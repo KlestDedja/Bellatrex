@@ -91,15 +91,17 @@ class EnsembleWrapper:
     class Estimator:
 
         class Tree_:
-            def __init__(self, feature, n_node_samples, children_left,
-                         children_right, threshold, value,
+            def __init__(self, feature, n_leaves, n_node_samples, children_left,
+                         children_right, threshold, value, max_depth,
                          feature_names_in_, n_features_in_, learner_class):
                 self.feature = feature
+                self.n_leaves = n_leaves
                 self.n_node_samples = n_node_samples
                 self.children_left = children_left
                 self.children_right = children_right
                 self.threshold = threshold
                 self.value = value
+                self.max_depth = max_depth
                 self.feature_names_in_ = feature_names_in_
                 self.n_features_in_ = n_features_in_
                 self.learner_class = learner_class
@@ -149,11 +151,13 @@ class EnsembleWrapper:
             self.tree_ = self.Tree_(  # ORDER IS IMPORTANT! Check how class Tree_ is initialized
                 # The .get method returns None if key is missing
                 tree_dict.get('features'),
+                tree_dict.get('n_leaves'),
                 tree_dict.get('node_sample_weight'),
                 tree_dict.get('children_left'),
                 tree_dict.get('children_right'),
                 tree_dict.get('thresholds'),
-                tree_dict.get('values'), # needs to be singular: .value!
+                tree_dict.get('values'), # Does it need to be spelled as singular? .value?
+                tree_dict.get('max_depth'),
                 tree_dict.get('feature_names_in_'),
                 tree_dict.get('n_features_in_'),
                 tree_dict.get('learner_class'),
@@ -165,12 +169,12 @@ class EnsembleWrapper:
         def predict(self, X):
             if isinstance(X, pd.DataFrame):
                 X = X.to_numpy()
-            leaf_indices = self.tree_.apply(X)
+            node_indices = self.tree_.apply(X)
             n_samples = X.shape[0]
             predictions = np.zeros((n_samples, self.n_outputs_))
 
             for i in range(n_samples):
-                leaf_idx = leaf_indices[i][-1]  # Assuming the last node is the leaf
+                leaf_idx = node_indices[i][-1]  # Assuming the last node is the leaf
                 predictions[i, :] = self.tree_.value[leaf_idx]
 
             return predictions
@@ -239,10 +243,13 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
         "children_left" : tree.children_left,
         "children_right" : tree.children_right,
         "children_default" : tree.children_right.copy(), # to be changed when sklearn can handle missing values
+        "n_leaves": tree.n_leaves,
+        "max_depth": tree.max_depth,
         "features" : tree.feature,
         "thresholds" : tree.threshold,
         "node_sample_weight": tree.weighted_n_node_samples,
         "feature_names_in_": getattr(clf_obj, "feature_names_in_", None),
+        # "max_depth" : getattr(clf_obj, "max_depth", None),
         "n_features_in_": getattr(tree_obj, "n_features_in_", None),
         "unique_times_": getattr(tree_obj, "unique_times_", None),
         "is_event_time_": getattr(tree_obj, "is_event_time_", None),

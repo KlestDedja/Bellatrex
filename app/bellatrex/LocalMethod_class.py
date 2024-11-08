@@ -404,7 +404,7 @@ class BellatrexExplain:
         # prepare data and info to be plotted:
         plot_kmeans, plot_data_bunch = tuned_method.preselect_represent_cluster_trees()
 
-        if plot_gui is False: # plot stadnard overview plots, without interactive features:
+        if plot_gui is False: # plot standard overview plots, without interactive features:
 
             if plot_max_depth is not None:
                 warnings.warn(f"Max depth for tree visualization = {plot_max_depth}"
@@ -421,6 +421,10 @@ class BellatrexExplain:
 
         if plot_gui is True:
 
+            if isinstance(self.clf, EnsembleWrapper):
+                raise ValueError("GUI interface is not compatible with packed EnsembleWrapper yet."
+                                 "\nPlease use the original sklearn.ensemble class")
+
             matplotlib.use('Agg')
             print('Matplotlib set in a non-interactive backend, with: \'matplotlib.use(\'Agg\')\'')
             from .gui_utils import check_and_import_gui_dependencies
@@ -429,7 +433,7 @@ class BellatrexExplain:
 
             if show is False:
                 warnings.warn("Plots are shown immediately while in an interactive session (plot_gui = True).\n"
-                            "The variable show = False is therefore ignored.")
+                            "Show = False is therefore ignored.")
 
             # A 'temporary' directory is used to store, read and clear files created during the User interactions:
             current_file_dir = os.path.dirname(os.path.abspath(__file__)) # app/bellatrex
@@ -506,8 +510,8 @@ class BellatrexExplain:
         multi_output_cases = tuned_method.MSA_KEYS + tuned_method.MTC_KEYS + tuned_method.MTR_KEYS
 
         if tuned_method.set_up in multi_output_cases:
-            raise ValueError(f"plot_overview() is compatible with single-output tasks only,\n"
-                             f"found \'{tuned_method.set_up}\'")
+            raise ValueError(f"plot_visuals() is compatible with single-output tasks only,\n"
+                             f"found \'{tuned_method.set_up}\'. Use plot_overview() instead")
 
         out_file, file_extra = self.create_rules_txt()
         rules, preds, baselines, weights, other_preds = read_rules(

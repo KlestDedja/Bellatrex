@@ -99,7 +99,8 @@ def make_interactive_plot(plots, temp_files_dir,
                     assert other_inputs is not None
                     # the other_inputs is supposed to be a TreeExtractor instance
 
-                    my_clf = other_inputs.clf # rf estiomator here
+                    my_clf = other_inputs.clf # rf estimator here. Is this compatible with the Wrapper? Probably not
+                    print(my_clf)
                     if hasattr(my_clf, "feature_names_in_"):
                         feature_names = my_clf.feature_names_in_
                     else:
@@ -505,10 +506,8 @@ def plot_with_interface(plot_data_bunch, kmeans,
                                   force_in=None,
                                   is_binary=False)
 
-
                 norm_preds = mpl.colors.BoundaryNorm(np.linspace(v_min,v_max, 256),
                                                       color_map_right.N)
-
 
                 cb2 = mpl.colorbar.Colorbar(ax, cmap=color_map_right, norm=norm_preds,
                                             label=str(input_method.fidelity_measure)+' loss')

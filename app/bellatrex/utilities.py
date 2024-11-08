@@ -70,23 +70,26 @@ def predict_helper(clf, X):
     # It should look as (n_samples, n_outputs) for multi-output,
     # and (n_samples,) for single output
 
-    # WHEN EXTENDING TO other tree-based learners (e.g. ExtraTrees) consider
+    # TODO WHEN EXTENDING (if ever) to  other tree-based learners (e.g. ExtraTrees), consider
     # checking for n_outputs and n_classes instead of check with isinstance
 
+    # cases where the original, non-wrapped, model is passed:
     if isinstance(clf, (RandomForestClassifier, DecisionTreeClassifier)) and clf.n_outputs_ == 1:
         return clf.predict_proba(X)[:,1]
     if isinstance(clf, (RandomForestClassifier, DecisionTreeClassifier)) and clf.n_outputs_ > 1:
         return np.array(clf.predict_proba(X))[:,:,1].T
-    if isinstance(clf, (RandomForestRegressor, DecisionTreeRegressor,
-                          RandomSurvivalForest, SurvivalTree)):
+    if isinstance(clf, (RandomForestRegressor, DecisionTreeRegressor, RandomSurvivalForest, SurvivalTree)):
         return clf.predict(X)
+    # case where wrapped model is passed:
     elif isinstance(clf, (EnsembleWrapper, EnsembleWrapper.Estimator)):
         ypred = clf.predict(X)
         if ypred.shape[1] == 1: # if output is of shape: (n_samples, 1)
-            return ypred.squeeze(axis=1) #consistency with sklearn output shape: (n_samples,)
-        #  otherwise if output is of shape: (n_samples, n_outputs) keep as it is
+            return ypred.squeeze(axis=1) # consistency with sklearn output shape: (n_samples,)
+        # otherwise if output is of shape: (n_samples, n_outputs) return as it is
+        return ypred
+        # NOTE: this function is often called once sample at the time, therefore often n_samples = 1
     else:
-        raise ValueError('Tree learner \'{clf.__class__.__name__}\' not recognized, or not implemented yet')
+        raise ValueError('Tree learner \'{clf.__class__.__name__}\' not recognized, or not implemented')
 
 
 def trail_pretty_digits(value, tot_digits):

@@ -1,10 +1,16 @@
 # Changelog
 
-## [0.2.3] - 2024-08-20
+## [0.2.3] - 2024-11-08
+### Fixed
+- Fixed bug when running `set_up=multi-label` with `EnsembleWrapper`
+- Updated dependency constraints with `dearpygui`, newest version is not supported (`lighttheme = create_theme_imgui_light()` raises an error.)
+)
 ### Refactored
 - Cleaned some code and dropped unused files and functions (still ongoing)
 ### Enhanced
-- Further streamlined loading of pre-trained models.
+- Further streamlined loading of pre-trained models with `EnsembleWrapper` class.
+- Improved compatibility between `EnsembleWrapper`and GUI interface
+
 
 
 ## [0.2.2] - 2024-08-12

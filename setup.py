@@ -48,7 +48,7 @@ setup(
                       'matplotlib>=3.7'],
     extras_require={
         'dev': ['pytest', 'twine'],
-        'gui': ['dearpygui>=1.6.2', 'dearpygui-ext>=0.9.5'] # for Graphical User Interface (demo)
+        'gui': ['dearpygui>=1.6.2, <2.0', 'dearpygui-ext>=0.9.5, <1.0'] # for Graphical User Interface (demo)
     },
     python_requires='>=3.9, <3.13',
 )
