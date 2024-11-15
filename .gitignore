@@ -1,6 +1,6 @@
 __pycache__/
 .vscode
-.vs/*
+.vs
 .pylintrc
 .spyderproject
 .spyproject
