@@ -42,7 +42,7 @@ setup(
         'Programming Language :: Python :: 3.12',    ],
     install_requires=['scikit-learn >= 1.2', # we avoid making use (for now) of some validation.utils functions that appear in 1.3.1
                       'threadpoolctl>=3.1',
-                      'scikit-survival>=0.22',
+                      'scikit-survival>=0.22, <1.0',
                       'scipy>=1.11',
                       'pandas>=1.5', #to load tutorial datasets
                       'matplotlib>=3.7'],
