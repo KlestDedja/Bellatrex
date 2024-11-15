@@ -1,5 +1,6 @@
 __pycache__/
 .vscode
+.vs/*
 .pylintrc
 .spyderproject
 .spyproject
@@ -28,6 +29,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.pypirc
 
 # Environments
 .env

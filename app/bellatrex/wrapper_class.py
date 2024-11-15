@@ -249,7 +249,6 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
         "thresholds" : tree.threshold,
         "node_sample_weight": tree.weighted_n_node_samples,
         "feature_names_in_": getattr(clf_obj, "feature_names_in_", None),
-        # "max_depth" : getattr(clf_obj, "max_depth", None),
         "n_features_in_": getattr(tree_obj, "n_features_in_", None),
         "unique_times_": getattr(tree_obj, "unique_times_", None),
         "is_event_time_": getattr(tree_obj, "is_event_time_", None),

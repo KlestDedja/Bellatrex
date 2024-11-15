@@ -100,7 +100,6 @@ def make_interactive_plot(plots, temp_files_dir,
                     # the other_inputs is supposed to be a TreeExtractor instance
 
                     my_clf = other_inputs.clf # rf estimator here. Is this compatible with the Wrapper? Probably not
-                    print(my_clf)
                     if hasattr(my_clf, "feature_names_in_"):
                         feature_names = my_clf.feature_names_in_
                     else:
@@ -125,6 +124,9 @@ def make_interactive_plot(plots, temp_files_dir,
                     smart_width = 1 + 0.4*real_plot_leaves
                     smart_width = int(smart_width)
                     smart_height = int(real_plot_depth+1)
+                    if my_clf.n_outputs_ > 3: # create extra vertical space for multi-output trees (output over is printed over multiple lines)
+                        smart_height = int(smart_height*(0.92+0.08*(my_clf.n_outputs_)))
+
                     plt.subplots(figsize=(smart_width, smart_height))
 
                     plot_tree_patched(the_tree, max_depth=max_depth,
