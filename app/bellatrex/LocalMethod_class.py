@@ -423,7 +423,8 @@ class BellatrexExplain:
 
             if isinstance(self.clf, EnsembleWrapper):
                 raise ValueError("GUI interface is not compatible with packed EnsembleWrapper yet."
-                                 "\nPlease use the original sklearn.ensemble class")
+                                 "\nPlease use the original sklearn.ensemble class and do not call"
+                                 "the `pack_trained_ensemble` function on it.")
 
             matplotlib.use('Agg')
             print('Matplotlib set in a non-interactive backend, with: \'matplotlib.use(\'Agg\')\'')
