@@ -44,7 +44,7 @@ jobs:
 
   gui-tests:
     name: GUI Tests
-    if: github.event_name == 'pull_request' || contains(toLower(github.event.head_commit.message), 'run ci')
+    if: github.event_name == 'pull_request' || contains(github.event.head_commit.message, 'run CI')
     runs-on: windows-latest
     strategy:
       matrix:
