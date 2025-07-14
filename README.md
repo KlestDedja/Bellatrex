@@ -63,7 +63,21 @@ pip install bellatrex[gui]
 
 **Note:** When running Bellatrex with the GUI for multiple test samples, the program will generate an interactive window. The process may take a couple of seconds, and the the user has to click at least once within the generated window in order to activate the interactive mode. Once this is done, the user can explore the generated rules by clicking on the corresponding representation. To show the Bellatrex explanation for the next sample, close the interactive window and wait until Bellatrex generates the explanation for the new sample.
 
-# Ready for the tutorial!
+# Ready to go!
 
-If you have downloaded the content of this folder and installed the packages successfully, you can dive into the [`tutorial.ipynb`](https://github.com/Klest94/Bellatrex/blob/main-dev/tutorial.ipynb) code and try Bellatrex yourself.
+If you have downloaded the content of this folder and installed the packages successfully, you can dive into [`tutorial.ipynb`](https://github.com/Klest94/Bellatrex/blob/main-dev/tutorial.ipynb) and try Bellatrex yourself.
+
+## Enjoying Bellatrex?
+
+Bellatrex is an open-source project that was initially developed with support from research funding provided by [Flanders AI](https://www.flandersai.be/en). Since the end of that funding period, the project has been maintained through __volunteer__ work, but there is always exiting work ahead: new features, performance improvements, tests for robustness... if you find Bellatrex useful or believe in its goals, there are several meaningful ways you can help support its ongoing development:
+
+### 🐛 Test and Report Issues
+
+Use Bellatrex in your own projects and let us know how it performs. If you encounter any bugs, inconsistencies, open an [issue](https://github.com/Klest94/Bellatrex/issues) and share example code and error traces.
+
+If you find areas for improvement, send us feedback alos by opening an [issue](https://github.com/Klest94/Bellatrex/issues).
+
+### ⭐ Star Bellatrex
+
+Easy: simply add a ⭐ to the project. It will make the project more visible to others and motivate ongoing voluntary development.
 
