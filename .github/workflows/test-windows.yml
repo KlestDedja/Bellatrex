@@ -1,4 +1,4 @@
-name: Bellatrex main CI test
+name: Bellatrex main CI test, with and without GUI
 
 on:
   push:
