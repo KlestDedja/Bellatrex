@@ -7,7 +7,7 @@ def load_data(filename: str) -> pd.DataFrame:
     return pd.read_csv(filepath)
 
 # Functions to load specific datasets
-# Spearation between X and y is done 'manually', that is: case by case
+# Separation between X and y is done 'manually', that is: case by case
 def load_binary_data(return_X_y=False):
     if return_X_y is False:
         return load_data('bin_tutorial.csv')
