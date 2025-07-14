@@ -1,14 +1,13 @@
-import pkg_resources
+from importlib.resources import files
 import pandas as pd
 import numpy as np
 
-def load_data(filename):
-    #returns a file system path for a resource (like a data file), within a package.
-    filepath = pkg_resources.resource_filename('bellatrex.datasets', filename)
+def load_data(filename: str) -> pd.DataFrame:
+    filepath = files("bellatrex.datasets") / filename
     return pd.read_csv(filepath)
 
 # Functions to load specific datasets
-# Spearation between X and y is done 'manually', that is: case by case 
+# Spearation between X and y is done 'manually', that is: case by case
 def load_binary_data(return_X_y=False):
     if return_X_y is False:
         return load_data('bin_tutorial.csv')
@@ -41,7 +40,7 @@ def load_survival_data(return_X_y=False):
             str(y.columns[0]): np.bool_,
             str(y.columns[1]): np.float32
             }
-        y = y.to_records(index=False, column_dtypes=dtypes_map) 
+        y = y.to_records(index=False, column_dtypes=dtypes_map)
 
         return X, y
 
