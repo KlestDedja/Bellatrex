@@ -4,7 +4,7 @@
 </p>
 
 [![Python Versions](https://img.shields.io/pypi/pyversions/bellatrex)](https://pypi.org/project/bellatrex/)
-[![Downloads](https://static.pepy.tech/badge/bellatrex)](https://pepy.tech/project/bellatrex?compact=true)
+[![Downloads](https://static.pepy.tech/badge/bellatrex?compact=true)](https://pepy.tech/project/bellatrex)
 [![License](https://img.shields.io/github/license/Klest94/Bellatrex)](https://github.com/Klest94/Bellatrex/blob/main-dev/LICENSE)
 [![Windows CI](https://github.com/Klest94/Bellatrex/actions/workflows/test-windows.yml/badge.svg?branch=main-dev)](https://github.com/Klest94/Bellatrex/actions/workflows/test-windows.yml)
 
