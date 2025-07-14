@@ -1,4 +1,4 @@
-name: CI test, core and GUI
+name: CI workflow # core and GUI
 
 on:
   push:
