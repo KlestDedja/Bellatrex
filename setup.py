@@ -9,7 +9,7 @@ from setuptools import find_packages, setup
 
 readme_path = os.path.join('README.md')
 
-with open(readme_path, 'r') as f:
+with open(readme_path, 'r', encoding='utf-8') as f:
     text_description = f.read()
 
 
