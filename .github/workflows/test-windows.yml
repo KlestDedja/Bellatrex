@@ -1,4 +1,4 @@
-name: Bellatrex main CI test, with and without GUI
+name: CI test, core and GUI
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   core-tests:
-    name: Core Tests (no GUI)
+    name: Core Tests
     runs-on: windows-latest
     strategy:
       matrix:
