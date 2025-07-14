@@ -26,7 +26,7 @@ setup(
     author_email="daneel.olivaw94@gmail.com",
     license="MIT",
 
-    # Package source lives under 'app/'
+    # Find package source under 'app/'
     package_dir={"": "app"},
     packages=find_packages(where="app"),
 
