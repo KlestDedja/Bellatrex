@@ -6,7 +6,6 @@ Here we manually test most of the features
 import os
 import pytest
 import matplotlib.pyplot as plt
-
 import bellatrex as btrex
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -21,22 +20,25 @@ from bellatrex.datasets import (
     load_binary_data,
     load_mtr_data
 )
-from bellatrex.utilities import get_auto_setup, predict_helper
+from bellatrex.utilities import get_auto_setup
 
-@pytest.mark.gui  # tag this test as GUI-dependent
-def test_gui_workflow():
-    print("Bellatrex version:", btrex.__version__)
+IS_CI = os.environ.get("CI") == "true"
 
-    MAX_TEST_SAMPLES = 2
-    PLOT_GUI = True
-    root_folder = os.getcwd()
+MAX_TEST_SAMPLES = 3
 
-    # Load dataset
-    X, y = load_mlc_data(return_X_y=True)
+DATA_LOADERS = [
+    load_binary_data,
+    load_regression_data,
+    load_survival_data,
+    load_mlc_data,
+    load_mtr_data,
+]
 
+# --- Common test setup logic shared by both tests ---
+def prepare_fitted_bellatrex(loader):
+    X, y = loader(return_X_y=True)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
     SETUP = get_auto_setup(y)
-    print("Detected prediction task 'SETUP':", SETUP)
 
     if SETUP.lower() in "survival":
         clf = RandomSurvivalForest(n_estimators=100, min_samples_split=10, n_jobs=-2, random_state=0)
@@ -48,21 +50,34 @@ def test_gui_workflow():
         raise ValueError(f"Detection task {SETUP} not compatible with Bellatrex (yet)")
 
     clf.fit(X_train, y_train)
-    print("Model fitting complete.")
-    clf_packed = pack_trained_ensemble(clf)
+    test_grid = {"n_trees": [0.6, 1.0], "n_dims": [2, None], "n_clusters": [1, 2, 3]}
+    btrex_fitted = BellatrexExplain(clf, set_up="auto", p_grid=test_grid, verbose=3).fit(X_train, y_train)
 
-    Btrex_fitted = BellatrexExplain(clf, set_up="auto", p_grid={"n_clusters": [1, 2, 3]}, verbose=3).fit(X_train, y_train)
+    return btrex_fitted, X_train, X_test, y_train
 
-    for i in range(MAX_TEST_SAMPLES):
-        print(f"Explaining sample i={i}")
-        explan_dir = os.path.join(root_folder, "explanations-out")
-        os.makedirs(explan_dir, exist_ok=True)
-        FILE_OUT = os.path.join(explan_dir, f"Rules_{SETUP}_id{i}.txt")
 
-        y_train_pred = predict_helper(clf, X_train)
+# --- Core (non-GUI) test ---
+def test_core_workflow():
+    for loader in DATA_LOADERS:
+        btrex_fitted, X_train, X_test, y_train = prepare_fitted_bellatrex(loader)
+        for i in range(MAX_TEST_SAMPLES):
+            tuned_method = btrex_fitted.explain(X_test, i)
+            tuned_method.plot_overview(show=not IS_CI, plot_gui=False)
+            _ = tuned_method.get_rules()  # Access rules without plotting
 
-        tuned_method = Btrex_fitted.explain(X_test, i)
-        tuned_method.plot_overview(show=True, plot_gui=PLOT_GUI)
+# --- GUI test with plot_gui=True ---
+@pytest.mark.gui
+def test_gui_workflow():
+    if IS_CI:
+        import matplotlib
+        matplotlib.use("Agg")  # Non-blocking backend when running in CI
 
-        # You can add assertions here for specific outputs, files created, etc.
-        plt.show()
+    for loader in DATA_LOADERS:
+        btrex_fitted, X_train, X_test, y_train = prepare_fitted_bellatrex(loader)
+
+        for i in range(MAX_TEST_SAMPLES):
+            tuned_method = btrex_fitted.explain(X_test, i)
+            tuned_method.plot_overview(show=not IS_CI, plot_gui=True)
+
+    if IS_CI:
+        plt.close("all")
