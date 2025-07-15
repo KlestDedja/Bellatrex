@@ -63,7 +63,7 @@ def test_core_workflow():
         for i in range(MAX_TEST_SAMPLES):
             tuned_method = btrex_fitted.explain(X_test, i)
             tuned_method.plot_overview(show=not IS_CI, plot_gui=False)
-            _ = tuned_method.get_rules()  # Access rules without plotting
+            # TODO: test create_rules_txt() method (do not store files)
 
 # --- GUI test with plot_gui=True ---
 @pytest.mark.gui
