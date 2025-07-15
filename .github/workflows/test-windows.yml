@@ -16,10 +16,12 @@ on:
       - 'app/**'
       - 'tests/**'
 
+  workflow_dispatch:
+
 jobs:
   core-tests:
     name: Core Tests
-    if: github.event_name == 'pull_request' || contains(github.event.head_commit.message, 'run CI')
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'run CI')
     runs-on: windows-latest
     strategy:
       matrix:
@@ -44,7 +46,7 @@ jobs:
 
   gui-tests:
     name: GUI Tests
-    if: github.event_name == 'pull_request' || contains(github.event.head_commit.message, 'run CI')
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'run CI')
     runs-on: windows-latest
     strategy:
       matrix:
