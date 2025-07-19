@@ -51,17 +51,16 @@ In case the previous step does not work, then the ``pip`` distribution is not wo
 
 ## Enable Graphical User Interface
 
-For an enhanced user experience that includes interactive plots, you can etiher  pip install the following additional packages:
-```
-pip install dearpygui==1.6.2
-pip install dearpygui-ext==0.9.5
-```
-Or install everything at once with:
-
+For an enhanced user experience that includes interactive plots, you can run:  
 ```
 pip install bellatrex[gui]
 ```
 
+or manually install the following packages on top of bellatrex:
+```
+pip install dearpygui==1.6.2
+pip install dearpygui-ext==0.9.5
+```
 
 **Note:** When running Bellatrex with the GUI for multiple test samples, the program will generate an interactive window. The process may take a couple of seconds, and the the user has to click at least once within the generated window in order to activate the interactive mode. Once this is done, the user can explore the generated rules by clicking on the corresponding representation. To show the Bellatrex explanation for the next sample, close the interactive window and wait until Bellatrex generates the explanation for the new sample.
 
