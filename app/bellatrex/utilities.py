@@ -159,7 +159,7 @@ def frmt_pretty_print(y_pred, digits_single=4, digits_vect=3) -> str:
                                 for val in y_pred)
 
     if isinstance(y_pred, np.ndarray) and y_pred.size == 1:
-        y_pred = float(y_pred) #transform to float and go to next case:
+        y_pred = float(np.ravel(y_pred)) #transform to float and go to next case:
 
     if isinstance(y_pred, (int, float)): # case for float and for singel-value array of shape (1,)
 
