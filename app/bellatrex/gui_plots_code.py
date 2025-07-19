@@ -41,7 +41,7 @@ class interactable_plot: #Object containing all information of a plot
 def make_interactive_plot(plots, temp_files_dir,
                           plot_size=700,
                           other_inputs=None,
-                          max_depth=None): #Function that makes the interctive plots
+                          max_depth=None, auto_close=False): #Function that makes the interctive plots
 
     """
     Generates an interactive Graphical User Interface with (default) two plots, offering the
@@ -372,6 +372,13 @@ def make_interactive_plot(plots, temp_files_dir,
     #DPG show app
     dpg.setup_dearpygui()
     dpg.show_viewport()
+
+    if auto_close:
+        import time
+        print("Auto-close is enabled. GUI will close in 3 seconds."
+        time.sleep(3)
+        dpg.stop_dearpygui()
+
     dpg.start_dearpygui()
     dpg.render_dearpygui_frame()
     dpg.destroy_context()
@@ -382,7 +389,8 @@ def plot_with_interface(plot_data_bunch, kmeans,
                         temp_files_dir,
                         max_depth=None,
                         colormap=None,
-                        clusterplots=(True,False)):
+                        clusterplots=(True,False),
+                        auto_close=False):
 
     def shaper(in_shape):
         if in_shape is True:
@@ -567,7 +575,8 @@ def plot_with_interface(plot_data_bunch, kmeans,
     make_interactive_plot(plots, temp_files_dir,
                           plot_size=700,
                           other_inputs=input_method,
-                          max_depth=max_depth)
+                          max_depth=max_depth,
+                          auto_close=auto_close)
 
     try:
         os.remove(os.path.join(temp_files_dir, 'temp_colourbar0.png'))

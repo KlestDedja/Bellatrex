@@ -77,7 +77,7 @@ def test_gui_workflow():
 
         for i in range(MAX_TEST_SAMPLES):
             tuned_method = btrex_fitted.explain(X_test, i)
-            tuned_method.plot_overview(show=not IS_CI, plot_gui=True)
+            tuned_method.plot_overview(show=not IS_CI, plot_gui=True, auto_close=True)
 
     if IS_CI:
         plt.close("all")

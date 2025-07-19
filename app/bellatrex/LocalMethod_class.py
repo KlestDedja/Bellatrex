@@ -380,7 +380,7 @@ class BellatrexExplain:
 
     def plot_overview(self, show=True,
                       plot_max_depth=None,
-                      colormap=None, plot_gui=False):
+                      colormap=None, plot_gui=False, auto_close=False):
 
         sample =  self.sample
         tuned_method = self.tuned_method
@@ -442,7 +442,7 @@ class BellatrexExplain:
             os.makedirs(temp_files_dir, exist_ok=True)
 
             plot_with_interface(plot_data_bunch, plot_kmeans, tuned_method, temp_files_dir,
-                                max_depth=plot_max_depth, colormap=colormap)
+                                max_depth=plot_max_depth, colormap=colormap, auto_close=auto_close)
             # REMARK: the temp files are deleted with os.remove in plot_with_interface, above
 
         return fig, axes # plt.gcf()
