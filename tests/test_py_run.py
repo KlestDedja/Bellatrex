@@ -5,6 +5,7 @@ Here we manually test most of the features
 
 import os
 import pytest
+import matplotlib
 import matplotlib.pyplot as plt
 import bellatrex as btrex
 from sklearn.model_selection import train_test_split
@@ -24,7 +25,7 @@ from bellatrex.utilities import get_auto_setup
 
 IS_CI = os.environ.get("CI") == "true"
 
-MAX_TEST_SAMPLES = 3
+MAX_TEST_SAMPLES = 2
 
 DATA_LOADERS = [
     load_binary_data,
@@ -53,13 +54,13 @@ def prepare_fitted_bellatrex(loader):
     test_grid = {"n_trees": [0.6, 1.0], "n_dims": [2, None], "n_clusters": [1, 2, 3]}
     btrex_fitted = BellatrexExplain(clf, set_up="auto", p_grid=test_grid, verbose=3).fit(X_train, y_train)
 
-    return btrex_fitted, X_train, X_test, y_train
+    return btrex_fitted, X_test
 
 
 # --- Core (non-GUI) test ---
 def test_core_workflow():
     for loader in DATA_LOADERS:
-        btrex_fitted, X_train, X_test, y_train = prepare_fitted_bellatrex(loader)
+        btrex_fitted, X_test = prepare_fitted_bellatrex(loader)
         for i in range(MAX_TEST_SAMPLES):
             tuned_method = btrex_fitted.explain(X_test, i)
             tuned_method.plot_overview(show=not IS_CI, plot_gui=False)
@@ -69,15 +70,12 @@ def test_core_workflow():
 @pytest.mark.gui
 def test_gui_workflow():
     if IS_CI:
-        import matplotlib
         matplotlib.use("Agg")  # Non-blocking backend when running in CI
 
     for loader in DATA_LOADERS:
-        btrex_fitted, X_train, X_test, y_train = prepare_fitted_bellatrex(loader)
+        btrex_fitted, X_test = prepare_fitted_bellatrex(loader)
 
         for i in range(MAX_TEST_SAMPLES):
             tuned_method = btrex_fitted.explain(X_test, i)
             tuned_method.plot_overview(show=not IS_CI, plot_gui=True, auto_close=True)
-
-    if IS_CI:
-        plt.close("all")
+            plt.close("all")

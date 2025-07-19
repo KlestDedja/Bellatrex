@@ -374,10 +374,9 @@ def make_interactive_plot(plots, temp_files_dir,
     dpg.show_viewport()
 
     if auto_close:
-        import time
-        print("Auto-close is enabled. GUI will close in 3 seconds."
-        time.sleep(3)
-        dpg.stop_dearpygui()
+        import threading
+        print("Auto-close is enabled. GUI will close in 3 seconds.")
+        threading.Timer(3.0, dpg.stop_dearpygui).start()
 
     dpg.start_dearpygui()
     dpg.render_dearpygui_frame()
