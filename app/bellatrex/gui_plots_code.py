@@ -369,17 +369,17 @@ def make_interactive_plot(plots, temp_files_dir,
     viewport=dpg.create_viewport(title='Plot', width=1000, height=720)
     dpg.configure_viewport(viewport,height=windowheight+5*FULLSPACING,width=windowwidth+2*FULLSPACING)
 
-    #DPG show app
+    #DPG show app, with option that does not crash whnen running headless tests:
     dpg.setup_dearpygui()
-    dpg.show_viewport()
-
-    if auto_close:
-        import threading
-        print("Auto-close is enabled. GUI will close in 3 seconds.")
-        threading.Timer(3.0, dpg.stop_dearpygui).start()
-
-    dpg.start_dearpygui()
-    dpg.render_dearpygui_frame()
+    
+    if not IS_CI:
+        dpg.show_viewport()
+        dpg.start_dearpygui()
+    else:
+        print("Running in CI: rendering one frame and skipping full GUI")
+        dpg.render_dearpygui_frame()
+        dpg.stop_dearpygui()
+    
     dpg.destroy_context()
 
 
