@@ -159,7 +159,7 @@ def frmt_pretty_print(y_pred, digits_single=4, digits_vect=3) -> str:
                                 for val in y_pred)
 
     if isinstance(y_pred, np.ndarray) and y_pred.size == 1:
-        y_pred = float(np.ravel(y_pred)) #transform to float and go to next case:
+        y_pred = y_pred.item()
 
     if isinstance(y_pred, (int, float)): # case for float and for singel-value array of shape (1,)
 
@@ -243,23 +243,31 @@ def _check_in_features(feature_names, sample):
 
 def colormap_from_str(colormap):
     '''
-    Function for the user to customize the colorbmap
+    Function for the user to customize the colormap.
+    Accepts a matplotlib colormap object or a string.
     '''
+
     if colormap is None:
-        cmap_output = plt.cm.get_cmap('RdYlBu_r') # default choice. Other possible default could be "viridis"
+        # Default: use 'RdYlBu_r'
+        cmap_output = mpl.colormaps['RdYlBu_r']
 
     elif isinstance(colormap, LinearSegmentedColormap):
         cmap_output = colormap
 
     elif isinstance(colormap, str):
-        if colormap not in plt.colormaps():
-            raise ValueError(f'Provided string {colormap} is not a recognized LinearSegmenetedColormap.'
-                             f' Check list by typing plt.colormaps()')
-        else:
-            cmap_output = plt.cm.get_cmap(colormap)
+        if colormap not in mpl.colormaps:
+            raise ValueError(
+                f'Provided string "{colormap}" is not a recognized colormap.\n'
+                f'Check available names via list(matplotlib.colormaps).'
+            )
+        cmap_output = mpl.colormaps[colormap]
+
     else:
-        raise ValueError('Provided colormap has to be either a LinearSegmenetedColormap,'
-                         f' or a recognized string. Found {type(colormap)} instead')
+        raise ValueError(
+            f'Provided colormap must be either a LinearSegmentedColormap or a recognized string.\n'
+            f'Got {type(colormap)} instead.'
+        )
+
     return cmap_output
 
 
