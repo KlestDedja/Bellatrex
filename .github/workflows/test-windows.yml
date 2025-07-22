@@ -1,5 +1,8 @@
 name: CI workflow # core and GUI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, main-dev]
