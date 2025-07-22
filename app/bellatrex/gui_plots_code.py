@@ -377,9 +377,7 @@ def make_interactive_plot(plots, temp_files_dir,
         dpg.show_viewport()
         dpg.start_dearpygui()
     else:
-        print("Running in CI: rendering one frame and skipping full GUI")
-        dpg.render_dearpygui_frame()
-        dpg.stop_dearpygui()
+        print("Running in CI: skipping DearPyGui rendering (headless safe)")
 
     dpg.destroy_context()
 
