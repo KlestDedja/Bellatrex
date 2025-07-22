@@ -1,12 +1,12 @@
 [project]
 name = "bellatrex"
-version = "0.2.4"  # Will be overwritten if you dynamically load from version.txt
-description = "A toolbox for Building Explanations through a LocaLly AccuraTe Rule EXtractor"
+version = "0.3.0"  # For now manually updated in synch with version.txt file, but TODO automatic synching
+description = "Explaining Random Forest model predictions by Building Explanations through a LocaLly AccuraTe Rule EXtractor"
 readme = "README.md"
 authors = [
     { name = "Klest Dedja", email = "daneel.olivaw94@gmail.com" },
 ]
-license = { text = "MIT" }
+license = { file = "LICENSE.txt" }
 requires-python = ">=3.9, <3.13"
 keywords = ["explainable AI", "rule extraction", "random forest", "surrogate models"]
 classifiers = [

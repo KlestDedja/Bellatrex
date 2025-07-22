@@ -4,6 +4,10 @@ Created on Mon Jul 22 11:21:19 2024
 @author: Klest Dedja
 """
 
+raise RuntimeError(
+    "This project uses pyproject.toml for configuration. Use `python -m build` instead of setup.py."
+)
+
 from pathlib import Path
 from setuptools import find_packages, setup
 
