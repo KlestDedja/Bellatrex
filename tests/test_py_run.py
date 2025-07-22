@@ -4,8 +4,8 @@ Here we manually test most of the features
 '''
 
 import os
-
 IS_CI = os.environ.get("CI") == "true"
+
 if IS_CI:
     import matplotlib
     matplotlib.use("Agg")  # Must be before importing pyplot

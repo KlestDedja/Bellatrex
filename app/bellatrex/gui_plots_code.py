@@ -1,6 +1,7 @@
 
 import warnings
 import os
+IS_CI = os.environ.get("CI") == "true"
 import math
 
 import dearpygui.dearpygui as dpg
@@ -371,7 +372,7 @@ def make_interactive_plot(plots, temp_files_dir,
 
     #DPG show app, with option that does not crash whnen running headless tests:
     dpg.setup_dearpygui()
-    
+
     if not IS_CI:
         dpg.show_viewport()
         dpg.start_dearpygui()
@@ -379,7 +380,7 @@ def make_interactive_plot(plots, temp_files_dir,
         print("Running in CI: rendering one frame and skipping full GUI")
         dpg.render_dearpygui_frame()
         dpg.stop_dearpygui()
-    
+
     dpg.destroy_context()
 
 
