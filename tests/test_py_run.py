@@ -4,9 +4,14 @@ Here we manually test most of the features
 '''
 
 import os
+
+IS_CI = os.environ.get("CI") == "true"
+if IS_CI:
+    import matplotlib
+    matplotlib.use("Agg")  # Must be before importing pyplot
+
 import pytest
-import matplotlib
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # Safe after backend is set
 import bellatrex as btrex
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -22,8 +27,6 @@ from bellatrex.datasets import (
     load_mtr_data
 )
 from bellatrex.utilities import get_auto_setup
-
-IS_CI = os.environ.get("CI") == "true"
 
 MAX_TEST_SAMPLES = 2
 
