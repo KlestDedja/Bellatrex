@@ -10,6 +10,14 @@ from bellatrex.datasets import (
     load_mtr_data
 )
 
+DATA_LOADERS = {
+    "binary": load_binary_data,
+    "regression": load_regression_data,
+    "survival": load_survival_data,
+    "multi-label": load_mlc_data,
+    "multi-target": load_mtr_data,
+}
+
 @pytest.mark.parametrize("loader", [
     load_binary_data,
     load_regression_data,
