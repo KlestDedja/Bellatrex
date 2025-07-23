@@ -16,7 +16,7 @@ import sksurv
 # from .utilities import  frmt_pretty_print
 from .TreeRepresentation_utils import tree_splits_to_vector#tree_vector
 from .TreeRepresentation_utils import rule_splits_to_vector, add_emergency_noise
-from .utilities import predict_helper
+from .utilities import predict_helper, safe_element_to_scalar
 
 
 class TreeExtraction:# is it convenient if it inherits?
@@ -226,7 +226,7 @@ class TreeExtraction:# is it convenient if it inherits?
 
         rf_pred = predict_helper(self.clf, sample)
         for k in range(self.clf.n_estimators):
-            tree_preds[k] = predict_helper(self.clf[k], sample.values)
+            tree_preds[k] = safe_element_to_scalar(predict_helper(self.clf[k], sample.values))
 
 
         # tree loss (euclidean norm of the predition vector vs real target(s))

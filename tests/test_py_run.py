@@ -30,19 +30,22 @@ from bellatrex.utilities import get_auto_setup
 
 MAX_TEST_SAMPLES = 2
 
-DATA_LOADERS = [
-    load_binary_data,
-    load_regression_data,
-    load_survival_data,
-    load_mlc_data,
-    load_mtr_data,
-]
+DATA_LOADERS = {
+    "binary": load_binary_data,
+    "regression": load_regression_data,
+    "survival": load_survival_data,
+    "multi-label": load_mlc_data,
+    "multi-target": load_mtr_data,
+}
 
 # --- Common test setup logic shared by both tests ---
 def prepare_fitted_bellatrex(loader):
-    X, y = loader(return_X_y=True)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
-    SETUP = get_auto_setup(y)
+
+    for SETUP, loader in DATA_LOADERS.items():  # Iterate over loading functions
+
+        X, y = loader(return_X_y=True)
+        X_train, X_test, y_train, _ = train_test_split(X, y, test_size=0.3, random_state=0)
+        # SETUP = get_auto_setup(y)
 
     if SETUP.lower() in "survival":
         clf = RandomSurvivalForest(n_estimators=100, min_samples_split=10, n_jobs=-2, random_state=0)
@@ -62,12 +65,42 @@ def prepare_fitted_bellatrex(loader):
 
 # --- Core (non-GUI) test ---
 def test_core_workflow():
-    for loader in DATA_LOADERS:
+    for setup, loader in DATA_LOADERS.items():  # Iterate over loading functions
         btrex_fitted, X_test = prepare_fitted_bellatrex(loader)
         for i in range(MAX_TEST_SAMPLES):
             tuned_method = btrex_fitted.explain(X_test, i)
             tuned_method.plot_overview(show=not IS_CI, plot_gui=False)
             # TODO: test create_rules_txt() method (do not store files)
+
+
+# --- Rules and file handling test ---
+def test_create_rules_txt():
+    for setup, loader in DATA_LOADERS.items():
+        X, y = loader(return_X_y=True)
+        X_train, X_test, y_train, _ = train_test_split(X, y, test_size=0.3, random_state=0)
+
+        if setup.lower() in "survival":
+            clf = RandomSurvivalForest(n_estimators=10, min_samples_split=2, n_jobs=-1, random_state=0)
+        elif setup.lower() in ["binary", "multi-label"]:
+            clf = RandomForestClassifier(n_estimators=10, min_samples_split=2, n_jobs=-1, random_state=0)
+        elif setup.lower() in ["regression", "multi-target"]:
+            clf = RandomForestRegressor(n_estimators=10, min_samples_split=2, n_jobs=-1, random_state=0)
+        else:
+            raise ValueError(f"Detection task {setup} not compatible with Bellatrex (yet)")
+
+        clf.fit(X_train, y_train)
+        btrex_fitted = BellatrexExplain(clf, set_up="auto", verbose=3).fit(X_train, y_train)
+
+        for i in range(MAX_TEST_SAMPLES):
+            btrex_fitted.explain(X_test, i)
+            out_file = "test_rules.txt"
+            btrex_fitted.create_rules_txt(out_file=out_file)
+            assert os.path.exists(out_file), "Rules file was not created"
+            file_extra = out_file.replace('.txt', '_extra.txt')
+            # Clean up after test
+            os.remove(out_file)
+            os.remove(file_extra)
+
 
 # --- GUI test with plot_gui=True ---
 @pytest.mark.gui
@@ -75,7 +108,7 @@ def test_gui_workflow():
     if IS_CI:
         matplotlib.use("Agg")  # Non-blocking backend when running in CI
 
-    for loader in DATA_LOADERS:
+    for setup, loader in DATA_LOADERS.items():  # Iterate over loading functions
         btrex_fitted, X_test = prepare_fitted_bellatrex(loader)
 
         for i in range(MAX_TEST_SAMPLES):

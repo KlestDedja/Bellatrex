@@ -1,4 +1,3 @@
-
 import warnings
 import numpy as np
 import pandas as pd
@@ -21,6 +20,11 @@ from matplotlib.ticker import FuncFormatter
 
 from .wrapper_class import EnsembleWrapper
 
+
+def safe_element_to_scalar(val):
+    if isinstance(val, np.ndarray) and val.shape == (1,):
+        return val.item()
+    return val
 
 def get_auto_setup(y_test):
 
@@ -75,7 +79,10 @@ def predict_helper(clf, X):
 
     # cases where the original, non-wrapped, model is passed:
     if isinstance(clf, (RandomForestClassifier, DecisionTreeClassifier)) and clf.n_outputs_ == 1:
-        return clf.predict_proba(X)[:,1]
+        proba = np.array(clf.predict_proba(X))  # Ensure proba is a NumPy array
+        if proba.shape[1] > 1:  # Ensure the second index exists
+            return proba[:, 1]
+        return proba[:, 0]  # Return the first index if only one class exists
     if isinstance(clf, (RandomForestClassifier, DecisionTreeClassifier)) and clf.n_outputs_ > 1:
         return np.array(clf.predict_proba(X))[:,:,1].T
     if isinstance(clf, (RandomForestRegressor, DecisionTreeRegressor, RandomSurvivalForest, SurvivalTree)):
@@ -775,8 +782,6 @@ def plot_preselected_trees(plot_data_bunch, kmeans, tuned_method,
             elif tuned_method.clf.ensemble_class == 'RandomForestRegressor':
                 cb2.set_label("Pred. value:"+ str(pred_tick),
                               size=base_font_size-3)
-            else:
-                raise ValueError(f'Case for EnsembleWrapper not recognized: {tuned_method.clf.ensemble_class}')
         else:
             raise ValueError(f'Model not recognized: {tuned_method.clf}')
 

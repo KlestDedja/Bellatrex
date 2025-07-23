@@ -1,4 +1,3 @@
-
 import os
 import warnings
 from joblib import Parallel, delayed
@@ -12,6 +11,7 @@ import sklearn
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.model_selection import ParameterGrid
 from sklearn.utils.validation import check_is_fitted
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 import sksurv
 from sksurv.ensemble import RandomSurvivalForest
@@ -216,17 +216,17 @@ class BellatrexExplain:
                     raise ValueError(f"Classifier {self.clf.ensemble_class} not compatible"
                                      "with \'auto\' set-up selection. PLease select the set-up manually")
 
-            elif isinstance(self.clf, sklearn.ensemble.RandomForestClassifier):
+            elif isinstance(self.clf, RandomForestClassifier):
                 if self.clf.n_outputs_ == 1:
                     self.set_up = 'binary'
                 else:
                     self.set_up = 'multi-label'
-            elif isinstance(self.clf, sklearn.ensemble.RandomForestRegressor):
+            elif isinstance(self.clf, RandomForestRegressor):
                 if np.array(y).ndim < 2 or self.clf.n_outputs_ == 1:
                     self.set_up = 'regression'
                 else:
                     self.set_up = 'multi-target'
-            elif isinstance(self.clf, sksurv.ensemble.forest.RandomSurvivalForest):
+            elif isinstance(self.clf, RandomSurvivalForest):
                 if self.clf.n_outputs_ == self.clf.unique_times_.shape[0]:
                     self.set_up = 'survival'
                 else:
@@ -354,7 +354,11 @@ class BellatrexExplain:
             surrogate_pred = np.array([0.0])
 
         for tree_idx, cluster_size in zip(final_extract_trees, final_cluster_sizes):
-            cluster_weight = cluster_size / np.sum(final_cluster_sizes)
+            if final_cluster_sizes is not None:
+                cluster_weight = cluster_size / np.sum(final_cluster_sizes)
+            else:
+                cluster_weight = 0  # or some default value
+
             surrogate_pred += predict_helper(self.clf[tree_idx], sample.values) * cluster_weight
 
         tuned_method.prediction = surrogate_pred
@@ -492,6 +496,12 @@ class BellatrexExplain:
 
         rules, preds, baselines, weights, other_preds = read_rules(
                             file=out_file, file_extra=file_extra)
+
+        # Ensure consistent formatting for multi-output cases
+        if isinstance(preds[0], list):  # Multi-output case
+            preds = [list(map(float, pred)) for pred in preds]
+        if isinstance(baselines[0], list):
+            baselines = [list(map(float, baseline)) for baseline in baselines]
 
         _input_validation(rules, preds, baselines, weights)
 

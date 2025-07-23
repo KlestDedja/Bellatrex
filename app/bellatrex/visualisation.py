@@ -326,10 +326,10 @@ def parse(rulesplit):
     """Parses a rulesplit outputted by Bellatrex into a form suitable for visualisation."""
 
     # 1) Replace special characters by LaTeX symbols
-    rulesplit = rulesplit.replace("≤" , "$\leq$")
-    rulesplit = rulesplit.replace("<=", "$\leq$")
-    rulesplit = rulesplit.replace("≥" , "$\geq$")
-    rulesplit = rulesplit.replace(">=", "$\geq$")
+    rulesplit = rulesplit.replace("≤" , r"$\leq$")
+    rulesplit = rulesplit.replace("<=", r"$\leq$")
+    rulesplit = rulesplit.replace("≥" , r"$\geq$")
+    rulesplit = rulesplit.replace(">=", r"$\geq$")
 
     # 2) Remove information related to the current value, situated after the threshold value (right hand side)
     end_math_idx = rulesplit.rfind('$') + 1
@@ -349,7 +349,6 @@ def parse(rulesplit):
 
 
 def read_rules(file, file_extra=None):
-
     """
     Reads and parses rules, predictions, baselines, and weights from a given file,
     with an optional additional file for extra predictions.
@@ -367,41 +366,46 @@ def read_rules(file, file_extra=None):
             - f_preds (list): A list of predictions corresponding to each rule.
             - f_baselines (list): A list of baseline predictions.
             - f_weights (list): A list of weights for each rule.
-            - other_preds (list or None): List of ununsed rules stored in the -extra file,
+            - other_preds (list or None): List of unused rules stored in the -extra file,
                 if provided; otherwise, None.
     """
     f_rules = []
     f_preds = []
     f_baselines = []
     f_weights = []
-    with open(file, "r") as f:
+    with open(file, "r", encoding="utf-8") as f:
         btrex_rules = f.readlines()
     for line in btrex_rules:
         if "RULE WEIGHT" in line:
-            f_weights.append( float(line.split(":")[1].strip("\n").strip(" #")) )
+            f_weights.append(float(line.split(":")[1].strip("\n").strip(" #")))
         if "Baseline prediction" in line:
-            f_baselines.append( float(line.split(":")[1].strip(" \n")) )
+            # Handle multiple comma-separated baseline predictions
+            baseline_values = line.split(":")[1].strip(" \n").split(",")
+            f_baselines.append([float(value.strip()) for value in baseline_values])  # Append as a list
             rule = []
             pred = []
         if "node" in line:
             fullrule = line.split(":")[1].strip().strip("\n").split("-->")
             index_thresh = max([fullrule[0].find(char) for char in ["=","<",">"]])
             fullrule[0] = fullrule[0][0:index_thresh+8]
-            rule.append( fullrule[0] )
-            pred.append( float(fullrule[1]) )
+            rule.append(fullrule[0])
+            # Handle multiple comma-separated predictions
+            predictions = fullrule[1].split(",")
+            pred.extend([float(p.strip()) for p in predictions])
         if "leaf" in line:
             f_rules.append(rule)
             f_preds.append(pred)
 
     if file_extra:
         other_preds = []
-        with open(file_extra, "r") as f:
+        with open(file_extra, "r", encoding="utf-8") as f:
             btrex_extra = f.readlines()
         for line in btrex_extra:
             if "Baseline prediction" in line:
                 pred = []
             if "node" in line:
-                pred.append(float(line.split("-->")[1]))
+                pred_values = line.split("-->")[1].strip().split(",")
+                pred.extend([float(p.strip()) for p in pred_values])
             if "leaf" in line:
                 other_preds.append(pred)
     else:

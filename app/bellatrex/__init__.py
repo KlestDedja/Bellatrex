@@ -16,6 +16,6 @@ __all__ = ['BellatrexExplain']
 
 version_file = os.path.join(os.path.dirname(__file__), 'version.txt')
 
-with open(version_file) as vf:
+with open(version_file, encoding='utf-8') as vf:
     __version__ = vf.read().strip()
 

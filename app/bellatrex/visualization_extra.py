@@ -6,13 +6,12 @@ from .utilities import frmt_pretty_print
 
 def _input_validation(rules, preds, baselines, weights):
     """
-    Validates the input parameters for consistency and computes the maximum rule length.
+    Validates the input parameters for consistency.
 
     Raises:
     - AssertionError: If the lengths of `rules`, `preds`, `baselines`, and `weights` are not equal.
     """
-    assert len(rules) == len(preds) == len(baselines) == len(weights), "All input lists must have the same length."
-
+    assert len(rules) == len(preds) == len(baselines) == len(weights), f"All input lists must have the same lengths, found {len(rules)}, {len(preds)}, {len(baselines)}, {len(weights)}."
     return None
 
 
