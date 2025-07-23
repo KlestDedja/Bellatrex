@@ -12,11 +12,19 @@
 
 
 
-# Welcome to Bellatrex!
+# Bellatrex: Explain your Random Forest predictions
 
-Random Forest models can be difficult to interpret, and Bellatrex addresses this challenge by generating explanations that are easy to understand, and by providing insights into how the model arrived at its predictions. Bellatrex does so by Building Explanations through a LocalLy AccuraTe Rule EXtractor (hence the name: Bellatrex) for a given test instance, by extracting only a few, diverse rules. See [the published paper](https://ieeexplore.ieee.org/abstract/document/10105927) for more details. The code for reproducing its results is available in a different [GitHub branch](https://github.com/Klest94/Bellatrex/tree/archive/reproduce-Dedja2023).
+Bellatrex is a Python library designed to generate concise, interpretable, and visually appealing explanations for predictions made by Random Forest models. The name says it all: Bellatrex stands for **B**uilding **E**xplanations through a **L**ocal**L**y **A**ccura**T**e **R**ule **EX**tractor.
 
-To illustrate how Bellatrex works, let's consider an example: when a user provides a test instance to Bellatrex, the tool begins by 1) pre-selecting a subset of the rules used to make the prediction; it then creates 2) a vector representation of such rules and 3) projects them to a low-dimensional space; Bellatrex then 4) clusters such representations to pick a rule from each cluster to explain the instance prediction. One rule per cluster is shown to the end user through visually appealing plots, and the tool's GUI allows users to explore similar rules to those extracted.
+Curious about the details and inner mechanisms of Bellatrex? Check out [our paper](https://ieeexplore.ieee.org/abstract/document/10105927) and jump into the [reproducibility branch](https://github.com/Klest94/Bellatrex/tree/archive/reproduce-Dedja2023) to dive into the experiments.
+
+## How Bellatrex works
+
+When explaining a prediction for a specific test instance, Bellatrex:
+1) pre-selects a subset of the rules used to make the prediction;
+2) creates a vector representation of such rules and (optionally) projects them into a low-dimensional space
+3) clusters such representations to pick a rule from each cluster to explain the instance prediction.
+4) Shows the selected rule through visually appealing plots, and the tool's GUI allows users to explore similar rules to those extracted.
 
 <table>
   <tr>
@@ -32,55 +40,66 @@ To illustrate how Bellatrex works, let's consider an example: when a user provid
 </table>
 
 
-Another strength of Bellatrex lies in its ability to handle several prediction tasks within `scikit-learn` implementations of Random Forests. For instance, Bellatrex can generate explanations for binary classification and multi-label predictions  tasks with `RandomForestClassifier`, as well as single- or multi-output regression tasks with `RandomForestRegressor`. Moreover, Bellatrex is compatible with scikit-survival's `RandomSurvivalForest`, allowing it to generate explanations for time-to-event predictions in the presence of right-censored data.
+## Supported models and tasks
 
+The current support of Bellatrex focuses on Random Forest models implemented via `scikit-learn` and `scikit-survival`:
 
-This repository contains:
-- instructions to run Bellatrex on your machine
-- an overview of the datasets used to test the effectiveness of the method
-- access to such datasets, as they appear after the pre-processing step.
+- Classification tasks and multi-label classification via `RandomForestClassifier`
+- Regression tasks and multi-target regression via `RandomForestRegressor`
+- Survival Analysis (time-to-event predictions with censoring) via `RandomSurvivalForest`
+
 
 # Set-up
 
-To install the standard version of Bellatrex, run:
+To install the standard version of Bellatrex (without an interacting GUI), run:
 
 ```
 pip install bellatrex
 ```
 
-In case the previous step does not work, then the ``pip`` distribution is not working as expected so please [contact us](https://mail.google.com/mail/u/0/?fs=1&tf=cm&source=mailto&to=daneel.olivaw94@gmail.com), and in the meantime try with a manual [clone](https://github.com/Klest94/Bellatrex) from the repository.
+If this step fails and you don't find a solution immediately, please [open an issue](https://github.com/Klest94/Bellatrex/issues). In the meantime, you can also try to [clone](https://github.com/Klest94/Bellatrex) the repository manually.
 
 
-## Enable Graphical User Interface
+## Interactive GUI mode
 
 For an enhanced user experience that includes interactive plots, you can run:  
 ```
 pip install bellatrex[gui]
 ```
 
-or manually install the following packages on top of bellatrex:
+or manually install the following additional packages:
 ```
 pip install dearpygui==1.6.2
 pip install dearpygui-ext==0.9.5
 ```
 
-**Note:** When running Bellatrex with the GUI for multiple test samples, the program will generate an interactive window. The process may take a couple of seconds, and the the user has to click at least once within the generated window in order to activate the interactive mode. Once this is done, the user can explore the generated rules by clicking on the corresponding representation. To show the Bellatrex explanation for the next sample, close the interactive window and wait until Bellatrex generates the explanation for the new sample.
+**Note:** When running Bellatrex with the GUI for multiple test samples, the program will generate an interactive window. The process may take a couple of seconds, and the the user might have to click at least once within the generated window in order to activate the interactive mode. Once this is done, the user can explore the generated rules by clicking on the corresponding representation. To show the Bellatrex explanation for the next sample, close the interactive window and wait until Bellatrex generates the explanation for the new sample.
 
-# Ready to go!
+# Ready to go? Quickstart tutorial
 
 If you have downloaded the content of this folder and installed the packages successfully, you can dive into [`tutorial.ipynb`](https://github.com/Klest94/Bellatrex/blob/main-dev/tutorial.ipynb) and try Bellatrex yourself.
 
-## Enjoying Bellatrex?
+## Support and Contributions
 
-Bellatrex is an open-source project that was initially developed with support from research funding provided by [Flanders AI](https://www.flandersai.be/en). Since the end of that funding period, the project has been maintained through __volunteer__ work, but there is always exiting work ahead: new features, performance improvements, tests for robustness... if you find Bellatrex useful or believe in its goals, there are several meaningful ways you can help support its ongoing development:
+Bellatrex is an open-source project that was initially developed from research funding by [Flanders AI](https://www.flandersai.be/en). Since the end of that funding period, the project has been maintained through volunteer work, but there is always exiting work ahead: new features, performance improvements, tests for robustness... if you find Bellatrex useful or believe in its goals, there are several meaningful ways you can help support its ongoing development:
 
-### 🐛 Test and Report Issues
+- 🐛 **Test and Report Issues:** if you encounter any bugs, inconsistencies, or simply find areas for improvement, open an [issue](https://github.com/Klest94/Bellatrex/issues) and share example code and error traces.
+- ⭐ **Give a star Bellatrex:** it will make the project more visible to others and motivate ongoing voluntary development.
 
-Use Bellatrex in your own projects and let us know how it performs. If you encounter any bugs, inconsistencies, open an [issue](https://github.com/Klest94/Bellatrex/issues) and share example code and error traces.
+## Refrences
 
-If you find areas for improvement, send us feedback alos by opening an [issue](https://github.com/Klest94/Bellatrex/issues).
+Please cite the following paper if you are using Bellatrex:
 
-### ⭐ Star Bellatrex
+> Dedja, K., Nakano, F.K., Pliakos, K. and Vens, C., 2023. BELLATREX: Building explanations through a locally accurate rule extractor. Ieee Access, 11, pp.41348-41367.
 
-Easy: simply add a ⭐ to the project. It will make the project more visible to others and motivate ongoing voluntary development.
-
+<pre>
+@article{dedja2023bellatrex,
+  title={BELLATREX: Building explanations through a locally accurate rule extractor},
+  author={Dedja, Klest and Nakano, Felipe Kenji and Pliakos, Konstantinos and Vens, Celine},
+  journal={Ieee Access},
+  volume={11},
+  pages={41348--41367},
+  year={2023},
+  publisher={IEEE}
+}
+<pre>
