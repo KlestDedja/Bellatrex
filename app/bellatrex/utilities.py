@@ -105,7 +105,7 @@ def trail_pretty_digits(value, tot_digits):
     leave an appropriate number of decimals. The higher the (absolute)
     value of the number, the fewer decimals.
     '''
-    # take a celining, without using the math module
+    # take a ceiling, without using the math module
     if np.abs(value) < 0.03:
         front_digits = 0 #we will use scientific notation in this case so ignore negative amounts
     else:
