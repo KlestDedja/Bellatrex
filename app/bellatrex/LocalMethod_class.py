@@ -21,7 +21,7 @@ from .utilities import predict_helper
 from .visualization_extra import _input_validation
 from .TreeExtraction_class import TreeExtraction
 from .utilities import plot_preselected_trees, rule_print_inline
-from .utilities import rule_to_file, frmt_pretty_print
+from .utilities import rule_to_file, frmt_pretty_print, is_pytest
 from .visualisation import read_rules, plot_rules
 
 class BellatrexExplain:
@@ -419,10 +419,6 @@ class BellatrexExplain:
                                                colormap=colormap)
             fig.suptitle("Plot overview", fontsize=16)
 
-            if show is True and fig is not None:
-                return plt.show() # seems to work.
-                # An alternative (depending on the plotting backend) is fig.show()
-
         if plot_gui is True:
 
             if isinstance(self.clf, EnsembleWrapper):
@@ -431,7 +427,7 @@ class BellatrexExplain:
                                  "the `pack_trained_ensemble` function on it.")
 
             matplotlib.use('Agg')
-            print('Matplotlib set in a non-interactive backend, with: \'matplotlib.use(\'Agg\')\'')
+            print('Matplotlib set in a non-interactive backend, with: \"matplotlib.use(\'Agg\')\"')
             from .gui_utils import check_and_import_gui_dependencies
             dearpygui, dearpygui_ext = check_and_import_gui_dependencies()
             from .gui_plots_code import plot_with_interface

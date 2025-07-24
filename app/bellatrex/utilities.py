@@ -1,4 +1,5 @@
 import warnings
+import os
 import numpy as np
 import pandas as pd
 
@@ -19,6 +20,18 @@ from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import FuncFormatter
 
 from .wrapper_class import EnsembleWrapper
+
+def is_ci():
+    return os.environ.get("CI", "false").lower() == "true"
+
+def is_pytest():
+    return "PYTEST_CURRENT_TEST" in os.environ
+
+def configure_matplotlib():
+    if is_ci() or is_pytest():
+        mpl.use("Agg")
+
+configure_matplotlib()
 
 
 def safe_element_to_scalar(val):
