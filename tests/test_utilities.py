@@ -3,7 +3,6 @@ import numpy as np
 from bellatrex.utilities import (
     get_auto_setup,
     concatenate_helper,
-    predict_helper,
     trail_pretty_digits,
     string_to_pretty_digits,
     frmt_pretty_print

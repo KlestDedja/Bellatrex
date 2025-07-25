@@ -18,7 +18,7 @@ from .plot_tree_patch import plot_tree_patched
 from .utilities import rule_print_inline, custom_axes_limit
 from .utilities import custom_formatter
 
-class interactable_point: #Object containg all information of a point
+class InteractPoint: #Object containg all information of a point
     def __init__(self,name,pos,color,size,shape,cluster_memb=None,value=None):
         self.name=str(name)                 #string
         self.pos=pos                        #list or tuple with two floats
@@ -29,10 +29,10 @@ class interactable_point: #Object containg all information of a point
         self.cluster_memb=cluster_memb      #string or None
         self.value=value                    #float or None (learner predicted value)
 
-class interactable_plot: #Object containing all information of a plot
+class InteractPlot: #Object containing all information of a plot
     def __init__(self,name,points,clustered=False,xlabel="PC1",ylabel="PC2"):
         self.name=str(name)                 #string (should be unique)
-        self.points=points                  #list of interactable_points objects
+        self.points=points                  #list of InteractPoints objects
         self.clustered=clustered            #Boolean
         self.xlabel=xlabel                  #string
         self.ylabel=ylabel                  #string
@@ -41,8 +41,7 @@ class interactable_plot: #Object containing all information of a plot
 def make_interactive_plot(plots, temp_files_dir,
                           plot_size=700,
                           other_inputs=None,
-                          max_depth=None): #Function that makes the interctive plots
-
+                          max_depth=None):
     """
     Generates an interactive Graphical User Interface with (default) two plots, offering the
     the possibility to interact with them.
@@ -50,7 +49,7 @@ def make_interactive_plot(plots, temp_files_dir,
     Parameters:
     -----------
     plots : list
-        A list of `interactable_plot` objects that contain the points and plotting information.
+        A list of interactable_plot objects that contain the points and plotting information.
     plot_size : int, optional, default=700
         The size of the plot in pixels.
     other_inputs : object, optional
@@ -60,28 +59,23 @@ def make_interactive_plot(plots, temp_files_dir,
 
     Returns:
     --------
-    None
+    list
+        A list of interactable_plot objects for further handling and testing.
 
-    This function sets up an interactive plot using the DearPyGui library. The plot displays points,
-    and clicking on a point triggers a callback that shows detailed information and visualizations
-    related to that point, such as decision trees for a specific sample index.
-
-    The function performs the following steps:
-    1. Sets up the DearPyGui context and theme.
-    2. Loads and sets up tree images.
-    3. Defines the mouse click callback to handle interactions.
-    4. Defines functions to draw points and interact with them.
-    5. Sets up the GUI window with the specified plots and points.
-    6. Calculates window sizes and axis limits based on the points.
-    7. Displays the GUI window and starts the DearPyGui event loop.
     """
-    border_size = 0.1 # Proportion of borders around the plot.
+    border_size = 0.1  # Proportion of borders around the plot.
     dpg.destroy_context()
     dpg.create_context()
 
-    #DPG set theme
+    # DPG set theme
     lighttheme = create_theme_imgui_light()
     dpg.bind_theme(lighttheme)
+
+    border_size = 0.1 # Proportion of borders around the plot.
+    fullspacing = 8
+    # dpg.destroy_context()
+    # dpg.create_context()
+
 
     #Load and set up tree image
     # create image to load:
@@ -94,8 +88,6 @@ def make_interactive_plot(plots, temp_files_dir,
         for plot in plots:
             for point in plot.points:
                 if point.hovered:
-
-                    # Currently, other_inputs is expcted to be given by the user:
                     assert other_inputs is not None
                     # the other_inputs is supposed to be a TreeExtractor instance
 
@@ -111,8 +103,6 @@ def make_interactive_plot(plots, temp_files_dir,
                     rule_print_inline(the_tree, other_inputs.sample)
 
                     tree_name_png = "Tree_" + str(tree_index) + ".png"
-                    # plot_my_tree(my_clf, tree_index, feature_names,
-                    #             sample_index, tree_name_png)
 
                     if max_depth is not None:
                         real_plot_leaves = max(the_tree.tree_.n_leaves, 2**(max_depth-1))
@@ -121,20 +111,20 @@ def make_interactive_plot(plots, temp_files_dir,
                         real_plot_leaves = the_tree.tree_.n_leaves
                         real_plot_depth = the_tree.tree_.max_depth
 
-                    smart_width = 1 + 0.4*real_plot_leaves
+                    smart_width = 1 + 0.4 * real_plot_leaves
                     smart_width = int(smart_width)
-                    smart_height = int(real_plot_depth+1)
-                    if my_clf.n_outputs_ > 3: # create extra vertical space for multi-output trees (output over is printed over multiple lines)
-                        smart_height = int(smart_height*(0.92+0.08*(my_clf.n_outputs_)))
+                    smart_height = int(real_plot_depth + 1)
+                    if my_clf.n_outputs_ > 3: # create extra vertical space for multi-output trees, since output is printed over multiple lines
+                        smart_height = int(smart_height * (0.92 + 0.08 * (my_clf.n_outputs_)))
 
                     plt.subplots(figsize=(smart_width, smart_height))
 
                     plot_tree_patched(the_tree, max_depth=max_depth,
-                                feature_names=feature_names,
-                                fontsize=8)
+                                      feature_names=feature_names,
+                                      fontsize=8)
 
                     plt.title("Tree %i for sample index %i" % (tree_index, sample_index),
-                                fontsize=10+int(1.3*real_plot_depth))
+                              fontsize=10 + int(1.3 * real_plot_depth))
                     plt.savefig(os.path.join(temp_files_dir, tree_name_png))
 
                     if plt.isinteractive():
@@ -143,17 +133,15 @@ def make_interactive_plot(plots, temp_files_dir,
                     # generates provisional plot: load tree_name_png, or "trial" file:
                     #"PL"+plot.name+"_"+point.name+".png"
                     IMwidth, IMheight, _, IMdata = dpg.load_image(os.path.join(temp_files_dir, tree_name_png))
-                    # print(f"Tree file saved in: {os.path.join(temp_files_dir)}") # GitHub\Bellatrex_pip\app\bellatrex
                     os.remove(os.path.join(temp_files_dir, tree_name_png))
 
                     with dpg.texture_registry(show=False):
                         treeplot = dpg.add_static_texture(IMwidth, IMheight, IMdata)
 
-                    # Opens window showing tree
-                    popup_window=dpg.add_window(width=min(IMwidth+4*FULLSPACING, windowwidth),
-                                                height=min(IMheight+5*FULLSPACING, windowheight),
-                                                modal=True,
-                                                horizontal_scrollbar=True)
+                    popup_window = dpg.add_window(width=min(IMwidth + 4 * FULLSPACING, windowwidth),
+                                                  height=min(IMheight + 5 * FULLSPACING, windowheight),
+                                                  modal=True,
+                                                  horizontal_scrollbar=True)
 
                     dpg.add_image(treeplot, width=IMwidth, height=IMheight,
                                   parent=popup_window)
@@ -163,8 +151,8 @@ def make_interactive_plot(plots, temp_files_dir,
         dpg.add_mouse_click_handler(button=dpg.mvMouseButton_Left,
                                     callback=mouse_click_left_callback)
 
-    # Activated every frame
-    def point_draw_and_interact(sender,app_data,user_data):
+    # Activated every frame ## IS THIS EVEN USED? CHECK SOON!
+    def point_draw_and_interact(sender, app_data, user_data):
 
         #Calculates positions in pixel space
         _helper_data = app_data[0]
@@ -269,107 +257,54 @@ def make_interactive_plot(plots, temp_files_dir,
             dpg.draw_circle([x[i],y[i]],size, fill=[150,150,150,255],parent=sender)
             dpg.draw_text([x[i]-size/2,y[i]-size],clusters[i],size=size*2,parent=sender)
 
-    # A few useful variables
+    # A few useful extra variables
     plotamount=len(plots)
-    #The following is a constant used for DPG positioning, representing the standard distance between
-    # two elements or between an element and the border of the parent container
-    FULLSPACING = 8
-
-    # Loads in the temp_colourbar images, saving the desired size.
     addedwidth=0
+    # Now load images and calculate sizes and limits
+    # Load in the temp_colourbar images, saving the desired size.
+
     for plot in plots:
-        #Loads and sets up the image
-        IMwidth, IMheight, _, IMdata = dpg.load_image(os.path.join(temp_files_dir, 'temp_colourbar'+plot.name+'.png'))
+        IMwidth, IMheight, _, IMdata = dpg.load_image(os.path.join(temp_files_dir, 'temp_colourbar' + plot.name + '.png'))
         with dpg.texture_registry(show=False):
-            dpg.add_static_texture(IMwidth,IMheight,IMdata, tag="temp_colourbar"+plot.name)
+            dpg.add_static_texture(IMwidth, IMheight, IMdata, tag="temp_colourbar" + plot.name)
+        plot.colour_bar_width = round(plot_size * IMwidth / IMheight)
+        addedwidth += plot.colour_bar_width
 
-        # Calculates the width of the image and preserves aspect ratio. Additionally, it
-        # saves the width for calculating the nessesary window size
-        plot.colour_bar_width=round(plot_size*IMwidth/IMheight)
-        addedwidth+=plot.colour_bar_width
-
-    # Calculates window sizes based on plot size and amount
-    windowwidth  = plotamount*plot_size+(2*plotamount+1)*FULLSPACING+addedwidth
-    windowheight = plot_size+2*FULLSPACING
+    windowwidth = plotamount * plot_size + (2 * plotamount + 1) * FULLSPACING + addedwidth
+    windowheight = plot_size + 2 * FULLSPACING
 
     # Calculates x- and y-axis limits based on points
     for plot in plots:
-        x_values=[]
-        y_values=[]
-        for point in plot.points:
-            x_values.append(point.pos[0])
-            y_values.append(point.pos[1])
-        x_diff=max(x_values)-min(x_values)
-        y_diff=max(y_values)-min(y_values)
-        plot.x_axis_limits=[min(x_values)-x_diff*border_size,
-                            max(x_values)+x_diff*border_size]
-        plot.y_axis_limits=[min(y_values)-y_diff*border_size,
-                            max(y_values)+y_diff*border_size]
-
-    # Calculates cluster averages if there are clusters
-    for plot in plots:
-        if plot.clustered: # only on the left plot (where clustering is shown)
-
-            #Gets the names of all the different clusters in the plot
-            clusters=[]
-            for point in plot.points:
-                if point.cluster_memb not in clusters:
-                    clusters.append(point.cluster_memb)
-
-            #gets the average coordinates of all the clusters
-            avg_coords=[]
-            for cluster in clusters:
-                coords=[]
-                for point in plot.points:
-                    if point.cluster_memb==cluster:
-                        coords.append(point.pos)
-                avg_coord = [sum(x)/len(x) for x in zip(*coords)]
-                avg_coords.append(avg_coord)
+        x_values = [point.pos[0] for point in plot.points]
+        y_values = [point.pos[1] for point in plot.points]
+        x_diff = max(x_values) - min(x_values)
+        y_diff = max(y_values) - min(y_values)
+        plot.x_axis_limits = [min(x_values) - x_diff * border_size,
+                              max(x_values) + x_diff * border_size]
+        plot.y_axis_limits = [min(y_values) - y_diff * border_size,
+                              max(y_values) + y_diff * border_size]
 
     sample_index = other_inputs.sample.index[0]
 
     #DPG build windows
     with dpg.window(tag="MainWindow", width=windowwidth,
-                    label="Explaining sample "+ str(sample_index) +", close the window to continue with code execution",
+                    label="Explaining sample " + str(sample_index) + ", close the window to continue with code execution",
                     height=windowheight, no_title_bar=False,
                     no_move=False,no_resize=True):
         with dpg.group(horizontal=True):
             for plot in plots:
-                # Adds interactable plot
-                with dpg.plot(tag="Tree representation plot"+plot.name,height=plot_size,width=plot_size):
+                with dpg.plot(tag="Tree representation plot" + plot.name, height=plot_size, width=plot_size):
+                    # create x-axis
+                    dpg.add_plot_axis(dpg.mvXAxis, label=plot.xlabel, tag="x_axis" + plot.name)
+                    dpg.set_axis_limits("x_axis" + plot.name, plot.x_axis_limits[0], plot.x_axis_limits[1])
 
-                    # Creates x axis
-                    dpg.add_plot_axis(dpg.mvXAxis, label=plot.xlabel, tag="x_axis"+plot.name)
-                    dpg.set_axis_limits("x_axis"+plot.name, plot.x_axis_limits[0], plot.x_axis_limits[1])
+                    # create y-axis
+                    dpg.add_plot_axis(dpg.mvYAxis, label=plot.ylabel, tag="y_axis" + plot.name)
+                    dpg.set_axis_limits("y_axis" + plot.name, plot.y_axis_limits[0], plot.y_axis_limits[1])
 
-                    # Creates y axis
-                    dpg.add_plot_axis(dpg.mvYAxis, label=plot.ylabel, tag="y_axis"+plot.name)
-                    dpg.set_axis_limits("y_axis"+plot.name,plot.y_axis_limits[0],plot.y_axis_limits[1])
+    viewport = dpg.create_viewport(title='Plot', width=1000, height=720)
+    dpg.configure_viewport(viewport, height=windowheight + 5 * FULLSPACING, width=windowwidth + 2 * FULLSPACING)
 
-                    # Adds points to correct plot
-                    pointcoordx=[point.pos[0] for point in plot.points]
-                    pointcoordy=[point.pos[1] for point in plot.points]
-                    with dpg.custom_series(pointcoordx,pointcoordy,2, user_data=plot,
-                                           callback=point_draw_and_interact,
-                                           parent="y_axis"+plot.name,tooltip=True):
-                        # Next, you can add other objects here instead of text if you want!
-                        dpg.add_text("Placeholder",tag="TooltipText"+plot.name)
-
-                    # Adds center of clusters
-                    if plot.clustered:
-                        dpg.add_custom_series([coord[0] for coord in avg_coords],
-                                              [coord[1] for coord in avg_coords], 2,
-                                              callback=cluster_average, parent="y_axis"+plot.name)
-
-                # Adds temp_colourbar image next to plot
-                dpg.add_image('temp_colourbar'+plot.name,height=plot_size, width=plot.colour_bar_width)
-
-
-    #DPG make viewport
-    viewport=dpg.create_viewport(title='Plot', width=1000, height=720)
-    dpg.configure_viewport(viewport,height=windowheight+5*FULLSPACING,width=windowwidth+2*FULLSPACING)
-
-    #DPG show app, with option that does not crash whnen running headless tests:
     dpg.setup_dearpygui()
 
     if not IS_CI:
@@ -379,6 +314,22 @@ def make_interactive_plot(plots, temp_files_dir,
         print("Running in CI: skipping DearPyGui rendering (headless safe)")
 
     dpg.destroy_context()
+
+    return plots
+def run_gui(viewport):
+    """
+    Executes the DearPyGui rendering event loop using the provided viewport.
+    This should be called by the user or application logic when ready to display the GUI.
+    Useful in scripts or notebooks. Not suitable for automated testing or CI.
+
+    Parameters:
+        viewport: The DearPyGui viewport object returned by make_interactive_plot.
+    """
+    import dearpygui.dearpygui as dpg
+    dpg.show_viewport(viewport)
+    dpg.start_dearpygui()
+    dpg.destroy_context()
+
 
 
 def plot_with_interface(plot_data_bunch, kmeans,
@@ -548,7 +499,7 @@ def plot_with_interface(plot_data_bunch, kmeans,
 
         points = []
         for j, index in enumerate(plot_data_bunch.index):
-            points.append(interactable_point(index, plottable_data[j],  # name and position
+            points.append(InteractPoint(index, plottable_data[j],  # name and position
                                             colours[j], custom_sizes[j],  # size
                                             # custom_edges[j],  # edge
                                             custom_shapes[j])  # shape
@@ -565,10 +516,10 @@ def plot_with_interface(plot_data_bunch, kmeans,
                 else:
                     raise ValueError("expecting float, got {type(plot_data_bunch.loss)} instead")
 
-        plots.append(interactable_plot(plotindex, points, clustered=clustered))
+        plots.append(InteractPlot(plotindex, points, clustered=clustered))
 
     # end of the enumerate(clusterplots) `for' loop (length 2 -> two plots)
-    make_interactive_plot(plots, temp_files_dir,
+    viewport_dict = make_interactive_plot(plots, temp_files_dir,
                           plot_size=700,
                           other_inputs=input_method,
                           max_depth=max_depth)

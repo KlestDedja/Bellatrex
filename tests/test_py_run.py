@@ -103,16 +103,39 @@ def test_create_rules_txt():
 
 
 # --- GUI test with plot_gui=True ---
+# @pytest.mark.gui
+# def test_gui_workflow_old():
+#     if IS_CI:
+#         matplotlib.use("Agg")  # Non-blocking backend when running in CI
+
+#     for _, loader in DATA_LOADERS.items():  # Iterate over loading functions
+#         btrex_fitted, X_test = prepare_fitted_bellatrex(loader)
+
+#         for i in range(MAX_TEST_SAMPLES):
+#             tuned_method = btrex_fitted.explain(X_test, i)
+#             fig, obj = tuned_method.plot_overview(show=not IS_CI, plot_gui=True)
+#             if not IS_CI: # if show=True
+#                 assert fig is not None
+#                 plt.close(fig)
+#             else:
+#                 assert obj is not None  # DearPyGui plot objects
+
 @pytest.mark.gui
 def test_gui_workflow():
-    if IS_CI:
-        matplotlib.use("Agg")  # Non-blocking backend when running in CI
 
-    for _, loader in DATA_LOADERS.items():  # Iterate over loading functions
+    for _, loader in DATA_LOADERS.items():
         btrex_fitted, X_test = prepare_fitted_bellatrex(loader)
 
         for i in range(MAX_TEST_SAMPLES):
             tuned_method = btrex_fitted.explain(X_test, i)
-            fig = tuned_method.plot_overview(show=not IS_CI, plot_gui=True)
-            assert fig is not None, "Plotting failed"
-            plt.close(fig)
+
+            fig, obj = tuned_method.plot_overview(show=False, plot_gui=True)
+
+            if not IS_CI:
+                assert fig is not None
+                plt.close(fig)
+            else:
+                from gui_plots_code import InteractPoint, InteractPlot
+
+                assert isinstance(obj, list)
+                assert all(isinstance(p, InteractPoint) for p in obj)

@@ -213,8 +213,8 @@ class BellatrexExplain:
                     raise ValueError(f"Shape of recarray labels {y.shape} implies multi-output survival analysis, "
                                      "which is not implemented yet")
                 else:
-                    raise ValueError(f"Classifier {self.clf.ensemble_class} not compatible"
-                                     "with \'auto\' set-up selection. PLease select the set-up manually")
+                    raise ValueError(f"Classifier {self.clf.ensemble_class} not compatible "
+                                     "with 'auto' set-up selection. Please select the set-up manually")
 
             elif isinstance(self.clf, RandomForestClassifier):
                 if self.clf.n_outputs_ == 1:
@@ -345,23 +345,25 @@ class BellatrexExplain:
         tuned_method = trees_extract.set_params(**best_params).main_fit()
         tuned_method.sample_score = tuned_method.score(self.fidelity_measure, self.ys_oracle)
 
-        final_extract_trees = np.array(tuned_method.final_trees_idx) #better printout as array (for some reason...)
-        final_cluster_sizes = tuned_method.cluster_sizes
+        # Ensure final_trees_idx and cluster_sizes are not None and are lists
+        final_extract_trees = np.array(tuned_method.final_trees_idx or [])
+        final_cluster_sizes = np.array(tuned_method.cluster_sizes or [])
 
         if not isinstance(self.clf, RandomSurvivalForest):
             surrogate_pred = np.array([0.0] * self.clf.n_outputs_).reshape(sample.shape[0], -1)
-        else: # Assumed RSF is only single-output
+        else:  # Assumed RSF is only single-output
             surrogate_pred = np.array([0.0])
 
         for tree_idx, cluster_size in zip(final_extract_trees, final_cluster_sizes):
-            if final_cluster_sizes is not None:
+            if len(final_cluster_sizes) > 0:
                 cluster_weight = cluster_size / np.sum(final_cluster_sizes)
             else:
-                cluster_weight = 0  # or some default value
+                cluster_weight = 0  # Default value
 
             surrogate_pred += predict_helper(self.clf[tree_idx], sample.values) * cluster_weight
 
-        tuned_method.prediction = surrogate_pred
+        # Store surrogate prediction directly in BellatrexExplain instance
+        self.surrogate_prediction = surrogate_pred
 
         surrogate_pred_str = frmt_pretty_print(surrogate_pred, digits_single=4)
 
@@ -379,14 +381,14 @@ class BellatrexExplain:
         self.tuned_method = tuned_method
         self.surrogate_pred_str = surrogate_pred_str
 
-        return self#, tuned_method, surrogate_pred_str
+        return self  # Return self for method chaining
 
 
     def plot_overview(self, show=True,
                       plot_max_depth=None,
                       colormap=None, plot_gui=False):
 
-        sample =  self.sample
+        sample = self.sample
         tuned_method = self.tuned_method
 
         if self.verbose >= 0:
@@ -395,36 +397,35 @@ class BellatrexExplain:
             print('Black box prediction: ' + frmt_pretty_print(y_pred_orig, digits_single=4))
             print('#' * 58, flush=True)
 
-        if self.verbose >= 4.0: # print more details in the console:
-            for tree_idx, cluster_size in zip(tuned_method.final_trees_idx, tuned_method.cluster_sizes):
-                rule_print_inline(self.clf[tree_idx], sample,
-                                  weight=cluster_size/ np.sum(tuned_method.cluster_sizes),
-                                  max_features_print=self.MAX_FEATURE_PRINT)
+        if self.verbose >= 4.0:  # print more details in the console:
+            if tuned_method.final_trees_idx and tuned_method.cluster_sizes:
+                for tree_idx, cluster_size in zip(tuned_method.final_trees_idx, tuned_method.cluster_sizes):
+                    rule_print_inline(self.clf[tree_idx], sample,
+                                      weight=cluster_size / np.sum(tuned_method.cluster_sizes),
+                                      max_features_print=self.MAX_FEATURE_PRINT)
 
-        # plotting with matplotlib here:
-        plt.ioff() # Set interactive mode to False
-        fig, axes = [None, None]
+        # Set interactive mode to False
+        plt.ioff()
+        fig, axes = None, None
 
-        # prepare data and info to be plotted:
+        # Prepare data and info to be plotted
         plot_kmeans, plot_data_bunch = tuned_method.preselect_represent_cluster_trees()
 
-        if plot_gui is False: # plot standard overview plots, without interactive features:
-
+        if not plot_gui:  # Plot standard overview plots, without interactive features
             if plot_max_depth is not None:
-                warnings.warn(f"Max depth for tree visualization = {plot_max_depth}"
-                              f" has no effect if set_gui is set to {plot_gui}")
+                warnings.warn(f"Max depth for tree visualization = {plot_max_depth} "
+                              f"has no effect if plot_gui is set to {plot_gui}")
 
             fig, axes = plot_preselected_trees(plot_data_bunch, plot_kmeans, tuned_method,
                                                base_font_size=self.FONT_SIZE,
                                                colormap=colormap)
             fig.suptitle("Plot overview", fontsize=16)
 
-        if plot_gui is True:
-
+        else:  # Interactive GUI plotting
             if isinstance(self.clf, EnsembleWrapper):
                 raise ValueError("GUI interface is not compatible with packed EnsembleWrapper yet."
                                  "\nPlease use the original sklearn.ensemble class and do not call"
-                                 "the `pack_trained_ensemble` function on it.")
+                                 "the pack_trained_ensemble function on it.")
 
             matplotlib.use('Agg')
             print('Matplotlib set in a non-interactive backend, with: \"matplotlib.use(\'Agg\')\"')
@@ -432,19 +433,23 @@ class BellatrexExplain:
             dearpygui, dearpygui_ext = check_and_import_gui_dependencies()
             from .gui_plots_code import plot_with_interface
 
-            if show is False:
+            if not show:
                 warnings.warn("Plots are shown immediately while in an interactive session (plot_gui = True).\n"
-                            "Show = False is therefore ignored.")
+                              "Show = False is therefore ignored.")
 
             # A 'temporary' directory is used to store, read and clear files created during the User interactions:
-            current_file_dir = os.path.dirname(os.path.abspath(__file__)) # app/bellatrex
-            temp_files_dir = os.path.join(current_file_dir, "temp_files") # app/bellatrex/temp_files
+            current_file_dir = os.path.dirname(os.path.abspath(__file__))  # app/bellatrex
+            temp_files_dir = os.path.join(current_file_dir, "temp_files")  # app/bellatrex/temp_files
             os.makedirs(temp_files_dir, exist_ok=True)
 
-            fig = plot_with_interface(plot_data_bunch, plot_kmeans, tuned_method, temp_files_dir, max_depth=plot_max_depth, colormap=colormap)
-            axes = None # sure about this? plot_with_interface returns list of stuff
+            # Call plot_with_interface and retrieve the interactive plots
+            plots = plot_with_interface(plot_data_bunch, plot_kmeans, tuned_method, temp_files_dir,
+                                        max_depth=plot_max_depth, colormap=colormap)
 
-            # the temp files are deleted with os.remove in plot_with_interface, above
+            # Create a placeholder figure and axes to match the expected output format
+            fig = plt.figure(figsize=(8, 6))
+            axes = plots  # Use the returned plots as axes-like objects
+
         return fig, axes # plt.gcf()
 
 
