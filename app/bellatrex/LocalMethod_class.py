@@ -384,7 +384,7 @@ class BellatrexExplain:
 
     def plot_overview(self, show=True,
                       plot_max_depth=None,
-                      colormap=None, plot_gui=False, auto_close=False):
+                      colormap=None, plot_gui=False):
 
         sample =  self.sample
         tuned_method = self.tuned_method
@@ -441,10 +441,10 @@ class BellatrexExplain:
             temp_files_dir = os.path.join(current_file_dir, "temp_files") # app/bellatrex/temp_files
             os.makedirs(temp_files_dir, exist_ok=True)
 
-            plot_with_interface(plot_data_bunch, plot_kmeans, tuned_method, temp_files_dir,
-                                max_depth=plot_max_depth, colormap=colormap, auto_close=auto_close)
-            # REMARK: the temp files are deleted with os.remove in plot_with_interface, above
+            fig = plot_with_interface(plot_data_bunch, plot_kmeans, tuned_method, temp_files_dir, max_depth=plot_max_depth, colormap=colormap)
+            axes = None # sure about this? plot_with_interface returns list of stuff
 
+            # the temp files are deleted with os.remove in plot_with_interface, above
         return fig, axes # plt.gcf()
 
 

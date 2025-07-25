@@ -108,10 +108,11 @@ def test_gui_workflow():
     if IS_CI:
         matplotlib.use("Agg")  # Non-blocking backend when running in CI
 
-    for setup, loader in DATA_LOADERS.items():  # Iterate over loading functions
+    for _, loader in DATA_LOADERS.items():  # Iterate over loading functions
         btrex_fitted, X_test = prepare_fitted_bellatrex(loader)
 
         for i in range(MAX_TEST_SAMPLES):
             tuned_method = btrex_fitted.explain(X_test, i)
-            tuned_method.plot_overview(show=not IS_CI, plot_gui=True, auto_close=True)
-            plt.close("all")
+            fig = tuned_method.plot_overview(show=not IS_CI, plot_gui=True)
+            assert fig is not None, "Plotting failed"
+            plt.close(fig)

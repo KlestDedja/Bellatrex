@@ -1,4 +1,3 @@
-
 import warnings
 import os
 IS_CI = os.environ.get("CI") == "true"
@@ -42,7 +41,7 @@ class interactable_plot: #Object containing all information of a plot
 def make_interactive_plot(plots, temp_files_dir,
                           plot_size=700,
                           other_inputs=None,
-                          max_depth=None, auto_close=False): #Function that makes the interctive plots
+                          max_depth=None): #Function that makes the interctive plots
 
     """
     Generates an interactive Graphical User Interface with (default) two plots, offering the
@@ -387,8 +386,7 @@ def plot_with_interface(plot_data_bunch, kmeans,
                         temp_files_dir,
                         max_depth=None,
                         colormap=None,
-                        clusterplots=(True,False),
-                        auto_close=False):
+                        clusterplots=(True,False)):
 
     def shaper(in_shape):
         if in_shape is True:
@@ -428,7 +426,7 @@ def plot_with_interface(plot_data_bunch, kmeans,
     custom_shapes = list(map(shaper, is_final_candidate))
     #custom_edges = list(map(edger, is_final_candidate))
 
-    plots=[]
+    plots = []
 
     color_map_left = cm.viridis  # default colormap for clustering plot
     color_map_left = mpl.colors.LinearSegmentedColormap.from_list('Custom cmap',
@@ -441,7 +439,7 @@ def plot_with_interface(plot_data_bunch, kmeans,
     for plotindex, clustered in enumerate(clusterplots):
 
         if clustered:
-            fig, ax= plt.subplots(1, 1, figsize=(1, 4.5), dpi=120)
+            fig, ax = plt.subplots(1, 1, figsize=(1, 4.5), dpi=120)
 
             # define the bins and normalize
             freqs = np.bincount(cluster_memb)
@@ -540,7 +538,7 @@ def plot_with_interface(plot_data_bunch, kmeans,
                 norms=[norm_preds(plot_data_bunch.loss[i]) for i in range(len(cluster_memb))]
 
         fig.tight_layout()
-        fig.savefig(os.path.join(temp_files_dir, 'temp_colourbar'+str(plotindex)))
+        fig.savefig(os.path.join(temp_files_dir, f'temp_colourbar{plotindex}.png'))
         plt.close(fig) # prevent them from being shown in the console.
 
         # use appropriate colormap (right plot vs left plot)
@@ -573,14 +571,13 @@ def plot_with_interface(plot_data_bunch, kmeans,
     make_interactive_plot(plots, temp_files_dir,
                           plot_size=700,
                           other_inputs=input_method,
-                          max_depth=max_depth,
-                          auto_close=auto_close)
+                          max_depth=max_depth)
 
     try:
         os.remove(os.path.join(temp_files_dir, 'temp_colourbar0.png'))
         os.remove(os.path.join(temp_files_dir, 'temp_colourbar1.png'))
     except (FileNotFoundError, UserWarning) as e:
         warnings.warn(f"{e}\nCould not delete temporary files correctly. Double check the "
-                      f"folder:\n {temp_files_dir}"
-                      )
-    return
+                      f"folder:\n {temp_files_dir}")
+
+    return plots  # Return the plots object for further handling
