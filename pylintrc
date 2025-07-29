@@ -1,0 +1,21 @@
+[MASTER]
+ignore=.venv
+jobs=1
+
+[MESSAGES CONTROL]
+disable=
+    missing-function-docstring
+
+[REPORTS]
+output-format=colorized
+reports=no
+
+[FORMAT]
+max-line-length=100 # we will use black formatting with max line length of 100
+
+; [TYPECHECK]
+; ignored-modules=numpy,polars,matplotlib,sklearn
+
+[VARIABLES]
+# We allow not only snake_case and but also variable names starting with X_
+variable-rgx=(([a-z_][a-z0-9_]*)|X_[A-Za-z0-9_]+)$

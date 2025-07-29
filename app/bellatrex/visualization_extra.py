@@ -4,6 +4,7 @@ from scipy.stats import gaussian_kde
 from matplotlib.patches import FancyArrowPatch
 from .utilities import frmt_pretty_print
 
+
 def _input_validation(rules, preds, baselines, weights):
     """
     Validates the input parameters for consistency.
@@ -11,7 +12,9 @@ def _input_validation(rules, preds, baselines, weights):
     Raises:
     - AssertionError: If the lengths of `rules`, `preds`, `baselines`, and `weights` are not equal.
     """
-    assert len(rules) == len(preds) == len(baselines) == len(weights), f"All input lists must have the same lengths, found {len(rules)}, {len(preds)}, {len(baselines)}, {len(weights)}."
+    assert (
+        len(rules) == len(preds) == len(baselines) == len(weights)
+    ), f"All input lists must have the same lengths, found {len(rules)}, {len(preds)}, {len(baselines)}, {len(weights)}."
     return None
 
 
@@ -28,21 +31,23 @@ def max_rulelength_visual(rules, max_rulelen=None):
 
     return max_rulelen
 
+
 def define_relative_position(n_cols):
 
-    assert isinstance(n_cols, int), f'n_cols must be int, found {type(n_cols)} instead'
+    assert isinstance(n_cols, int), f"n_cols must be int, found {type(n_cols)} instead"
 
     if n_cols == 1:
-        pos_list = ['center']
+        pos_list = ["center"]
     elif n_cols == 2:
-        pos_list = ['left', 'right']
+        pos_list = ["left", "right"]
     elif n_cols > 2:
-        pos_list = n_cols*['center']
-        pos_list[0] = 'left'
-        pos_list[-1] = 'right'
+        pos_list = n_cols * ["center"]
+        pos_list[0] = "left"
+        pos_list[-1] = "right"
     else:
-        raise ValueError(f'n_cols but be positive integer, got {n_cols} instead')
+        raise ValueError(f"n_cols but be positive integer, got {n_cols} instead")
     return pos_list
+
 
 def convert_to_data_coords(ax, point):
     """
@@ -59,20 +64,20 @@ def convert_to_data_coords(ax, point):
 
 def plot_arrow(ax, pos, weight, pred_out, fontsize, tot_digits):
 
-    #Define start position of the arrow based on predicted value (min-max transformed)
+    # Define start position of the arrow based on predicted value (min-max transformed)
     x_min, x_max = ax.get_xlim()
-    x_start =  (pred_out-x_min)/(x_max-x_min)
-    ax.axis('off')
+    x_start = (pred_out - x_min) / (x_max - x_min)
+    ax.axis("off")
     y_start = 0.98  # Starting height of the arrow
 
-    if pos in ['c', 'center']:
+    if pos in ["c", "center"]:
         x_end, y_end = 0.5, 0.05
 
-    elif pos in ['r', 'right']:
+    elif pos in ["r", "right"]:
         x_end, y_end = -0.02, 0.05
 
-    elif pos in ['l', 'left']:
-        x_end, y_end = 1.02 , 0.05
+    elif pos in ["l", "left"]:
+        x_end, y_end = 1.02, 0.05
 
     y_med = 0.4
 
@@ -82,13 +87,13 @@ def plot_arrow(ax, pos, weight, pred_out, fontsize, tot_digits):
         (x_start, y_med),  # Turn point 1
         (x_end, y_med),  # Turn point 2
         (x_end, y_end),  # End (without arrowhead)
-        (x_end, 0)  # End (with arrowhead)
+        (x_end, 0),  # End (with arrowhead)
     ]
 
-    linestyles = [':', '-', '-', '-', '-'] #Differing line patterns
-    alphas = [0.55, 0.8, 0.8, 1, 1] # some transparency in the first segment
+    linestyles = [":", "-", "-", "-", "-"]  # Differing line patterns
+    alphas = [0.55, 0.8, 0.8, 1, 1]  # some transparency in the first segment
     zorders = [0, 1, 1, 1, 1]
-    weight_width = 1 + 0.7*(weight > 0.2) + 0.7*(weight > 0.35) + 0.7*(weight > 0.5)
+    weight_width = 1 + 0.7 * (weight > 0.2) + 0.7 * (weight > 0.35) + 0.7 * (weight > 0.5)
 
     assert len(alphas) == len(points) == len(linestyles) == len(zorders)
 
@@ -103,25 +108,24 @@ def plot_arrow(ax, pos, weight, pred_out, fontsize, tot_digits):
         arrow = FancyArrowPatch(
             posA=posA,
             posB=posB,
-            arrowstyle='-',
+            arrowstyle="-",
             linewidth=weight_width,
             linestyle=linestyles[i],
-            color='black',
+            color="black",
             alpha=alphas[i],
-            zorder=zorders[i]
+            zorder=zorders[i],
         )
         arrow.set_clip_on(False)  # Disable clipping
         ax.add_patch(arrow)
 
-
     # Now all segemts are drawn, place text conveniently
 
-    movesRight = 2*((x_end > x_start)-0.5)
+    movesRight = 2 * ((x_end > x_start) - 0.5)
     # traslate the text to the left from the end if x_end > x_start,
     # otherwise traslate to the right
-    x_text = x_end - 0.23*movesRight
+    x_text = x_end - 0.23 * movesRight
 
-    y_text = 0.25*y_med+0.75*y_end
+    y_text = 0.25 * y_med + 0.75 * y_end
 
     ax.annotate(
         text=rf"{frmt_pretty_print(pred_out, tot_digits)}$\times${weight:.2f}",  # Displaying the product of prediction and weight
@@ -130,7 +134,9 @@ def plot_arrow(ax, pos, weight, pred_out, fontsize, tot_digits):
         xycoords="axes fraction",
         textcoords="axes fraction",
         fontsize=fontsize,
-        ha='center', va='bottom')
+        ha="center",
+        va="bottom",
+    )
 
     # Final arrowhead
     ax.annotate(
@@ -139,14 +145,11 @@ def plot_arrow(ax, pos, weight, pred_out, fontsize, tot_digits):
         xy=points[-1],
         xycoords="axes fraction",
         textcoords="axes fraction",
-        arrowprops=dict(
-            arrowstyle="-|>",
-            linewidth=weight_width,
-            mutation_scale=25,
-            color='black')
+        arrowprops=dict(arrowstyle="-|>", linewidth=weight_width, mutation_scale=25, color="black"),
     )
 
     return ax
+
 
 if __name__ == "__main__":
 
@@ -157,10 +160,7 @@ if __name__ == "__main__":
 
     fig, ax = plt.subplots()
     ax.set_xlim(0, 0.70)
-    ax = plot_arrow(ax, 'c', 0.35, 0.65, fontsize=12)  # Example with 'weight' as 'w', 'pred_out' as 'p', and 'color' as 'blue'
+    ax = plot_arrow(
+        ax, "c", 0.35, 0.65, fontsize=12
+    )  # Example with 'weight' as 'w', 'pred_out' as 'p', and 'color' as 'blue'
     plt.show()
-
-
-
-
-

@@ -1,6 +1,6 @@
 [project]
 name = "bellatrex"
-version = "0.3.0"  # For now manually updated in synch with version.txt file, but TODO automatic synching
+version = "0.3.0"  # For now manually updated in synch with version.txt file, TODO automatic synching
 description = "Explaining Random Forest model predictions by Building Explanations through a LocaLly AccuraTe Rule EXtractor"
 readme = "README.md"
 authors = [
@@ -36,6 +36,23 @@ gui = [
     "dearpygui >=1.6.2, <2.0",
     "dearpygui-ext >=0.9.5, <1.0"
 ]
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+skip-string-normalization = false
+exclude = '''
+/(
+    \.venv
+  | build
+  | dist
+  | \.git
+  | \.mypy_cache
+  | \.pytest_cache
+  | \.tox
+  | __pycache__
+)/
+'''
 
 [tool.setuptools.packages.find]
 where = ["app"]

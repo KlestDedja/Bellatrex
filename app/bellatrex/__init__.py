@@ -11,11 +11,10 @@ import os
 from .LocalMethod_class import BellatrexExplain
 
 # expose these functions to outer layers:
-__all__ = ['BellatrexExplain']
+__all__ = ["BellatrexExplain"]
 
 
-version_file = os.path.join(os.path.dirname(__file__), 'version.txt')
+version_file = os.path.join(os.path.dirname(__file__), "version.txt")
 
-with open(version_file, encoding='utf-8') as vf:
+with open(version_file, encoding="utf-8") as vf:
     __version__ = vf.read().strip()
-

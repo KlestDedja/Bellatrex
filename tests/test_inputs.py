@@ -5,6 +5,7 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sksurv.ensemble import RandomSurvivalForest
 
 import sys
+
 print(sys.path)
 
 from bellatrex import BellatrexExplain
@@ -13,7 +14,7 @@ from bellatrex.datasets import (
     load_regression_data,
     load_survival_data,
     load_binary_data,
-    load_mtr_data
+    load_mtr_data,
 )
 
 DATA_LOADERS = {
@@ -55,11 +56,17 @@ def test_invalid_hyperparameters():
         X_train, _, y_train, _ = train_test_split(X, y, test_size=0.3, random_state=0)
 
         if setup.lower() in "survival":
-            clf = RandomSurvivalForest(n_estimators=10, min_samples_split=2, n_jobs=-1, random_state=0)
+            clf = RandomSurvivalForest(
+                n_estimators=10, min_samples_split=2, n_jobs=-1, random_state=0
+            )
         elif setup.lower() in ["binary", "multi-label"]:
-            clf = RandomForestClassifier(n_estimators=10, min_samples_split=2, n_jobs=-1, random_state=0)
+            clf = RandomForestClassifier(
+                n_estimators=10, min_samples_split=2, n_jobs=-1, random_state=0
+            )
         elif setup.lower() in ["regression", "multi-target"]:
-            clf = RandomForestRegressor(n_estimators=10, min_samples_split=2, n_jobs=-1, random_state=0)
+            clf = RandomForestRegressor(
+                n_estimators=10, min_samples_split=2, n_jobs=-1, random_state=0
+            )
         else:
             raise ValueError(f"Detection task {setup} not compatible with Bellatrex (yet)")
 
@@ -69,11 +76,13 @@ def test_invalid_hyperparameters():
         with pytest.raises(ValueError):
             BellatrexExplain(clf, set_up="auto", p_grid=invalid_p_grid).fit(X_train, y_train)
 
+
 def test_unfitted_model():
     clf = RandomForestClassifier(n_estimators=10, random_state=0)
     btrex = BellatrexExplain(clf, set_up="auto")
     with pytest.raises(Exception):
         btrex.explain(None, 0)
+
 
 def test_unsupported_model():
     class UnsupportedModel:
@@ -84,4 +93,3 @@ def test_unsupported_model():
         BellatrexExplain(clf, set_up="auto")
     except ValueError as e:
         assert "Unsupported model type" in str(e), "Expected ValueError for unsupported model"
-

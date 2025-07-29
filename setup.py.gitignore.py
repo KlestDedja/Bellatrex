@@ -29,16 +29,13 @@ setup(
     author="Klest Dedja",
     author_email="daneel.olivaw94@gmail.com",
     license="MIT",
-
     # Find package source under 'app/'
     package_dir={"": "app"},
     packages=find_packages(where="app"),
-
     include_package_data=True,  # Includes files from MANIFEST.in
     package_data={
         "bellatrex.datasets": ["*.csv"],  # Include bundled datasets
     },
-
     install_requires=[
         "scikit-learn >= 1.2",
         "threadpoolctl>=3.1",
@@ -47,17 +44,11 @@ setup(
         "pandas>=1.5",
         "matplotlib>=3.7",
     ],
-
     extras_require={
         "dev": ["pytest", "twine"],
-        "gui": [
-            "dearpygui>=1.6.2, <2.0",
-            "dearpygui-ext>=0.9.5, <1.0"
-        ]
+        "gui": ["dearpygui>=1.6.2, <2.0", "dearpygui-ext>=0.9.5, <1.0"],
     },
-
     python_requires=">=3.9, <3.13",
-
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3.9",

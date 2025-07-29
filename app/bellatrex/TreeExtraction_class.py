@@ -1,12 +1,13 @@
 import numpy as np
 import pandas as pd
 import os
+
 # due to a known issue with memory leak on Windows with MKL, set the following:
 # os.environ["OMP_NUM_THREADS"] = "1"
 # os.environ["MKL_NUM_THREADS"] = "1"
 import warnings
 from sklearn.metrics.pairwise import cosine_distances
-from sklearn.manifold import MDS #, TSNE
+from sklearn.manifold import MDS  # , TSNE
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.neighbors import KDTree
@@ -14,12 +15,12 @@ from sklearn.utils import Bunch
 import sksurv
 
 # from .utilities import  frmt_pretty_print
-from .TreeRepresentation_utils import tree_splits_to_vector#tree_vector
+from .TreeRepresentation_utils import tree_splits_to_vector  # tree_vector
 from .TreeRepresentation_utils import rule_splits_to_vector, add_emergency_noise
 from .utilities import predict_helper, safe_element_to_scalar
 
 
-class TreeExtraction:# is it convenient if it inherits?
+class TreeExtraction:  # is it convenient if it inherits?
 
     RAND_SEED = 0
     BINARY_KEYS = ["bin", "binary"]
@@ -29,44 +30,53 @@ class TreeExtraction:# is it convenient if it inherits?
     MTR_KEYS = ["multi-t", "multi-target", "mtr"]
     MSA_KEYS = ["multi-sa", "multi-variate-sa", "mvsa"]
 
-
-    def __init__(self, proj_method, dissim_method,
-                 feature_represent,
-                 n_trees, n_dims, n_clusters,
-                 pre_select_loss, fidelity_measure,
-                 clf, oracle_sample,
-                 set_up, sample, verbose,
-                 output_explain=False):
+    def __init__(
+        self,
+        proj_method,
+        dissim_method,
+        feature_represent,
+        n_trees,
+        n_dims,
+        n_clusters,
+        pre_select_loss,
+        fidelity_measure,
+        clf,
+        oracle_sample,
+        set_up,
+        sample,
+        verbose,
+        output_explain=False,
+    ):
         # consider inheriting from LocalMethod, smth like:
         # LocalMethod.__init__(self) (??)
         self.proj_method = proj_method
         self.dissim_method = dissim_method
         self.feature_represent = feature_represent
-        self.n_trees = n_trees #repetitive... correct?
+        self.n_trees = n_trees  # repetitive... correct?
         self.n_dims = n_dims
         self.n_clusters = n_clusters
-        self.pre_select_loss = pre_select_loss # drop?
+        self.pre_select_loss = pre_select_loss  # drop?
         self.fidelity_measure = fidelity_measure
         self.clf = clf
         self.oracle_sample = oracle_sample
         self.set_up = set_up
-        self.sample = sample #  X[idx:idx+1]
-        self.verbose = verbose # to improve (set levels for example)
-        self.final_trees_idx= None #non extracted yet
-        self.cluster_sizes = None #non extracted yet
+        self.sample = sample  #  X[idx:idx+1]
+        self.verbose = verbose  # to improve (set levels for example)
+        self.final_trees_idx = None  # non extracted yet
+        self.cluster_sizes = None  # non extracted yet
         self.output_explain = output_explain
-
 
     # adaptation of n_trees to case where the proportion is given instead, is
     # is handled in the .fit of LocalMethod
 
-    def get_params(self, deep=True): #set deep=True if it does not work
-        return {"dissim_method": self.dissim_method,
-                "proj_method": self.proj_method,
-                "n_trees": self.n_trees,
-                "n_dims": self.n_dims,
-                "n_clusters":  self.n_clusters
-                }
+    def get_params(self, deep=True):  # set deep=True if it does not work
+        return {
+            "dissim_method": self.dissim_method,
+            "proj_method": self.proj_method,
+            "n_trees": self.n_trees,
+            "n_dims": self.n_dims,
+            "n_clusters": self.n_clusters,
+        }
 
     def set_params(self, **params):
         for key, value in params.items():
@@ -77,8 +87,7 @@ class TreeExtraction:# is it convenient if it inherits?
         return self
 
     def main_fit(self):
-
-        '''
+        """
         this is the main function, does the following:
             raw_tree data:
             - compute tree loss, (and sort for pre-filtering)
@@ -107,49 +116,53 @@ class TreeExtraction:# is it convenient if it inherits?
                                             (needed as the order is lost ater pre-selection step)
                   rf_pred=rf_pred,      ---> RF original prediction
                   loss=selected_losses)       ---> distance ( loss) to full RF prediction
-        '''
+        """
         kmeans, selected_bunch = self.preselect_represent_cluster_trees()
 
-        self.final_trees_idx, \
-        self.cluster_sizes = self.extract_final_trees(selected_bunch.proj_data,
-                                                              selected_bunch.index, kmeans)
+        self.final_trees_idx, self.cluster_sizes = self.extract_final_trees(
+            selected_bunch.proj_data, selected_bunch.index, kmeans
+        )
         return self
 
-
     def preselect_represent_cluster_trees(self):
-        '''
+        """
         transform trees to vectors and store everything in matrix,
         the output is matrix of the form (n_selected_trees, n_features),
         indeces of the original trees are also stored through the DataFrame
-        '''
+        """
         ### pre-selection step:
-        tree_local_losses, rf_pred = self.calcul_tree_proximity_loss(self.sample) #w.r.t. to sample we want to explain
+        tree_local_losses, rf_pred = self.calcul_tree_proximity_loss(
+            self.sample
+        )  # w.r.t. to sample we want to explain
 
-        selected_trees_idx = np.argsort(tree_local_losses)[:self.n_trees] # sort trees losses
-        selected_preds = [predict_helper(self.clf[i], self.sample.values) for i in selected_trees_idx]
+        selected_trees_idx = np.argsort(tree_local_losses)[: self.n_trees]  # sort trees losses
+        selected_preds = [
+            predict_helper(self.clf[i], self.sample.values) for i in selected_trees_idx
+        ]
 
         selected_losses = np.array([tree_local_losses[i] for i in selected_trees_idx])
 
-        dict_trees = {} # empty dictionary to fill: {index : tree-vector}
+        dict_trees = {}  # empty dictionary to fill: {index : tree-vector}
 
         if self.dissim_method == "trees":
             for idx in selected_trees_idx:
-                dict_trees.update({idx : tree_splits_to_vector(self.clf,
-                                            idx, self.feature_represent)})
+                dict_trees.update(
+                    {idx: tree_splits_to_vector(self.clf, idx, self.feature_represent)}
+                )
             tree_matrix = pd.DataFrame.from_dict(dict_trees, "index")
 
         elif self.dissim_method == "rules":
             for idx in selected_trees_idx:
-                dict_trees.update({idx : rule_splits_to_vector(self.clf,
-                                            idx, self.feature_represent, self.sample)})
+                dict_trees.update(
+                    {idx: rule_splits_to_vector(self.clf, idx, self.feature_represent, self.sample)}
+                )
             tree_matrix = pd.DataFrame.from_dict(dict_trees, "index")
-
 
         # for PCA, the tree_representation is enough: tree_vector / rule_vector,
         # therefore, no pairwise distance is needed
 
         if self.proj_method == "PCA":
-            pass #no pairwise distance calculation
+            pass  # no pairwise distance calculation
 
         # for MDS, a transformation to distance square matrix is needed first
         elif self.proj_method == "MDS":
@@ -160,42 +173,52 @@ class TreeExtraction:# is it convenient if it inherits?
                 tree_matrix = add_emergency_noise(tree_matrix)
 
         else:
-            raise KeyError(f"projection method \'{self.proj_method}\' not recognised.")
+            raise KeyError(f"projection method '{self.proj_method}' not recognised.")
 
         # at this point, the a tree_matrix has been computed and is in the appropriate format (symmetric)
 
         # dim_reduction inherits self.n_dims and self.proj_method
         # dim_reduction calls either PCA or MDS, according to proj-method variable
-        proj_trees = self.dim_reduction(tree_matrix) # from pandas to numpy. Indexes stored in Bunch
+        proj_trees = self.dim_reduction(
+            tree_matrix
+        )  # from pandas to numpy. Indexes stored in Bunch
 
         # clustering step (indeces retained in Bunch object)
-        selected_bunch = Bunch(proj_data=proj_trees, matrix=tree_matrix,
-                         index=selected_trees_idx,
-                         loss=selected_losses,
-                         pred=selected_preds,
-                         rf_pred=rf_pred,
-                         set_up=self.set_up)
+        selected_bunch = Bunch(
+            proj_data=proj_trees,
+            matrix=tree_matrix,
+            index=selected_trees_idx,
+            loss=selected_losses,
+            pred=selected_preds,
+            rf_pred=rf_pred,
+            set_up=self.set_up,
+        )
         # numpy 2d-array (lambda,2), (lamda, lambda), orig. indeces, losses
-        if self.n_clusters > 1: # K-Means is performed on the projected trees
-            with warnings.catch_warnings(): # ignore known issue on scikit-learn (as of scikit-learn 1.2.2)
+        if self.n_clusters > 1:  # K-Means is performed on the projected trees
+            with (
+                warnings.catch_warnings()
+            ):  # ignore known issue on scikit-learn (as of scikit-learn 1.2.2)
                 warnings.filterwarnings("ignore", message=".*memory leak on Windows with MKL*")
                 # kmeans = None # initialise with dummy line (why? is the filterswarning the problem?)
-                kmeans = KMeans(n_clusters=self.n_clusters,
-                                init='k-means++', n_init=5,
-                                max_iter=1000,
-                                random_state=TreeExtraction.RAND_SEED).fit(proj_trees)
+                kmeans = KMeans(
+                    n_clusters=self.n_clusters,
+                    init="k-means++",
+                    n_init=5,
+                    max_iter=1000,
+                    random_state=TreeExtraction.RAND_SEED,
+                ).fit(proj_trees)
 
-        else: #avoid running K-Means (raises warning)
-            #output info in the same format so that the cases are indistinguishable
+        else:  # avoid running K-Means (raises warning)
+            # output info in the same format so that the cases are indistinguishable
             one_label = np.zeros(proj_trees.shape[0], dtype=np.int32)
             one_center = np.mean(proj_trees, axis=0)
             # mimic a kmeans instance
-            kmeans = Bunch(labels_=one_label, #kmeans.lables_ is a 1D array of 1s only (single class)
-                           cluster_centers_= np.array([one_center]) # kmeans.centers_ is a 2D array
-                           )
+            kmeans = Bunch(
+                labels_=one_label,  # kmeans.lables_ is a 1D array of 1s only (single class)
+                cluster_centers_=np.array([one_center]),  # kmeans.centers_ is a 2D array
+            )
 
         return kmeans, selected_bunch
-
 
     def calcul_tree_proximity_loss(self, sample):
 
@@ -208,12 +231,12 @@ class TreeExtraction:# is it convenient if it inherits?
             warnings.warn("If newly implemented, check the self.clf.n_outputs_ part of this code.")
 
         # output vector consistent with utilities.predict_helper function output
-        if n_real_outputs > 1: #multi-output set-up
+        if n_real_outputs > 1:  # multi-output set-up
             tree_preds = np.zeros([self.clf.n_estimators, n_real_outputs])
-        else: #single output set-up (binary, survival, regression)
+        else:  # single output set-up (binary, survival, regression)
             tree_preds = np.zeros(self.clf.n_estimators)
 
-        my_pre_select_loss =  np.zeros(self.clf.n_estimators)
+        my_pre_select_loss = np.zeros(self.clf.n_estimators)
 
         # NOTE:
         # = As of sklearn v.1.1.3 clf[k] does not inherit feature_names_in_
@@ -228,11 +251,10 @@ class TreeExtraction:# is it convenient if it inherits?
         for k in range(self.clf.n_estimators):
             tree_preds[k] = safe_element_to_scalar(predict_helper(self.clf[k], sample.values))
 
-
         # tree loss (euclidean norm of the predition vector vs real target(s))
         if self.pre_select_loss in ["fidel-L2", "L2"]:
             for k in range(self.clf.n_estimators):
-                my_pre_select_loss[k] = np.linalg.norm(rf_pred-tree_preds[k])
+                my_pre_select_loss[k] = np.linalg.norm(rf_pred - tree_preds[k])
         elif self.pre_select_loss in ["fidel-cosine", "cosine", "cos"]:
             my_pre_select_loss[k] = cosine_distances(rf_pred, tree_preds[k])
         else:
@@ -240,21 +262,22 @@ class TreeExtraction:# is it convenient if it inherits?
 
         return my_pre_select_loss, rf_pred
 
-
-    def tree_prediction(self, clf_tree): #(self, selected_indeces, sample):
+    def tree_prediction(self, clf_tree):  # (self, selected_indeces, sample):
 
         # same as before: clf_tree does not inherit feature_names_in_ correctly
 
         if hasattr(clf_tree, "predict_proba"):
-            if clf_tree.n_outputs_ > 1: # multi-label-classification case
-                single_tree_pred = np.array(clf_tree.predict_proba(self.sample.values))[:,:,1]
-            else: #binary case
-                single_tree_pred = clf_tree.predict_proba(self.sample.values)[:,1][0]
-        elif hasattr(clf_tree, "predict"): #regression, survival, multi-target regression
-            if isinstance(clf_tree, sksurv.tree.SurvivalTree) or clf_tree.n_outputs_ == 1: # survival OR regression
+            if clf_tree.n_outputs_ > 1:  # multi-label-classification case
+                single_tree_pred = np.array(clf_tree.predict_proba(self.sample.values))[:, :, 1]
+            else:  # binary case
+                single_tree_pred = clf_tree.predict_proba(self.sample.values)[:, 1][0]
+        elif hasattr(clf_tree, "predict"):  # regression, survival, multi-target regression
+            if (
+                isinstance(clf_tree, sksurv.tree.SurvivalTree) or clf_tree.n_outputs_ == 1
+            ):  # survival OR regression
                 single_tree_pred = float(clf_tree.predict(self.sample.values))
 
-            else: #multi-target regression
+            else:  # multi-target regression
                 # nothing is accurate here, just random
                 single_tree_pred = clf_tree.predict(self.sample.values)
 
@@ -263,85 +286,89 @@ class TreeExtraction:# is it convenient if it inherits?
 
         return single_tree_pred
 
-
     def jaccard_pair_distance(self, tree_1, tree_2):
-        return  np.sum(np.minimum(tree_1, tree_2))/np.sum(np.maximum(tree_1, tree_2))
-
+        return np.sum(np.minimum(tree_1, tree_2)) / np.sum(np.maximum(tree_1, tree_2))
 
     def tranform_to_symm_matrix(self, matrix_df_input):
         # assumes the input is a DatFrame (the DataFrame is create just before this
         # function is called, so I wouldn't even bother checking for type
-        matrix_input = matrix_df_input.values # to np.ndarray
+        matrix_input = matrix_df_input.values  # to np.ndarray
 
-        #assumes each ROW corresponds to a representation of a tree
+        # assumes each ROW corresponds to a representation of a tree
         size = matrix_input.shape[0]
-        A = np.zeros([size, size])   #this part can be optmisied (and double checked)
+        A = np.zeros([size, size])  # this part can be optmisied (and double checked)
 
         for i in range(size):
-            for j in range(i+1):
-                A[i,j] = 1-self.jaccard_pair_distance(matrix_input[i],
-                                                     matrix_input[j]) #1-Jacc for dissimilarity
-                A[j,i] = A[i,j]
-        return A # no need to store DataFrame, the original indeces
+            for j in range(i + 1):
+                A[i, j] = 1 - self.jaccard_pair_distance(
+                    matrix_input[i], matrix_input[j]
+                )  # 1-Jacc for dissimilarity
+                A[j, i] = A[i, j]
+        return A  # no need to store DataFrame, the original indeces
         # are stored in some selected_indeces and in the soon to appear selected_bunch object
-        #return pd.DataFrame(A, columns=matrix_df_input.columns,
+        # return pd.DataFrame(A, columns=matrix_df_input.columns,
         #                    index=matrix_df_input.columns)
-
 
     def pre_selection_trees(self, tree_matrix):
         tree_prox_loss = tree_matrix.loss_loss
-        selected_trees_idx = np.argsort(tree_prox_loss)[:self.n_trees] # first sort all trees
+        selected_trees_idx = np.argsort(tree_prox_loss)[: self.n_trees]  # first sort all trees
 
-        selected_tree_losses = np.sort(tree_prox_loss)[:self.n_trees] # get LOWEST loss
-        selected_trees = tree_matrix.matrix.reindex(index=selected_trees_idx).reindex(columns= selected_trees_idx)
+        selected_tree_losses = np.sort(tree_prox_loss)[: self.n_trees]  # get LOWEST loss
+        selected_trees = tree_matrix.matrix.reindex(index=selected_trees_idx).reindex(
+            columns=selected_trees_idx
+        )
         selected_bunch = Bunch(trees=selected_trees, loss=selected_tree_losses)
         return selected_bunch
-
 
     def dim_reduction(self, selected_trees):
 
         # setting up "tru"number of output dimensions, furtrmore
         # prevent errors from raising if n_dims > n_samples
-        if self.n_dims is None: # useful for MDS only (PCA can skip this part)
-            true_dims = min(selected_trees.shape[0], selected_trees.shape[1]) #keep all dimensions
-        elif self.n_dims >= 1: # should not be needed, but sometimes it is...
+        if self.n_dims is None:  # useful for MDS only (PCA can skip this part)
+            true_dims = min(selected_trees.shape[0], selected_trees.shape[1])  # keep all dimensions
+        elif self.n_dims >= 1:  # should not be needed, but sometimes it is...
             true_dims = min(self.n_dims, selected_trees.shape[0], selected_trees.shape[1])
         else:
-            true_dims = self.n_dims # follows sklearn's implementation (amount of explained variance)
+            true_dims = (
+                self.n_dims
+            )  # follows sklearn's implementation (amount of explained variance)
 
         # apply the dim reduciton method from the candidate ETrees object
-        if self.proj_method == "PCA" and self.n_dims is not None: # if None, skip completely
-            m = PCA(n_components=true_dims,
-                    random_state=TreeExtraction.RAND_SEED)
+        if self.proj_method == "PCA" and self.n_dims is not None:  # if None, skip completely
+            m = PCA(n_components=true_dims, random_state=TreeExtraction.RAND_SEED)
             proj_trees = m.fit_transform(selected_trees)
 
         elif self.proj_method == "MDS":
-            m = MDS(n_components=true_dims, metric=True, max_iter=1000, # metric=True, sure?
-                    random_state=TreeExtraction.RAND_SEED, dissimilarity='precomputed')
+            m = MDS(
+                n_components=true_dims,
+                metric=True,
+                max_iter=1000,  # metric=True, sure?
+                random_state=TreeExtraction.RAND_SEED,
+                dissimilarity="precomputed",
+            )
             proj_trees = m.fit_transform(selected_trees)
 
-        else: # method == PCA and n_dims == None: do nothing :-P
+        else:  # method == PCA and n_dims == None: do nothing :-P
             proj_trees = selected_trees
 
         return proj_trees
 
     def extract_final_trees(self, proj_trees_data, origin_indeces, kmeans):
 
-
         cluster_sizes = np.bincount(kmeans.labels_)
         search_tree = KDTree(proj_trees_data)
-        final_trees = search_tree.query(kmeans.cluster_centers_, k=1,
-                                         return_distance=False).flatten()
+        final_trees = search_tree.query(
+            kmeans.cluster_centers_, k=1, return_distance=False
+        ).flatten()
         # flattening is necessay, otherwise 2D array is outputted
-        #search_tree.query returns: (dist, indeces loc), we are interested in indeces only
+        # search_tree.query returns: (dist, indeces loc), we are interested in indeces only
         # however, pandas indeces are now lost, we need to retrieve them:
-        #self.final_trees_idx= proj_trees.index[final_trees].values
+        # self.final_trees_idx= proj_trees.index[final_trees].values
         self.final_trees_idx = [origin_indeces[k] for k in final_trees]
-            #TreeExtraction.plot_my_clusters(self, proj_trees, kmeans)
-        return self.final_trees_idx, cluster_sizes #it's an array, right?
+        # TreeExtraction.plot_my_clusters(self, proj_trees, kmeans)
+        return self.final_trees_idx, cluster_sizes  # it's an array, right?
 
-
-    def local_prediction(self): #self clf, X, sample,
+    def local_prediction(self):  # self clf, X, sample,
 
         assert np.shape(self.cluster_sizes)[0] == np.shape(self.final_trees_idx)[0]
 
@@ -354,41 +381,39 @@ class TreeExtraction:# is it convenient if it inherits?
             # self.clf.n_outputs_  on RSF gives shape: (unique_times_, ) which is miselading
 
         # output vector consistent with utilities.predict_helper function output
-        if n_real_outputs > 1: #multi-output set-up
+        if n_real_outputs > 1:  # multi-output set-up
             btrex_pred = np.zeros([1, n_real_outputs])
-        else: #single output set-up (binary, survival, regression)
+        else:  # single output set-up (binary, survival, regression)
             btrex_pred = np.zeros(1)
 
         for t, cluster_size in zip(self.final_trees_idx, self.cluster_sizes):
-            cluster_weight = cluster_size/np.sum(self.cluster_sizes)
+            cluster_weight = cluster_size / np.sum(self.cluster_sizes)
             # assert isinstance(predict_helper(self.clf[t], self.sample.values), (float, int))
-            btrex_pred += predict_helper(self.clf[t], self.sample.values)*cluster_weight
+            btrex_pred += predict_helper(self.clf[t], self.sample.values) * cluster_weight
 
         return btrex_pred
 
-
     ### HERE ADD ORACLE PREDICTION IN THE FUTURE (decouple from RF)
-    def oracle_prediction(self): # add, inherit prediction method
+    def oracle_prediction(self):  # add, inherit prediction method
 
         return predict_helper(self.clf, self.sample)
 
-
     def score(self, fidelity_measure, oracle_sample):
         y_local = self.local_prediction()
-        y_pred = self.oracle_prediction() if oracle_sample is None else oracle_sample  # not always same format as y_local
+        y_pred = (
+            self.oracle_prediction() if oracle_sample is None else oracle_sample
+        )  # not always same format as y_local
 
         # y_local and y_pred might not have the exact same format,
         # but the scoring measures still work (as for now)
 
         if fidelity_measure in ["fidel-L2", "L2"]:
-            return 1-np.linalg.norm(y_pred-y_local) # 1 - L2 distance
+            return 1 - np.linalg.norm(y_pred - y_local)  # 1 - L2 distance
         elif fidelity_measure in ["fidel-cosine", "cosine", "cos"]:
-            #it outputs a matrix of distances, we are interested in a 1x1 comparison
-            return 1-float(cosine_distances(y_pred.reshape(1,-1), y_local.reshape(1,-1)))
+            # it outputs a matrix of distances, we are interested in a 1x1 comparison
+            return 1 - float(cosine_distances(y_pred.reshape(1, -1), y_local.reshape(1, -1)))
         else:
             raise KeyError(f"Input {self.fidelity_measure} is not recognised")
-
-
 
     #### this code is of poor quality, seldom used ####
     # TODO clean up from this point onwards
@@ -468,7 +493,6 @@ class TreeExtraction:# is it convenient if it inherits?
     #         else:
     #             raise KeyError("Set-up {} is not recognised".format(self.set_up))
 
-
     #         tree_structure = rf[tree_idx].tree_
 
     #         intervals = {feat : [-np.inf, np.inf] for feat in feature_names}
@@ -494,11 +518,9 @@ class TreeExtraction:# is it convenient if it inherits?
     #             else:
     #                 raise Warning("Current node prediction is not yet implemented for this scenario")
 
-
     #         if self.output_explain == True:
 
     #             sample_np = sample.values.T.ravel()
-
 
     #             with open(full_save_tree, 'w+') as f:
 
@@ -519,7 +541,6 @@ class TreeExtraction:# is it convenient if it inherits?
     #                                 current_pred(tree_structure, node, indent, self.set_up, f)
     #                             f.write("node.{:4}: {}if {:8} <= {:#4g}\n".format(node, indent, name, threshold))
     #                             # works only for binary case
-
 
     #                         recurse(tree_structure.children_left[node], depth + 1, sample_np, intervals)
 
@@ -543,7 +564,6 @@ class TreeExtraction:# is it convenient if it inherits?
     #                             f.write("RF prediction: {:.4f}\n".format(frmt_pretty_print(rf_pred)))
     #                             f.write("True label: {}".format(y_true))
 
-
     #                 recurse(0, 1, sample_np, intervals) # problem arises here
 
     #                 if self.set_up.lower() in ["survival", "surv"]:
@@ -566,7 +586,6 @@ class TreeExtraction:# is it convenient if it inherits?
     #                     #plt.savefig(full_save_plot)
     #                     plt.show()
 
-
     #             with open(full_save_leaf, 'w') as f:
     #                 f.write("###### considered covariates ######\n")
     #                 for j, k in zip(feature_names, range(len(feature_names))):
@@ -586,4 +605,4 @@ class TreeExtraction:# is it convenient if it inherits?
     #                 with open(full_save_leaf) as f:
     #                     print(f.read()) #printing (simplified) leaf structure on console
 
-    #return tree_rules, leaf_struct
+    # return tree_rules, leaf_struct

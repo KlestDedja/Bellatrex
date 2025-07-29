@@ -1,4 +1,3 @@
-
 def check_and_import_gui_dependencies():
     try:
         import dearpygui

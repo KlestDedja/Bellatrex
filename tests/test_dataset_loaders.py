@@ -7,7 +7,7 @@ from bellatrex.datasets import (
     load_regression_data,
     load_survival_data,
     load_mlc_data,
-    load_mtr_data
+    load_mtr_data,
 )
 
 DATA_LOADERS = {
@@ -18,25 +18,33 @@ DATA_LOADERS = {
     "multi-target": load_mtr_data,
 }
 
-@pytest.mark.parametrize("loader", [
-    load_binary_data,
-    load_regression_data,
-    load_survival_data,
-    load_mlc_data,
-    load_mtr_data,
-])
+
+@pytest.mark.parametrize(
+    "loader",
+    [
+        load_binary_data,
+        load_regression_data,
+        load_survival_data,
+        load_mlc_data,
+        load_mtr_data,
+    ],
+)
 def test_dataset_returns_dataframe(loader):
     df = loader(return_X_y=False)
     assert isinstance(df, pd.DataFrame)
     assert not df.empty, "Dataset should not be empty"
 
-@pytest.mark.parametrize("loader", [
-    load_binary_data,
-    load_regression_data,
-    load_survival_data,
-    load_mlc_data,
-    load_mtr_data,
-])
+
+@pytest.mark.parametrize(
+    "loader",
+    [
+        load_binary_data,
+        load_regression_data,
+        load_survival_data,
+        load_mlc_data,
+        load_mtr_data,
+    ],
+)
 def test_dataset_returns_X_y(loader):
     X, y = loader(return_X_y=True)
 
@@ -44,7 +52,7 @@ def test_dataset_returns_X_y(loader):
 
     # Survival task returns structured numpy array
     if isinstance(y, np.ndarray) and y.dtype.names:
-        assert 'event' in y.dtype.names or len(y.dtype.names) == 2
+        assert "event" in y.dtype.names or len(y.dtype.names) == 2
     else:
         assert isinstance(y, (pd.Series, pd.DataFrame)), "y should be Series or DataFrame"
 

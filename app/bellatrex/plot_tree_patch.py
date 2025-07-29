@@ -22,7 +22,8 @@ from sklearn.tree import _criterion
 from sklearn.tree import _tree
 from sklearn.tree._reingold_tilford import buchheim, Tree
 from sksurv.tree import SurvivalTree
-#from sksurv.tree._criterion import LogrankCriterion
+
+# from sksurv.tree._criterion import LogrankCriterion
 
 
 def _color_brew(n):
@@ -43,41 +44,36 @@ def _color_brew(n):
     c = s * v
     m = v - c
 
-    for h in np.arange(25, 385, 360. / n).astype(int):
+    for h in np.arange(25, 385, 360.0 / n).astype(int):
         # Calculate some intermediate values
-        h_bar = h / 60.
+        h_bar = h / 60.0
         x = c * (1 - abs((h_bar % 2) - 1))
         # Initialize RGB with same hue & chroma as our color
-        rgb = [(c, x, 0),
-               (x, c, 0),
-               (0, c, x),
-               (0, x, c),
-               (x, 0, c),
-               (c, 0, x),
-               (c, x, 0)]
+        rgb = [(c, x, 0), (x, c, 0), (0, c, x), (0, x, c), (x, 0, c), (c, 0, x), (c, x, 0)]
         r, g, b = rgb[int(h_bar)]
         # Shift the initial RGB values to match value and store
-        rgb = [(int(255 * (r + m))),
-               (int(255 * (g + m))),
-               (int(255 * (b + m)))]
+        rgb = [(int(255 * (r + m))), (int(255 * (g + m))), (int(255 * (b + m)))]
         color_list.append(rgb)
 
     return color_list
 
 
-def plot_tree_patched(decision_tree,
-                   max_depth=None,
-                   feature_names=None,
-                   class_names=None,
-                   label='all',
-                   filled=False,
-                   impurity=True,
-                   node_ids=False,
-                   proportion=False,
-                   rotate=False,
-                   rounded=False,
-                   precision=3,
-                   ax=None, fontsize=None):
+def plot_tree_patched(
+    decision_tree,
+    max_depth=None,
+    feature_names=None,
+    class_names=None,
+    label="all",
+    filled=False,
+    impurity=True,
+    node_ids=False,
+    proportion=False,
+    rotate=False,
+    rounded=False,
+    precision=3,
+    ax=None,
+    fontsize=None,
+):
     """Plot a decision tree.
     The sample counts that are shown are weighted with any sample_weights that
     might be present.
@@ -144,22 +140,39 @@ def plot_tree_patched(decision_tree,
     [Text(251.5,345.217,'X[3] <= 0.8...
     """
     exporter = _MPLTreeExporter(
-        max_depth=max_depth, feature_names=feature_names,
-        class_names=class_names, label=label, filled=filled,
-        impurity=impurity, node_ids=node_ids,
-        proportion=proportion, rotate=rotate, rounded=rounded,
-        precision=precision, fontsize=fontsize)
+        max_depth=max_depth,
+        feature_names=feature_names,
+        class_names=class_names,
+        label=label,
+        filled=filled,
+        impurity=impurity,
+        node_ids=node_ids,
+        proportion=proportion,
+        rotate=rotate,
+        rounded=rounded,
+        precision=precision,
+        fontsize=fontsize,
+    )
     return exporter.export(decision_tree, ax=ax)
 
 
 class _BaseTreeExporter(object):
-    def __init__(self, max_depth=None, feature_names=None,
-                 class_names=None, label='all',
-                 node_plot="chf",
-                 filled=False,
-                 impurity=True, node_ids=False,
-                 proportion=False, rotate=False, rounded=False,
-                 precision=3, fontsize=None):
+    def __init__(
+        self,
+        max_depth=None,
+        feature_names=None,
+        class_names=None,
+        label="all",
+        node_plot="chf",
+        filled=False,
+        impurity=True,
+        node_ids=False,
+        proportion=False,
+        rotate=False,
+        rounded=False,
+        precision=3,
+        fontsize=None,
+    ):
         self.max_depth = max_depth
         self.feature_names = feature_names
         self.class_names = class_names
@@ -176,44 +189,40 @@ class _BaseTreeExporter(object):
 
     def get_color(self, value):
         # Find the appropriate color & intensity for a node
-        if self.colors['bounds'] is None:
+        if self.colors["bounds"] is None:
             # Classification tree
-            color = list(self.colors['rgb'][np.argmax(value)])
+            color = list(self.colors["rgb"][np.argmax(value)])
             sorted_values = sorted(value, reverse=True)
             if len(sorted_values) == 1:
                 alpha = 0
             else:
-                alpha = ((sorted_values[0] - sorted_values[1])
-                         / (1 - sorted_values[1]))
+                alpha = (sorted_values[0] - sorted_values[1]) / (1 - sorted_values[1])
         else:
             # Regression tree or multi-output
-            color = list(self.colors['rgb'][0])
-            alpha = ((value - self.colors['bounds'][0]) /
-                     (self.colors['bounds'][1] - self.colors['bounds'][0]))
+            color = list(self.colors["rgb"][0])
+            alpha = (value - self.colors["bounds"][0]) / (
+                self.colors["bounds"][1] - self.colors["bounds"][0]
+            )
         # unpack numpy scalars
         alpha = float(alpha)
         # compute the color as alpha against white
         color = [int(round(alpha * c + (1 - alpha) * 255, 0)) for c in color]
         # Return html color code in #RRGGBB format
-        return '#%2x%2x%2x' % tuple(color)
+        return "#%2x%2x%2x" % tuple(color)
 
     def get_fill_color(self, tree, node_id):
         # Fetch appropriate color for node
-        if 'rgb' not in self.colors:
+        if "rgb" not in self.colors:
             # Initialize colors and bounds if required
-            self.colors['rgb'] = _color_brew(tree.n_classes[0])
+            self.colors["rgb"] = _color_brew(tree.n_classes[0])
             if tree.n_outputs != 1:
                 # Find max and min impurities for multi-output
-                self.colors['bounds'] = (np.min(-tree.impurity),
-                                         np.max(-tree.impurity))
-            elif (tree.n_classes[0] == 1 and
-                  len(np.unique(tree.value)) != 1):
+                self.colors["bounds"] = (np.min(-tree.impurity), np.max(-tree.impurity))
+            elif tree.n_classes[0] == 1 and len(np.unique(tree.value)) != 1:
                 # Find max and min values in leaf nodes for regression
-                self.colors['bounds'] = (np.min(tree.value),
-                                         np.max(tree.value))
+                self.colors["bounds"] = (np.min(tree.value), np.max(tree.value))
         if tree.n_outputs == 1:
-            node_val = (tree.value[node_id][0, :] /
-                        tree.weighted_n_node_samples[node_id])
+            node_val = tree.value[node_id][0, :] / tree.weighted_n_node_samples[node_id]
             if tree.n_classes[0] == 1:
                 # Regression
                 node_val = tree.value[node_id][0, :]
@@ -230,7 +239,7 @@ class _BaseTreeExporter(object):
             value = tree.value[node_id]
 
         # Should labels be shown?
-        labels = (self.label == 'root' and node_id == 0) or self.label == 'all'
+        labels = (self.label == "root" and node_id == 0) or self.label == "all"
 
         characters = self.characters
         node_string = characters[-1]
@@ -238,7 +247,7 @@ class _BaseTreeExporter(object):
         # Write node ID
         if self.node_ids:
             if labels:
-                node_string += 'node '
+                node_string += "node "
             node_string += characters[0] + str(node_id) + characters[4]
 
         # Write decision criteria
@@ -247,14 +256,13 @@ class _BaseTreeExporter(object):
             if self.feature_names is not None:
                 feature = self.feature_names[tree.feature[node_id]]
             else:
-                feature = "X%s%s%s" % (characters[1],
-                                       tree.feature[node_id],
-                                       characters[2])
-            node_string += '%s %s %s%s' % (feature,
-                                           characters[3],
-                                           round(tree.threshold[node_id],
-                                                 self.precision),
-                                           characters[4])
+                feature = "X%s%s%s" % (characters[1], tree.feature[node_id], characters[2])
+            node_string += "%s %s %s%s" % (
+                feature,
+                characters[3],
+                round(tree.threshold[node_id], self.precision),
+                characters[4],
+            )
 
         # Write impurity
         if self.impurity:
@@ -263,45 +271,38 @@ class _BaseTreeExporter(object):
             elif not isinstance(criterion, str):
                 criterion = "impurity"
             if labels:
-                node_string += '%s = ' % criterion
+                node_string += "%s = " % criterion
 
             if criterion != "logrank":
-                node_string += (str(round(tree.impurity[node_id], self.precision))
-                                + characters[4])
-            elif criterion == "logrank": #assigned manually in this patch
-                node_string += "\n"#("NaN" + characters[4])
+                node_string += str(round(tree.impurity[node_id], self.precision)) + characters[4]
+            elif criterion == "logrank":  # assigned manually in this patch
+                node_string += "\n"  # ("NaN" + characters[4])
 
         # Write node sample count
         if labels:
-            node_string += 'samples = '
+            node_string += "samples = "
         if self.proportion:
-            percent = (100. * tree.n_node_samples[node_id] /
-                       float(tree.n_node_samples[0]))
-            node_string += (str(round(percent, 1)) + '%' +
-                            characters[4])
+            percent = 100.0 * tree.n_node_samples[node_id] / float(tree.n_node_samples[0])
+            node_string += str(round(percent, 1)) + "%" + characters[4]
         else:
-            node_string += (str(tree.n_node_samples[node_id]) +
-                            characters[4])
+            node_string += str(tree.n_node_samples[node_id]) + characters[4]
 
         # Write node class distribution / regression value
         if self.proportion and tree.n_classes[0] != 1:
             # For classification this will show the proportion of samples
             value = value / tree.weighted_n_node_samples[node_id]
         if labels and criterion != "logrank":
-            node_string += 'value = '
+            node_string += "value = "
 
         if criterion == "logrank":
             value_text = np.array("", dtype="S32")
 
-            if labels and self.node_plot.lower()== "chf":
-                node_string += "CH = "+ str(round(tree.value[node_id,-1,0],
-                                         self.precision))
-            elif labels and self.node_plot.lower()== "survival":
-                node_string += "Surv. = " + str(round(tree.value[-1,node_id,1],
-                                         self.precision))
+            if labels and self.node_plot.lower() == "chf":
+                node_string += "CH = " + str(round(tree.value[node_id, -1, 0], self.precision))
+            elif labels and self.node_plot.lower() == "survival":
+                node_string += "Surv. = " + str(round(tree.value[-1, node_id, 1], self.precision))
             else:
-                raise ValueError("node_plot must be \'chf\' or \'survival\'")
-
+                raise ValueError("node_plot must be 'chf' or 'survival'")
 
         elif tree.n_classes[0] == 1:
             # Regression
@@ -317,7 +318,7 @@ class _BaseTreeExporter(object):
             value_text = np.around(value, self.precision)
 
         # Strip whitespace
-        value_text = str(value_text.astype('S32')).replace("b'", "'")
+        value_text = str(value_text.astype("S32")).replace("b'", "'")
         value_text = value_text.replace("' '", ", ").replace("'", "")
         if tree.n_classes[0] == 1 and tree.n_outputs == 1:
             value_text = value_text.replace("[", "").replace("]", "")
@@ -325,77 +326,99 @@ class _BaseTreeExporter(object):
         node_string += value_text + characters[4]
 
         # Write node majority class
-        if (self.class_names is not None and
-                tree.n_classes[0] != 1 and
-                tree.n_outputs == 1):
+        if self.class_names is not None and tree.n_classes[0] != 1 and tree.n_outputs == 1:
             # Only done for single-output classification trees
             if labels:
-                node_string += 'class = '
+                node_string += "class = "
             if self.class_names is not True:
                 class_name = self.class_names[np.argmax(value)]
             else:
-                class_name = "y%s%s%s" % (characters[1],
-                                          np.argmax(value),
-                                          characters[2])
+                class_name = "y%s%s%s" % (characters[1], np.argmax(value), characters[2])
 
             node_string += class_name
 
         # Clean up any trailing newlines
         if node_string.endswith(characters[4]):
-            node_string = node_string[:-len(characters[4])]
+            node_string = node_string[: -len(characters[4])]
 
         return node_string + characters[5]
 
 
 class _MPLTreeExporter(_BaseTreeExporter):
-    def __init__(self, max_depth=None, feature_names=None,
-                 class_names=None, label='all', filled=False,
-                 impurity=True, node_ids=False,
-                 proportion=False, rotate=False, rounded=False,
-                 precision=3, fontsize=None):
+    def __init__(
+        self,
+        max_depth=None,
+        feature_names=None,
+        class_names=None,
+        label="all",
+        filled=False,
+        impurity=True,
+        node_ids=False,
+        proportion=False,
+        rotate=False,
+        rounded=False,
+        precision=3,
+        fontsize=None,
+    ):
 
         super().__init__(
-            max_depth=max_depth, feature_names=feature_names,
-            class_names=class_names, label=label, filled=filled,
-            impurity=impurity, node_ids=node_ids, proportion=proportion,
-            rotate=rotate, rounded=rounded, precision=precision)
+            max_depth=max_depth,
+            feature_names=feature_names,
+            class_names=class_names,
+            label=label,
+            filled=filled,
+            impurity=impurity,
+            node_ids=node_ids,
+            proportion=proportion,
+            rotate=rotate,
+            rounded=rounded,
+            precision=precision,
+        )
         self.fontsize = fontsize
 
         # validate
         if isinstance(precision, Integral):
             if precision < 0:
-                raise ValueError("'precision' should be greater or equal to 0."
-                                 " Got {} instead.".format(precision))
+                raise ValueError(
+                    "'precision' should be greater or equal to 0."
+                    " Got {} instead.".format(precision)
+                )
         else:
-            raise ValueError("'precision' should be an integer. Got {}"
-                             " instead.".format(type(precision)))
+            raise ValueError(
+                "'precision' should be an integer. Got {}" " instead.".format(type(precision))
+            )
 
         # The depth of each node for plotting with 'leaf' option
-        self.ranks = {'leaves': []}
+        self.ranks = {"leaves": []}
         # The colors to render each node with
-        self.colors = {'bounds': None}
+        self.colors = {"bounds": None}
 
-        self.characters = ['#', '[', ']', '<=', '\n', '', '']
+        self.characters = ["#", "[", "]", "<=", "\n", "", ""]
 
-        self.bbox_args = dict(fc='w')
+        self.bbox_args = dict(fc="w")
         if self.rounded:
-            self.bbox_args['boxstyle'] = "round"
+            self.bbox_args["boxstyle"] = "round"
         else:
             # matplotlib <1.5 requires explicit boxstyle
-            self.bbox_args['boxstyle'] = "square"
+            self.bbox_args["boxstyle"] = "square"
 
         self.arrow_args = dict(arrowstyle="<-")
 
-    def _make_tree(self, node_id, et, depth=0, criterion='entropy'):
+    def _make_tree(self, node_id, et, depth=0, criterion="entropy"):
         # traverses _tree.Tree recursively, builds intermediate
         # "_reingold_tilford.Tree" object
         name = self.node_to_str(et, node_id, criterion=criterion)
-        if (et.children_left[node_id] != _tree.TREE_LEAF
-                and (self.max_depth is None or depth <= self.max_depth)):
-            children = [self._make_tree(et.children_left[node_id], et,
-                                        depth=depth + 1, criterion=criterion),
-                        self._make_tree(et.children_right[node_id], et,
-                                        depth=depth + 1, criterion=criterion)]
+        if et.children_left[node_id] != _tree.TREE_LEAF and (
+            self.max_depth is None or depth <= self.max_depth
+        ):
+            children = [
+                self._make_tree(
+                    et.children_left[node_id], et, depth=depth + 1, criterion=criterion
+                ),
+                self._make_tree(
+                    et.children_right[node_id], et, depth=depth + 1, criterion=criterion
+                ),
+            ]
         else:
             return Tree(name, node_id)
         return Tree(name, node_id, *children)
@@ -403,12 +426,13 @@ class _MPLTreeExporter(_BaseTreeExporter):
     def export(self, decision_tree, ax=None):
         import matplotlib.pyplot as plt
         from matplotlib.text import Annotation
+
         if ax is None:
             ax = plt.gca()
         ax.clear()
         ax.set_axis_off()
         if isinstance(decision_tree, SurvivalTree):
-            criterion = "logrank" #assign automatically (.criterion is originallly missing for sksurv.tree.SurvivalTree)
+            criterion = "logrank"  # assign automatically (.criterion is originallly missing for sksurv.tree.SurvivalTree)
         else:
             criterion = decision_tree.criterion
         my_tree = self._make_tree(0, decision_tree.tree_, criterion=criterion)
@@ -425,11 +449,9 @@ class _MPLTreeExporter(_BaseTreeExporter):
         scale_x = ax_width / max_x
         scale_y = ax_height / max_y
 
-        self.recurse(draw_tree, decision_tree.tree_, ax,
-                     scale_x, scale_y, ax_height)
+        self.recurse(draw_tree, decision_tree.tree_, ax, scale_x, scale_y, ax_height)
 
-        anns = [ann for ann in ax.get_children()
-                if isinstance(ann, Annotation)]
+        anns = [ann for ann in ax.get_children() if isinstance(ann, Annotation)]
 
         # update sizes of all bboxes
         renderer = ax.figure.canvas.get_renderer()
@@ -442,53 +464,57 @@ class _MPLTreeExporter(_BaseTreeExporter):
             # adjust fontsize to avoid overlap
             # get max box width and height
             try:
-                extents = [ann.get_bbox_patch().get_window_extent()
-                           for ann in anns]
+                extents = [ann.get_bbox_patch().get_window_extent() for ann in anns]
                 max_width = max([extent.width for extent in extents])
                 max_height = max([extent.height for extent in extents])
                 # width should be around scale_x in axis coordinates
-                size = anns[0].get_fontsize() * min(scale_x / max_width,
-                                                    scale_y / max_height)
+                size = anns[0].get_fontsize() * min(scale_x / max_width, scale_y / max_height)
                 for ann in anns:
                     ann.set_fontsize(size)
             except AttributeError:
                 # matplotlib < 1.5
-                warnings.warn("Automatic scaling of tree plots requires "
-                              "matplotlib 1.5 or higher. Please specify "
-                              "fontsize.")
+                warnings.warn(
+                    "Automatic scaling of tree plots requires "
+                    "matplotlib 1.5 or higher. Please specify "
+                    "fontsize."
+                )
 
         return anns
 
     def recurse(self, node, tree, ax, scale_x, scale_y, height, depth=0):
         # need to copy bbox args because matplotib <1.5 modifies them
-        kwargs = dict(bbox=self.bbox_args.copy(), ha='center', va='center',
-                      zorder=100 - 10 * depth, xycoords='axes pixels')
+        kwargs = dict(
+            bbox=self.bbox_args.copy(),
+            ha="center",
+            va="center",
+            zorder=100 - 10 * depth,
+            xycoords="axes pixels",
+        )
 
         if self.fontsize is not None:
-            kwargs['fontsize'] = self.fontsize
+            kwargs["fontsize"] = self.fontsize
 
         # offset things by .5 to center them in plot
-        xy = ((node.x + .5) * scale_x, height - (node.y + .5) * scale_y)
+        xy = ((node.x + 0.5) * scale_x, height - (node.y + 0.5) * scale_y)
 
         if self.max_depth is None or depth <= self.max_depth:
             if self.filled:
-                kwargs['bbox']['fc'] = self.get_fill_color(tree,
-                                                           node.tree.node_id)
+                kwargs["bbox"]["fc"] = self.get_fill_color(tree, node.tree.node_id)
             if node.parent is None:
                 # root
                 ax.annotate(node.tree.label, xy, **kwargs)
             else:
-                xy_parent = ((node.parent.x + .5) * scale_x,
-                             height - (node.parent.y + .5) * scale_y)
+                xy_parent = (
+                    (node.parent.x + 0.5) * scale_x,
+                    height - (node.parent.y + 0.5) * scale_y,
+                )
                 kwargs["arrowprops"] = self.arrow_args
                 ax.annotate(node.tree.label, xy_parent, xy, **kwargs)
             for child in node.children:
-                self.recurse(child, tree, ax, scale_x, scale_y, height,
-                             depth=depth + 1)
+                self.recurse(child, tree, ax, scale_x, scale_y, height, depth=depth + 1)
 
         else:
-            xy_parent = ((node.parent.x + .5) * scale_x,
-                         height - (node.parent.y + .5) * scale_y)
+            xy_parent = ((node.parent.x + 0.5) * scale_x, height - (node.parent.y + 0.5) * scale_y)
             kwargs["arrowprops"] = self.arrow_args
-            kwargs['bbox']['fc'] = 'grey'
+            kwargs["bbox"]["fc"] = "grey"
             ax.annotate("\n  (...)  \n", xy_parent, xy, **kwargs)
