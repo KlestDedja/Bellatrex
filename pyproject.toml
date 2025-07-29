@@ -7,7 +7,7 @@ authors = [
     { name = "Klest Dedja", email = "daneel.olivaw94@gmail.com" },
 ]
 license = { file = "LICENSE.txt" }
-requires-python = ">=3.9, <3.13"
+requires-python = ">=3.9, <4.0"
 keywords = ["explainable AI", "rule extraction", "random forest", "surrogate models"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -19,7 +19,7 @@ classifiers = [
 dependencies = [
     "scikit-learn >=1.2",
     "threadpoolctl >=3.1",
-    "scikit-survival >=0.22, <1.0",
+    "scikit-survival >=0.22",
     "scipy >=1.11",
     "pandas >=1.5",
     "matplotlib >=3.7",
