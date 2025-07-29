@@ -29,7 +29,8 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-cov",
-    "twine"
+    "twine",
+    "black >= 0.24"
 ]
 gui = [
     "dearpygui >=1.6.2, <2.0",
