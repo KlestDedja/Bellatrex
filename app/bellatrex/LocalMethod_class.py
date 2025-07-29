@@ -7,13 +7,11 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 
-import sklearn
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.model_selection import ParameterGrid
 from sklearn.utils.validation import check_is_fitted
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
-import sksurv
 from sksurv.ensemble import RandomSurvivalForest
 
 from .wrapper_class import EnsembleWrapper

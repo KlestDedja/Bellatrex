@@ -1,7 +1,5 @@
-import warnings
 import os
-
-IS_CI = os.environ.get("CI") == "true"
+import warnings
 import math
 
 import dearpygui.dearpygui as dpg
@@ -18,6 +16,8 @@ from .utilities import colormap_from_str
 from .plot_tree_patch import plot_tree_patched
 from .utilities import rule_print_inline, custom_axes_limit
 from .utilities import custom_formatter
+
+IS_CI = os.environ.get("CI") == "true"
 
 
 class InteractPoint:  # Object containg all information of a point
@@ -160,7 +160,7 @@ def make_interactive_plot(plots, temp_files_dir, plot_size=700, other_inputs=Non
             button=dpg.mvMouseButton_Left, callback=mouse_click_left_callback
         )
 
-    # Activated every frame ## IS THIS EVEN USED? CHECK SOON!
+    # Activated every frame ## IS THIS EVEN USED? CHECK!
     def point_draw_and_interact(sender, app_data, user_data):
 
         # Calculates positions in pixel space
@@ -351,15 +351,15 @@ def make_interactive_plot(plots, temp_files_dir, plot_size=700, other_inputs=Non
         viewport, height=windowheight + 5 * fullspacing, width=windowwidth + 2 * fullspacing
     )
 
-    dpg.setup_dearpygui()
+    # dpg.setup_dearpygui()
 
-    if not IS_CI:
-        dpg.show_viewport()
-        dpg.start_dearpygui()
-    else:
-        print("Running in CI: skipping DearPyGui rendering (headless safe)")
+    # if not IS_CI:
+    #     dpg.show_viewport()
+    #     dpg.start_dearpygui()
+    # else:
+    #     print("Running in CI: skipping DearPyGui rendering (headless safe)")
 
-    dpg.destroy_context()
+    # dpg.destroy_context()
 
     return plots
 

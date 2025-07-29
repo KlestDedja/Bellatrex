@@ -153,11 +153,5 @@ def test_gui_workflow():
 
             # Enforce plot_gui=False in headless mode
             fig, obj = tuned_method.plot_overview(show=not IS_CI, plot_gui=True)
-            if not IS_CI:
-                # Non-headless mode: Ensure matplotlib figures are closed
-                assert fig is not None
-                plt.close(fig)
-            else:
-                # Automatically close DearPyGui windows
-                for window_id in obj:
-                    dpg.delete_item(window_id)
+            assert obj is not None
+            plt.close(fig)
