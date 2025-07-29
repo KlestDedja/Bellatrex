@@ -345,9 +345,15 @@ class BellatrexExplain:
         tuned_method = trees_extract.set_params(**best_params).main_fit()
         tuned_method.sample_score = tuned_method.score(self.fidelity_measure, self.ys_oracle)
 
-        # Ensure final_trees_idx and cluster_sizes are not None and are lists
-        final_extract_trees = np.array(tuned_method.final_trees_idx or [])
-        final_cluster_sizes = np.array(tuned_method.cluster_sizes or [])
+        # Ensure final_trees_idx and cluster_sizes are not None and are arrays
+        if tuned_method.final_trees_idx is not None:
+            final_extract_trees = np.array(tuned_method.final_trees_idx)
+        else:
+            final_extract_trees = np.array([])
+        if tuned_method.cluster_sizes is not None:
+            final_cluster_sizes = np.array(tuned_method.cluster_sizes)
+        else:
+            final_cluster_sizes = np.array([])
 
         if not isinstance(self.clf, RandomSurvivalForest):
             surrogate_pred = np.array([0.0] * self.clf.n_outputs_).reshape(sample.shape[0], -1)

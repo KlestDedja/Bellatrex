@@ -138,8 +138,8 @@ def make_interactive_plot(plots, temp_files_dir,
                     with dpg.texture_registry(show=False):
                         treeplot = dpg.add_static_texture(IMwidth, IMheight, IMdata)
 
-                    popup_window = dpg.add_window(width=min(IMwidth + 4 * FULLSPACING, windowwidth),
-                                                  height=min(IMheight + 5 * FULLSPACING, windowheight),
+                    popup_window = dpg.add_window(width=min(IMwidth + 4 * fullspacing, windowwidth),
+                                                  height=min(IMheight + 5 * fullspacing, windowheight),
                                                   modal=True,
                                                   horizontal_scrollbar=True)
 
@@ -270,8 +270,8 @@ def make_interactive_plot(plots, temp_files_dir,
         plot.colour_bar_width = round(plot_size * IMwidth / IMheight)
         addedwidth += plot.colour_bar_width
 
-    windowwidth = plotamount * plot_size + (2 * plotamount + 1) * FULLSPACING + addedwidth
-    windowheight = plot_size + 2 * FULLSPACING
+    windowwidth = plotamount * plot_size + (2 * plotamount + 1) * fullspacing + addedwidth
+    windowheight = plot_size + 2 * fullspacing
 
     # Calculates x- and y-axis limits based on points
     for plot in plots:
@@ -303,7 +303,7 @@ def make_interactive_plot(plots, temp_files_dir,
                     dpg.set_axis_limits("y_axis" + plot.name, plot.y_axis_limits[0], plot.y_axis_limits[1])
 
     viewport = dpg.create_viewport(title='Plot', width=1000, height=720)
-    dpg.configure_viewport(viewport, height=windowheight + 5 * FULLSPACING, width=windowwidth + 2 * FULLSPACING)
+    dpg.configure_viewport(viewport, height=windowheight + 5 * fullspacing, width=windowwidth + 2 * fullspacing)
 
     dpg.setup_dearpygui()
 

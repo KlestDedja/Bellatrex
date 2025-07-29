@@ -103,43 +103,43 @@ class TreeExtraction:# is it convenient if it inherits?
         HL bunch properties:
             Bunch(proj_data=proj_trees, ---> the tree representation, projected
                   matrix=tree_matrix,   ---> the original tree representation (kept for debug?)
-                  index=HL_trees_idx,   ---> indeces of the orginal tree learners
+                  index=selected_trees_idx,   ---> indeces of the orginal tree learners
                                             (needed as the order is lost ater pre-selection step)
                   rf_pred=rf_pred,      ---> RF original prediction
-                  loss=HL_losses)       ---> distance ( loss) to full RF prediction
+                  loss=selected_losses)       ---> distance ( loss) to full RF prediction
         '''
-        kmeans, HL_bunch = self.preselect_represent_cluster_trees()
+        kmeans, selected_bunch = self.preselect_represent_cluster_trees()
 
         self.final_trees_idx, \
-        self.cluster_sizes = self.extract_final_trees(HL_bunch.proj_data,
-                                                              HL_bunch.index, kmeans)
+        self.cluster_sizes = self.extract_final_trees(selected_bunch.proj_data,
+                                                              selected_bunch.index, kmeans)
         return self
 
 
     def preselect_represent_cluster_trees(self):
         '''
         transform trees to vectors and store everything in matrix,
-        the output is matrix of the form (n_HL_trees, n_features),
+        the output is matrix of the form (n_selected_trees, n_features),
         indeces of the original trees are also stored through the DataFrame
         '''
         ### pre-selection step:
         tree_local_losses, rf_pred = self.calcul_tree_proximity_loss(self.sample) #w.r.t. to sample we want to explain
 
-        HL_trees_idx = np.argsort(tree_local_losses)[:self.n_trees] # sort trees losses
-        HL_preds = [predict_helper(self.clf[i], self.sample.values) for i in HL_trees_idx]
+        selected_trees_idx = np.argsort(tree_local_losses)[:self.n_trees] # sort trees losses
+        selected_preds = [predict_helper(self.clf[i], self.sample.values) for i in selected_trees_idx]
 
-        HL_losses = np.array([tree_local_losses[i] for i in HL_trees_idx])
+        selected_losses = np.array([tree_local_losses[i] for i in selected_trees_idx])
 
         dict_trees = {} # empty dictionary to fill: {index : tree-vector}
 
         if self.dissim_method == "trees":
-            for idx in HL_trees_idx:
+            for idx in selected_trees_idx:
                 dict_trees.update({idx : tree_splits_to_vector(self.clf,
                                             idx, self.feature_represent)})
             tree_matrix = pd.DataFrame.from_dict(dict_trees, "index")
 
         elif self.dissim_method == "rules":
-            for idx in HL_trees_idx:
+            for idx in selected_trees_idx:
                 dict_trees.update({idx : rule_splits_to_vector(self.clf,
                                             idx, self.feature_represent, self.sample)})
             tree_matrix = pd.DataFrame.from_dict(dict_trees, "index")
@@ -169,10 +169,10 @@ class TreeExtraction:# is it convenient if it inherits?
         proj_trees = self.dim_reduction(tree_matrix) # from pandas to numpy. Indexes stored in Bunch
 
         # clustering step (indeces retained in Bunch object)
-        HL_bunch = Bunch(proj_data=proj_trees, matrix=tree_matrix,
-                         index=HL_trees_idx,
-                         loss=HL_losses,
-                         pred=HL_preds,
+        selected_bunch = Bunch(proj_data=proj_trees, matrix=tree_matrix,
+                         index=selected_trees_idx,
+                         loss=selected_losses,
+                         pred=selected_preds,
                          rf_pred=rf_pred,
                          set_up=self.set_up)
         # numpy 2d-array (lambda,2), (lamda, lambda), orig. indeces, losses
@@ -194,7 +194,7 @@ class TreeExtraction:# is it convenient if it inherits?
                            cluster_centers_= np.array([one_center]) # kmeans.centers_ is a 2D array
                            )
 
-        return kmeans, HL_bunch
+        return kmeans, selected_bunch
 
 
     def calcul_tree_proximity_loss(self, sample):
@@ -241,7 +241,7 @@ class TreeExtraction:# is it convenient if it inherits?
         return my_pre_select_loss, rf_pred
 
 
-    def tree_prediction(self, clf_tree): #(self, HL_indeces, sample):
+    def tree_prediction(self, clf_tree): #(self, selected_indeces, sample):
 
         # same as before: clf_tree does not inherit feature_names_in_ correctly
 
@@ -283,29 +283,29 @@ class TreeExtraction:# is it convenient if it inherits?
                                                      matrix_input[j]) #1-Jacc for dissimilarity
                 A[j,i] = A[i,j]
         return A # no need to store DataFrame, the original indeces
-        # are stored in some HL_indeces and in the soon to appear HL_bunch object
+        # are stored in some selected_indeces and in the soon to appear selected_bunch object
         #return pd.DataFrame(A, columns=matrix_df_input.columns,
         #                    index=matrix_df_input.columns)
 
 
     def pre_selection_trees(self, tree_matrix):
         tree_prox_loss = tree_matrix.loss_loss
-        HL_trees_idx = np.argsort(tree_prox_loss)[:self.n_trees] # first sort all trees
+        selected_trees_idx = np.argsort(tree_prox_loss)[:self.n_trees] # first sort all trees
 
-        HL_tree_losses = np.sort(tree_prox_loss)[:self.n_trees] # get LOWEST loss
-        HL_trees = tree_matrix.matrix.reindex(index=HL_trees_idx).reindex(columns= HL_trees_idx)
-        HL_bunch = Bunch(trees=HL_trees, loss=HL_tree_losses)
-        return HL_bunch
+        selected_tree_losses = np.sort(tree_prox_loss)[:self.n_trees] # get LOWEST loss
+        selected_trees = tree_matrix.matrix.reindex(index=selected_trees_idx).reindex(columns= selected_trees_idx)
+        selected_bunch = Bunch(trees=selected_trees, loss=selected_tree_losses)
+        return selected_bunch
 
 
-    def dim_reduction(self, HL_trees):
+    def dim_reduction(self, selected_trees):
 
         # setting up "tru"number of output dimensions, furtrmore
         # prevent errors from raising if n_dims > n_samples
         if self.n_dims is None: # useful for MDS only (PCA can skip this part)
-            true_dims = min(HL_trees.shape[0], HL_trees.shape[1]) #keep all dimensions
+            true_dims = min(selected_trees.shape[0], selected_trees.shape[1]) #keep all dimensions
         elif self.n_dims >= 1: # should not be needed, but sometimes it is...
-            true_dims = min(self.n_dims, HL_trees.shape[0], HL_trees.shape[1])
+            true_dims = min(self.n_dims, selected_trees.shape[0], selected_trees.shape[1])
         else:
             true_dims = self.n_dims # follows sklearn's implementation (amount of explained variance)
 
@@ -313,15 +313,15 @@ class TreeExtraction:# is it convenient if it inherits?
         if self.proj_method == "PCA" and self.n_dims is not None: # if None, skip completely
             m = PCA(n_components=true_dims,
                     random_state=TreeExtraction.RAND_SEED)
-            proj_trees = m.fit_transform(HL_trees)
+            proj_trees = m.fit_transform(selected_trees)
 
         elif self.proj_method == "MDS":
             m = MDS(n_components=true_dims, metric=True, max_iter=1000, # metric=True, sure?
                     random_state=TreeExtraction.RAND_SEED, dissimilarity='precomputed')
-            proj_trees = m.fit_transform(HL_trees)
+            proj_trees = m.fit_transform(selected_trees)
 
         else: # method == PCA and n_dims == None: do nothing :-P
-            proj_trees = HL_trees
+            proj_trees = selected_trees
 
         return proj_trees
 
