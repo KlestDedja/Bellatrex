@@ -14,10 +14,10 @@ from sksurv.ensemble import RandomSurvivalForest
 from sksurv.tree import SurvivalTree
 
 import matplotlib as mpl
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, BoundaryNorm
 import matplotlib.pyplot as plt
-from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import FuncFormatter
+from matplotlib.colorbar import Colorbar
 
 from .wrapper_class import EnsembleWrapper
 
@@ -483,7 +483,7 @@ def rule_to_code(clf_i, traversed_nodes, sample, full_save_name):
     intervals = {feat: [-np.inf, np.inf] for feat in feature_names}
 
     if full_save_name is not None:
-        with open(full_save_name, "w+") as f:
+        with open(full_save_name, "w+", encoding="utf-8") as f:
             f.write("###### SAMPLE to explain ######\n")
 
             for i, k in zip(feature_names, range(len(feature_names))):
@@ -520,21 +520,17 @@ def rule_to_code(clf_i, traversed_nodes, sample, full_save_name):
             f.close()
 
 
-def rule_to_code_and_intervals(
-    clf_i, scenario, traversed_nodes, sample, feature_names, full_save_name
-):
+def rule_to_code_and_intervals(clf_i, traversed_nodes, sample, feature_names, full_save_name):
 
     leaf_print = predict_helper(clf_i, sample)
 
     tree_ = clf_i.tree_
-    feature_name = [
-        feature_names[i] if i != _tree.TREE_UNDEFINED else "undefined!" for i in tree_.feature
-    ]
+    feature_name = [feature_names[i] if i != -2 else "undefined!" for i in tree_.feature]
 
     intervals = {feat: [-np.inf, np.inf] for feat in feature_names}
 
     if full_save_name is not None:
-        with open(full_save_name, "w+") as f:
+        with open(full_save_name, "w+", encoding="utf-8") as f:
             f.write("###### SAMPLE to explain ######\n")
 
             for i, k in zip(feature_names, range(len(feature_names))):
@@ -546,7 +542,7 @@ def rule_to_code_and_intervals(
 
             def recurse(node, depth, sample, intervals):
                 indent = "  " * depth
-                if tree_.feature[node] != _tree.TREE_UNDEFINED:
+                if tree_.feature[node] != -2:
                     name = feature_name[node]
                     threshold = tree_.threshold[node]
                     if traversed_nodes[node] == 1 and sample[tree_.feature[node]] <= threshold:
@@ -571,7 +567,9 @@ def rule_to_code_and_intervals(
 
     if full_save_name is not None:
         with open(
-            full_save_name.split(".")[0] + "-simplif." + full_save_name.split(".")[-1], "w+"
+            full_save_name.split(".")[0] + "-simplif." + full_save_name.split(".")[-1],
+            "w+",
+            encoding="utf-8",
         ) as f:
             f.write("###### SAMPLE to explain ######\n")
 
@@ -588,7 +586,9 @@ def rule_to_code_and_intervals(
                     )
             f.close()
 
-            with open(full_save_name) as f:  # printing tree-rule structure on console
+            with open(
+                full_save_name, encoding="utf-8"
+            ) as f:  # printing tree-rule structure on console
                 print(f.read())
 
             print(
@@ -596,7 +596,8 @@ def rule_to_code_and_intervals(
             )  # split between tree rule print and leaf interval representation
 
             with open(
-                full_save_name.split(".")[0] + "-simplif." + full_save_name.split(".")[-1]
+                full_save_name.split(".")[0] + "-simplif." + full_save_name.split(".")[-1],
+                encoding="utf-8",
             ) as f:
                 print(f.read())  # printing (simplified) leaf structure on console
 
@@ -723,9 +724,9 @@ def plot_preselected_trees(
     axes[0].set_title("Cluster membership", fontdict={"fontsize": base_font_size + 1})
 
     # create the map for segmented colorbar (axes[1]: left colorbar)
-    cmap = plt.cm.viridis  # keep default colormap for clustering plot
+    cmap = plt.colormaps["viridis"]
     cmaplist = [cmap(i) for i in range(cmap.N)]
-    cmap_left = mpl.colors.LinearSegmentedColormap.from_list("Custom cmap", cmaplist, cmap.N)
+    cmap_left = LinearSegmentedColormap.from_list("Custom cmap", cmaplist, cmap.N)
 
     # define the bins and normalize
     freqs = np.bincount(class_memb)
@@ -750,20 +751,20 @@ def plot_preselected_trees(
         labels.append("cl.{:d}".format(i + 1))
 
     # normalizing color, prepare ticks, labels
-    norm = mpl.colors.BoundaryNorm(norm_bins, cmap_left.N)
+    norm = BoundaryNorm(norm_bins, cmap_left.N)
     tickz = norm_bins[:-1] + (norm_bins[1:] - norm_bins[:-1]) / 2
 
     if tickz.max() == norm_bins.max():  # artificial empty cluster somewhere: drop
         tickz = tickz[:-1]  # drop last tick at top of colorbar
 
     # colorab on axis 2 out of 4.
-    cb = mpl.colorbar.Colorbar(
+    cb = Colorbar(
         axes[1],
         cmap=cmap_left,
         norm=norm,
         spacing="proportional",
-        ticks=tickz,
-        boundaries=norm_bins,
+        ticks=list(tickz),
+        boundaries=list(norm_bins),
         format="%1i",
     )
     # label="cluster membership")
@@ -798,7 +799,7 @@ def plot_preselected_trees(
             is_binary=is_binary,
         )
 
-        norm_preds = mpl.colors.BoundaryNorm(np.linspace(v_min, v_max, 256), cmap_right.N)
+        norm_preds = BoundaryNorm(np.linspace(v_min, v_max, 256), cmap_right.N)
 
         color_indeces = np.zeros(len(plot_data_bunch.pred))  # length = n_trees
 
@@ -837,9 +838,9 @@ def plot_preselected_trees(
         axes[2].set_title("Rule-path predictions", fontdict={"fontsize": base_font_size + 1})
 
         # add color bar to the side
-        pred_tick = np.round(float(tuned_method.local_prediction()), 3)
+        pred_tick = np.round(float(tuned_method.local_prediction().item()), 3)
 
-        cb2 = mpl.colorbar.Colorbar(
+        cb2 = Colorbar(
             axes[3],
             cmap=cmap_right,
             norm=norm_preds,
@@ -917,7 +918,7 @@ def plot_preselected_trees(
         axes[2].axis("equal")
         axes[2].set_title("Rule-path predictions", fontdict={"fontsize": base_font_size + 1})
 
-        cb2 = mpl.colorbar.Colorbar(
+        cb2 = Colorbar(
             axes[3],
             cmap=cmap_right,
             norm=norm_preds,

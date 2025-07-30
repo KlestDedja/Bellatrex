@@ -57,22 +57,22 @@ def test_invalid_hyperparameters():
 
         if setup.lower() in "survival":
             clf = RandomSurvivalForest(
-                n_estimators=10, min_samples_split=2, n_jobs=-1, random_state=0
+                n_estimators=10, min_samples_split=5, n_jobs=-1, random_state=0
             )
         elif setup.lower() in ["binary", "multi-label"]:
             clf = RandomForestClassifier(
-                n_estimators=10, min_samples_split=2, n_jobs=-1, random_state=0
+                n_estimators=10, min_samples_split=5, n_jobs=-1, random_state=0
             )
         elif setup.lower() in ["regression", "multi-target"]:
             clf = RandomForestRegressor(
-                n_estimators=10, min_samples_split=2, n_jobs=-1, random_state=0
+                n_estimators=10, min_samples_split=5, n_jobs=-1, random_state=0
             )
         else:
             raise ValueError(f"Detection task {setup} not compatible with Bellatrex (yet)")
 
         clf.fit(X_train, y_train)
 
-        invalid_p_grid = {"n_trees": [-1, 0], "n_dims": ["invalid"], "n_clusters": ["invalid"]}
+        invalid_p_grid = {"n_trees": [-1, 0], "n_dims": [0, 1], "n_clusters": [0, "invalid"]}
         with pytest.raises(ValueError):
             BellatrexExplain(clf, set_up="auto", p_grid=invalid_p_grid).fit(X_train, y_train)
 
@@ -86,6 +86,8 @@ def test_unfitted_model():
 
 def test_unsupported_model():
     class UnsupportedModel:
+        """Just a dummy class to simulate an unsupported model type."""
+
         pass
 
     clf = UnsupportedModel()

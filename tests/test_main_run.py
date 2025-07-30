@@ -106,17 +106,30 @@ def test_create_rules_txt():
             raise ValueError(f"Detection task {setup} not compatible with Bellatrex (yet)")
 
         clf.fit(X_train, y_train)
-        btrex_fitted = BellatrexExplain(clf, set_up="auto", verbose=3).fit(X_train, y_train)
+        btrex_fitted = BellatrexExplain(clf, set_up="auto", verbose=1).fit(X_train, y_train)
 
         for i in range(MAX_TEST_SAMPLES):
             btrex_fitted.explain(X_test, i)
             out_file = "test_rules.txt"
             btrex_fitted.create_rules_txt(out_file=out_file)
             assert os.path.exists(out_file), "Rules file was not created"
-            file_extra = out_file.replace(".txt", "_extra.txt")
-            # Clean up after test
+
+            with open(out_file, "r", encoding="utf8") as f:
+                content = f.read()
+                assert len(content) > 0, "Rules file is empty."
+
+            enough_trees = clf.n_estimators * min(btrex_fitted.p_grid["n_trees"]) > max(
+                btrex_fitted.p_grid["n_clusters"]
+            )
             os.remove(out_file)
-            os.remove(file_extra)
+            # If there are more trees than clusters, check for extra rules file
+            if enough_trees:
+                out_file_extra = out_file.replace(".txt", "_extra.txt")
+                with open(out_file_extra, "r", encoding="utf8") as f:
+                    content = f.read()
+                    assert len(content) > 0, "Rules file is empty."
+
+                os.remove(out_file_extra)
 
 
 # --- GUI test with plot_gui=True ---
