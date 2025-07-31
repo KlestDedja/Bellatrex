@@ -15,8 +15,8 @@ from sklearn.utils import Bunch
 import sksurv
 
 # from .utilities import  frmt_pretty_print
-from .TreeRepresentation_utils import tree_splits_to_vector  # tree_vector
-from .TreeRepresentation_utils import rule_splits_to_vector, add_emergency_noise
+from .tree_representation_utils import tree_splits_to_vector  # tree_vector
+from .tree_representation_utils import rule_splits_to_vector, add_emergency_noise
 from .utilities import predict_helper, safe_element_to_scalar
 
 

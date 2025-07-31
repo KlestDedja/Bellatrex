@@ -17,7 +17,7 @@ from sksurv.ensemble import RandomSurvivalForest
 from .wrapper_class import EnsembleWrapper
 from .utilities import predict_helper
 from .visualization_extra import _input_validation
-from .TreeExtraction_class import TreeExtraction
+from .tree_extraction import TreeExtraction
 from .utilities import plot_preselected_trees, rule_print_inline
 from .utilities import rule_to_file, frmt_pretty_print, is_pytest
 from .visualisation import read_rules, plot_rules

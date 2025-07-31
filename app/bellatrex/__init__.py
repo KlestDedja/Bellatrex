@@ -17,7 +17,7 @@ except ImportError:
 # outer layer only after (ediatble) installation is complete
 def __getattr__(name):
     if name == "BellatrexExplain":
-        from .LocalMethod_class import BellatrexExplain  # pylint: disable=import-outside-toplevel
+        from .bellatrex_explain import BellatrexExplain  # pylint: disable=import-outside-toplevel
 
         return BellatrexExplain
     raise AttributeError(f"module {__name__} has no attribute {name}")

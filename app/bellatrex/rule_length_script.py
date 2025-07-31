@@ -18,9 +18,9 @@ from sklearn.ensemble import RandomForestRegressor
 import matplotlib.pyplot as plt
 
 from utilities import get_data_list
-from TreeDissimilarity_class import TreeDissimilarity
+from tree_dissimilarity import TreeDissimilarity
 
-# from LocalMethod_class import LocalTreeExtractor
+# from bellatrex_explain import LocalTreeExtractor
 from IPython import get_ipython
 
 get_ipython().run_line_magic("matplotlib", "inline")
