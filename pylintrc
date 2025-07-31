@@ -17,5 +17,5 @@ max-line-length=100 # we will use black formatting with max line length of 100
 ; ignored-modules=numpy,polars,matplotlib,sklearn
 
 [VARIABLES]
-# We allow not only snake_case and but also variable names starting with X_
+# We allow snake_case and variable names starting with X_ such as X_train, X_test, etc.
 variable-rgx=(([a-z_][a-z0-9_]*)|X_[A-Za-z0-9_]+)$
