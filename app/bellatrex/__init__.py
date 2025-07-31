@@ -1,20 +1,26 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jul 22 16:19:54 2024
-
+bellatrex package initializer.
 @author: Klest Dedja
-
 """
-import os
 
-# app/bellatrex/__init__.py
-from .LocalMethod_class import BellatrexExplain
+from typing import TYPE_CHECKING  # so that pylance checker does not complain
 
-# expose these functions to outer layers:
+try:
+    from .__version__ import __version__
+except ImportError:
+    __version__ = "unknown"
+
+
+# Lazy import to safely expose BellatrexExplain to
+# outer layer only after (ediatble) installation is complete
+def __getattr__(name):
+    if name == "BellatrexExplain":
+        from .LocalMethod_class import BellatrexExplain  # pylint: disable=import-outside-toplevel
+
+        return BellatrexExplain
+    raise AttributeError(f"module {__name__} has no attribute {name}")
+
+
 __all__ = ["BellatrexExplain"]
-
-
-version_file = os.path.join(os.path.dirname(__file__), "version.txt")
-
-with open(version_file, encoding="utf-8") as vf:
-    __version__ = vf.read().strip()

@@ -18,7 +18,7 @@ def _input_validation(rules, preds, baselines, weights):
     return None
 
 
-def max_rulelength_visual(rules, max_rulelen=None):
+def compute_max_visual_len(rules, max_rulelen=None):
 
     # Calculate the maximum rule length from the list of rules.
     max_rulelen_calculated = max(len(rule) for rule in rules)

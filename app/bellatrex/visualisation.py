@@ -4,7 +4,7 @@ from scipy import stats
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
-from .visualization_extra import _input_validation, max_rulelength_visual
+from .visualization_extra import _input_validation, compute_max_visual_len
 from .visualization_extra import define_relative_position, plot_arrow
 from .utilities import frmt_pretty_print
 
@@ -51,25 +51,25 @@ def plot_rules(
     # Validate inputs and determine maximum rule length
     _input_validation(rules, preds, baselines, weights)
 
-    max_rulelen_visual = max_rulelength_visual(rules, max_rulelen=max_rulelen)
+    max_rulelen_visual = compute_max_visual_len(rules, max_rulelen=max_rulelen)
 
     nrules = len(rules)
 
     for i in range(nrules):
         assert len(rules[i]) == len(preds[i])
-        if len(rules[i]) > max_rulelen:
+        if len(rules[i]) > max_rulelen_visual:
             # +1 because we need to replace the last one
-            omitted = len(rules[i]) - max_rulelen + 1
-            rules[i][max_rulelen - 1] = f"+{omitted} other rule splits"
-            preds[i][max_rulelen - 1] = preds[i][-1]
-            rules[i] = rules[i][:max_rulelen]
-            preds[i] = preds[i][:max_rulelen]
+            omitted = len(rules[i]) - max_rulelen_visual + 1
+            rules[i][max_rulelen_visual - 1] = f"+{omitted} other rule splits"
+            preds[i][max_rulelen_visual - 1] = preds[i][-1]
+            rules[i] = rules[i][:max_rulelen_visual]
+            preds[i] = preds[i][:max_rulelen_visual]
 
     if other_preds is not None:  # sets up distribution of all rule esitmates
         for i, other_pred in enumerate(other_preds):
-            if len(other_pred) > max_rulelen:
-                other_pred[max_rulelen - 1] = other_pred[-1]  # check leaf node
-                other_pred = other_pred[:max_rulelen]
+            if len(other_pred) > max_rulelen_visual:
+                other_pred[max_rulelen_visual - 1] = other_pred[-1]  # check leaf node
+                other_pred = other_pred[:max_rulelen_visual]
 
     if preds_distr is not None:
         density = stats.gaussian_kde(preds_distr)
@@ -104,7 +104,7 @@ def plot_rules(
     get_color = lambda value, baseline: cmap(norm(value - baseline))
 
     # Initialize the plot (rules and arrows only)
-    plot_height_rulebased = 0.9 * max(max_rulelen, 4)
+    plot_height_rulebased = 0.9 * max(max_rulelen_visual, 4)
 
     if preds_distr is None:  # no extra axis objects for density plot
         fig, aaxs = plt.subplots(
@@ -152,7 +152,7 @@ def plot_rules(
         # plus some margin, given by the few lines above. We choose to use
         # the same x-axis limits for all plots, for a better interpretability
         ax.set_xlim([min_rel_x_axis, max_rel_x_axis])
-        ax.set_ylim([max_rulelen + 0.75, -0.75])
+        ax.set_ylim([max_rulelen_visual + 0.75, -0.75])
         ax.set_yticks(range(max_rulelen_visual + 1))
         ax.tick_params(axis="y", labelsize=base_fontsize)
         ax.grid(axis="x", zorder=-99, alpha=0.5)
@@ -161,8 +161,8 @@ def plot_rules(
         )  # (weighted {weights[i]:.2f})")
 
     plt.subplots_adjust(wspace=0.12)
-    # alt: max_rulelen --> fig.get_size_inches()[0]
-    aspect = 20 * (max_rulelen / 5)  # because aspect=20 is ideal when max_rulelen=5
+    # alt: max_rulelen_visual --> fig.get_size_inches()[0]
+    aspect = 20 * (max_rulelen_visual / 5)  # because aspect=20 is ideal when max_rulelen_visual=5
     cbar = plt.colorbar(
         plt.cm.ScalarMappable(norm=norm, cmap=cmap),
         ax=aaxs,
@@ -180,7 +180,7 @@ def plot_rules(
         for bsl, ax in zip(baselines, rule_axs):
             for pred in other_preds:
                 ax.plot(
-                    [bsl, *pred],
+                    [*bsl, *pred],
                     np.arange(len(pred) + 1),
                     c=[0.9, 0.9, 0.9],
                     alpha=1.0,
@@ -190,7 +190,8 @@ def plot_rules(
 
     # Highlight the rule of interest on each plot
     for bsl, rule, pred, ax in zip(baselines, rules, preds, rule_axs):
-        traj = [bsl, *pred]
+        traj = [*bsl, *pred]
+        bsl = bsl[0]  # structure has changed upstream and bsl is now a single-element list
         pad = 0.3
         xmin, xmax = ax.get_xlim()
 
@@ -198,7 +199,7 @@ def plot_rules(
         xtext_base_block = min(xtext_base_block, 0.15 * xmin + 0.85 * xmax)
 
         ax.text(
-            s=f"Baseline\n{frmt_pretty_print(bsl, tot_digits)}",
+            s=f"Baseline\n{frmt_pretty_print(traj[0], tot_digits)}",
             fontsize=base_fontsize,
             x=xtext_base_block,
             y=-pad,
@@ -260,12 +261,20 @@ def plot_rules(
     if preds_distr is not None:
         # Training set distribution (as provided by preds_distr)
         for i, (bsl, pred, ax) in enumerate(zip(baselines, preds, dens_axs)):
+
+            # avg_bsl = np.mean(bsl, axis=0)
+            avg_bsl = np.mean(baselines[i])  # assumes single-class output
+            assert isinstance(avg_bsl, (float, int))
+
+            # Set the density plot axes limits to match the rule plot axes limits
+            ax.set_xlim(rule_axs[i].get_xlim())
+            # Plot density plot with dot marker on top of the curve and dottes lines around
             ax.plot(x, density(x), "k")
             col1 = "gray"  # get_color(bsl     , bsl)
-            col2 = get_color(pred[-1], bsl)
-            ax.plot(bsl, density(bsl), ".", c=col1, ms=15)
+            col2 = get_color(pred[-1], avg_bsl)
+            ax.plot(avg_bsl, density(avg_bsl), ".", c=col1, ms=15)
             ax.plot(pred[-1], density(pred[-1]), ".", c=col2, ms=15)
-            ax.vlines(x=bsl, ymin=0, ymax=density(bsl), colors=col1, linestyles=":")
+            ax.vlines(x=avg_bsl, ymin=0, ymax=density(avg_bsl), colors=col1, linestyles=":")
             ax.vlines(x=pred[-1], ymin=0, ymax=density(pred[-1]), colors=col2, linestyles=":")
             ax.set_ylim([0, 1.1 * ax.get_ylim()[1]])
             ax.set_yticks([])
@@ -277,24 +286,26 @@ def plot_rules(
 
         # Connect density plot axes to the rest of the plot
         for bsl, pred, ax, dax in zip(baselines, preds, rule_axs, dens_axs):
+
+            avg_bsl = np.mean(bsl, axis=0)
             # Draw dotted vline from baseline to density
             ax.vlines(x=bsl, ymin=0, ymax=ax.get_ylim()[0], colors="gray", linestyles=":")
             dax.vlines(
-                x=bsl, ymin=density(bsl), ymax=dax.get_ylim()[1], colors="gray", linestyles=":"
+                x=bsl, ymin=density(avg_bsl), ymax=dax.get_ylim()[1], colors="gray", linestyles=":"
             )
             # Draw dotted line from final prediction to density
             ax.vlines(
                 x=pred[-1],
-                ymin=max_rulelen,
+                ymin=max_rulelen_visual,
                 ymax=ax.get_ylim()[0],
-                colors=get_color(pred[-1], bsl),
+                colors=get_color(pred[-1], avg_bsl),
                 linestyles=":",
             )
             dax.vlines(
                 x=pred[-1],
                 ymin=density(pred[-1]),
                 ymax=dax.get_ylim()[1],
-                colors=get_color(pred[-1], bsl),
+                colors=get_color(pred[-1], avg_bsl),
                 linestyles=":",
             )
 
@@ -477,5 +488,14 @@ def read_rules(file, file_extra=None):
                 other_preds.append(pred)
     else:
         other_preds = None
+
+    # f_rules: list of lists, where each inner list contains decision splits strings as elements
+    # f_preds: list of lists, same shape and structure as f_rules, where every element
+    #       is a float with node-level predictions (or list for multi-output trees, in the future)
+    # f_baselines: list of lists, every element contaains baseline (root) predictions.
+    #   Single-element list for single output trees.
+    # f_weights: list of floats, every element is a weight of the corresponding (tree) rule
+    # other_preds: list of lists, same shape and structure as f_preds, but for unused rules
+    #   Results in a much longer list of rules (the unused rules) comapred to f_rules.
 
     return f_rules, f_preds, f_baselines, f_weights, other_preds

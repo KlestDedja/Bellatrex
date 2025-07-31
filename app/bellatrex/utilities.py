@@ -184,6 +184,8 @@ def frmt_pretty_print(y_pred, digits_single=4, digits_vect=3) -> str:
     assert digits_vect >= 1
     y_pred_str = None  # initialized, it's supposed to be manipulated inside the function
 
+    y_pred = np.array(y_pred)  # ensure y_pred is a NumPy array for consistent handling
+
     # if 2-d, the only acceptable option is that it is a nested 1-d vector
     if isinstance(y_pred, np.ndarray) and y_pred.ndim == 2:
         if y_pred.shape[0] > 1:
