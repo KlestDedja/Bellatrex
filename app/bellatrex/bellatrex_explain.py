@@ -604,9 +604,30 @@ class BellatrexExplain:
         show=True,
     ):
         """
-        - create rules in txt
-        - read rules from txt files
-        - parse them and plot them
+        Generate a visual explanation of the rules for a single-output task.
+
+        This method creates rule files, parses them, and plots a visual representation
+        of the rules extracted by Bellatrex. Intended only for single-output
+        setups (e.g., binary classification, regression or survival analysis). For multi-output tasks,
+        use `plot_overview()` instead.
+
+        Parameters:
+            plot_max_depth (int, optional): Maximum number of rules (depth) to display.
+            preds_distr (np.ndarray or Series, optional): Distribution of training predictions,
+                used for background histograms or contextual visuals.
+            conf_level (float, optional): Confidence level to display for predictions.
+            tot_digits (int, default=4): Number of digits to round numeric values in the plot.
+            b_box_pred (np.ndarray or Series, optional): Optional black-box prediction reference.
+            keep_files (bool, default=False): Whether to keep intermediate `.txt` rule files.
+            out_file (str, optional): Custom file path to store generated rule files.
+            show (bool, default=True): whether to immediately display the figure.
+
+        Returns:
+            Tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
+                The figure and axes containing the plotted rule visualization, regardless of `show`.
+
+        Raises:
+            ValueError: If called on a multi-output setup, which is not supported by this function.
         """
         tuned_method = self.tuned_method
         multi_output_cases = tuned_method.MSA_KEYS + tuned_method.MTC_KEYS + tuned_method.MTR_KEYS
@@ -650,8 +671,8 @@ class BellatrexExplain:
 
         if show is True:
             plt.show()
-        else:
-            return fig, axs
+
+        return fig, axs
 
     def predict_survival_curve(self, X, idx):
         """

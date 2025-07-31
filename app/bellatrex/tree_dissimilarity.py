@@ -1,9 +1,9 @@
 import numpy as np
 
-# from TreeExtraction_class import TreeExtraction
+# from tree_extraction import TreeExtraction
 # from TreeRepresentation import Jaccard_trees
 # from TreeRepresentation import Jaccard_rules
-from .TreeRepresentation_utils import tree_splits_to_vector, rule_splits_to_vector
+from .tree_representation_utils import tree_splits_to_vector, rule_splits_to_vector
 
 
 class TreeDissimilarity:
@@ -67,11 +67,11 @@ class TreeDissimilarity:
         return 1 - A  # dissimilarity instead of similarity (A[i,i]= 0)
 
     def distance_matrix_to_float(self, dist_matrix):
-        # avergaes the OFF_DIAGONAL elements of the matrix
+        # averages the OFF_DIAGONAL elements of the matrix
         # if matrix is (1 x 1) return np.nan (division by zero!)
         if dist_matrix.shape[0] != dist_matrix.shape[1]:
-            raise Exception("Non square Matrix?")
-        if dist_matrix.shape[0] > 1 and dist_matrix.shape[0] > 1:
+            raise ValueError(f"Expected a square matrix, but got shape: {dist_matrix.shape}")
+        if dist_matrix.shape[0] > 1 and dist_matrix.shape[1] > 1:
             return dist_matrix.sum() / dist_matrix.shape[0] / (dist_matrix.shape[1] - 1)
         else:
             return np.nan
