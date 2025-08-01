@@ -22,16 +22,19 @@ class TreeDissimilarity:
         self.tree_indeces = tree_indeces
         self.dissim_method = dissim_method
         self.feature_represent = feature_represent
-        self.sample = sample  # is only used for Jaccard_trees dissimilarity
+        self.sample = sample
 
-    def compute_dissimilarity(self):
+    def return_avg_dissim_and_matrix(self):
+        """
+        This is the main function that computes everything we need. TODO move out of the class?
+        """
 
         vectors = self.tree_to_vectors(
             self.clf, self.tree_indeces, self.dissim_method, self.feature_represent, self.sample
         )
 
         diss_matrix = self.vectors_to_dissim_matrix(vectors)
-        avg_dissimilarity = self.distance_matrix_to_float(diss_matrix)
+        avg_dissimilarity = self.compute_avg_dissimilarity(diss_matrix)
 
         return avg_dissimilarity, diss_matrix
 
@@ -43,16 +46,16 @@ class TreeDissimilarity:
 
         if dissim_method == "trees":
             for idx in tree_indeces:
-                # weights "by sample size" or "simple" cases are conisidered
+                # weights "by sample size" or "simple" cases are considered
                 vectors.append(tree_splits_to_vector(clf, idx, feature_represent))
 
         if dissim_method == "rules":
             for idx in tree_indeces:
-                # weights "by sample size" or "simple" cases are conisidered
+                # weights "by sample size" or "simple" cases are considered
                 vectors.append(rule_splits_to_vector(clf, idx, feature_represent, sample))
         return vectors
 
-    def vectors_to_dissim_matrix(self, vector_list):
+    def vectors_to_dissim_matrix(self, vector_list: list):
 
         size = len(vector_list)
         A = np.zeros([size, size])
@@ -66,12 +69,13 @@ class TreeDissimilarity:
 
         return 1 - A  # dissimilarity instead of similarity (A[i,i]= 0)
 
-    def distance_matrix_to_float(self, dist_matrix):
+    def compute_avg_dissimilarity(self, dist_matrix: np.ndarray):
         # averages the OFF_DIAGONAL elements of the matrix
         # if matrix is (1 x 1) return np.nan (division by zero!)
         if dist_matrix.shape[0] != dist_matrix.shape[1]:
             raise ValueError(f"Expected a square matrix, but got shape: {dist_matrix.shape}")
         if dist_matrix.shape[0] > 1 and dist_matrix.shape[1] > 1:
             return dist_matrix.sum() / dist_matrix.shape[0] / (dist_matrix.shape[1] - 1)
+        # In a 2x2 matrix, the average is computed over a single element taken twice, then / 2
         else:
             return np.nan

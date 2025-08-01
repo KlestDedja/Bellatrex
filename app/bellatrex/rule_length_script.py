@@ -1,7 +1,6 @@
 import numpy as np
 import os
 import pandas as pd
-import datetime
 import warnings
 import re
 
@@ -9,21 +8,18 @@ warnings.filterwarnings("ignore", category=UserWarning)
 from datetime import date
 
 today = date.today()
-print("Today's date:", today)
 from sksurv.ensemble import RandomSurvivalForest
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import RandomForestRegressor
 
-# from joblib import Parallel, delayed
 import matplotlib.pyplot as plt
 
 from utilities import get_data_list
-from tree_dissimilarity import TreeDissimilarity
 
+# from tree_dissimilarity import TreeDissimilarity
 # from bellatrex_explain import LocalTreeExtractor
-from IPython import get_ipython
-
-get_ipython().run_line_magic("matplotlib", "inline")
+# from IPython import get_ipython
+# get_ipython().run_line_magic("matplotlib", "inline")
 
 SETUP = "surv"
 PROJ_METHOD = "PCA"
