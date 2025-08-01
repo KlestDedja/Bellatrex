@@ -32,7 +32,9 @@ dev = [
     "pytest",
     "pytest-cov",
     "twine",
-    "black >= 0.24"
+    "black >= 0.24",
+    "nbstripout >= 0.6"
+
 ]
 gui = [
     "dearpygui >=1.6.2, <2.0",
