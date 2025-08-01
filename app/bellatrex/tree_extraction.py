@@ -88,7 +88,7 @@ class TreeExtraction:  # is it convenient if it inherits?
 
     def main_fit(self):
         """
-        this is the main function, does the following:
+        This is the main function, does the following:
             raw_tree data:
             - compute tree loss, (and sort for pre-filtering)
             - computes vectos_to_matrix,
@@ -100,7 +100,7 @@ class TreeExtraction:  # is it convenient if it inherits?
         the steps are:
             - tree_matrix is build, and tree "local loss"(1-faithfulness)
             is calculated
-            - pre_selection_trees phase selects top \lambda trees ( tunable)
+            - pre_selection_trees phase selects top \\lambda trees ( tunable)
             - dim_reduction performs MDS to reduce dimensionality (tunable)
             - cluster_and-extract performs K-means and selects trees closest
             to each cluster center, also outputs cluster sizes
