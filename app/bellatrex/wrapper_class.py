@@ -279,7 +279,7 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
 
     tree_dict["output_format"] = output_format
 
-    if isinstance(tree_obj, SurvivalTree):
+    if isinstance(tree_obj, SurvivalTree): # case SETUP=survival
 
         if tree_dict["unique_times_"] is None and output_format not in ["probability"]:
             raise KeyError("Missing 'unique_times_' in the tree ensemble.")
@@ -320,7 +320,7 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
         else:
             raise ValueError("Input not recognized. Double check")
 
-    # Decision Tree Classifier case here:
+    # case SETUP=binary:
     elif (
         isinstance(tree_obj, DecisionTreeClassifier)
         and tree_obj.n_outputs_ == 1
@@ -329,7 +329,7 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
         partials = tree.value[:, 0, :]  # output for 2 classes, now take average
         tree_dict["values"] = (partials[:, 1] / (partials[:, 0] + partials[:, 1])).reshape(-1, 1)
 
-    elif (
+    elif ( #case SETUP=multi-label
         isinstance(tree_obj, DecisionTreeClassifier)
         and tree_obj.n_outputs_ > 1
         and output_format in ["probability", "auto"]
@@ -337,14 +337,14 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
         partials = tree.value
         tree_dict["values"] = partials[:, :, 1] / (partials[:, :, 0] + partials[:, :, 1])
 
-    elif (
+    elif ( # case SETUP=regression
         isinstance(tree_obj, DecisionTreeRegressor)
         and tree_obj.n_outputs_ == 1
         and output_format in ["probability", "auto"]
     ):
         tree_dict["values"] = tree.value[:, 0, 0].reshape(-1, 1)  # output (n_nodes, 1)
 
-    elif (
+    elif ( # case SETUP=multi-target
         isinstance(tree_obj, DecisionTreeRegressor)
         and tree_obj.n_outputs_ > 1
         and output_format in ["probability", "auto"]

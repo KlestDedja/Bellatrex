@@ -1,5 +1,4 @@
 import warnings
-import os
 import numpy as np
 import pandas as pd
 
@@ -22,20 +21,19 @@ from matplotlib.colorbar import Colorbar
 from .wrapper_class import EnsembleWrapper
 
 
-def is_ci():
-    return os.environ.get("CI", "false").lower() == "true"
+# def is_ci():
+#     return os.environ.get("CI", "false").lower() == "true"
 
 
-def is_pytest():
-    return "PYTEST_CURRENT_TEST" in os.environ
+# def is_pytest():
+#     return "PYTEST_CURRENT_TEST" in os.environ
+
+# def configure_matplotlib():
+#     if is_ci() or is_pytest():
+#         mpl.use("Agg")
 
 
-def configure_matplotlib():
-    if is_ci() or is_pytest():
-        mpl.use("Agg")
-
-
-configure_matplotlib()
+# configure_matplotlib()
 
 
 def safe_element_to_scalar(val):
@@ -288,16 +286,6 @@ def used_feature_set(clf_i, feature_names, sample):
     return unique_features
 
 
-def _check_in_features(feature_names, sample):
-
-    if len(feature_names) != sample.shape[1]:
-        raise ValueError(
-            f"Found {len(feature_names)} features, whereas the sample to explain"
-            f" has shape {sample.shape}. expected {sample.shape[1]} features instead"
-        )
-    else:
-        pass
-
 
 def colormap_from_str(colormap):
     """
@@ -471,139 +459,6 @@ def rule_to_file(clf_i, sample, rule_weight, max_features_print, f):
     )  # feature_name list missing?
 
 
-def rule_to_code(clf_i, traversed_nodes, sample, full_save_name):
-
-    leaf_print = predict_helper(clf_i, sample.values)
-
-    tree_ = clf_i.tree_
-    feature_names = sample.columns  # it's a pd.DataFrame by now
-
-    feature_name = [
-        feature_names[i] if i != _tree.TREE_UNDEFINED else "undefined!" for i in tree_.feature
-    ]
-
-    intervals = {feat: [-np.inf, np.inf] for feat in feature_names}
-
-    if full_save_name is not None:
-        with open(full_save_name, "w+", encoding="utf-8") as f:
-            f.write("###### SAMPLE to explain ######\n")
-
-            for i, k in zip(feature_names, range(len(feature_names))):
-                f.write(f"{str(i):13}: {str(sample[k]):7} \n")
-
-            f.write("\n###############################\n")
-
-            sample = sample.to_numpy().reshape(-1)  # from single column to single line
-
-            def recurse(node, depth, sample, intervals):
-                indent = "  " * depth
-                if tree_.feature[node] != _tree.TREE_UNDEFINED:  # if feature is not undefined (??)
-                    name = feature_name[node]
-                    threshold = tree_.threshold[node]
-                    if traversed_nodes[node] == 1 and sample[tree_.feature[node]] <= threshold:
-                        intervals[name][1] = threshold  # reduce feature upper bound
-                        traversed_nodes[node] = 0
-                        f.write(f"node.{name}:{indent} if {name} <= {threshold}\n")
-
-                    recurse(tree_.children_left[node], depth + 1, sample, intervals)
-
-                    if traversed_nodes[node] == 1 and sample[tree_.feature[node]] > threshold:
-                        intervals[name][0] = threshold  # increase feature lower bound
-                        traversed_nodes[node] = 0
-                        f.write(f"node {name}:{indent} if {name} > {threshold}\n")
-                    recurse(tree_.children_right[node], depth + 1, sample, intervals)
-                else:  # it is undefined, it is therefore a leaf (?)
-                    if traversed_nodes[node] == 1:
-                        # print("leafnode.{}: {}return {}".format(node, indent, leaf_print2)) #tree_.value[node].ravel()
-                        f.write(f"leafnode.{name}:{indent} returns {leaf_print}\n")
-                        f.write(f"predicted:{leaf_print}\n")
-
-            recurse(0, 1, sample, intervals)
-            f.close()
-
-
-def rule_to_code_and_intervals(clf_i, traversed_nodes, sample, feature_names, full_save_name):
-
-    leaf_print = predict_helper(clf_i, sample)
-
-    tree_ = clf_i.tree_
-    feature_name = [feature_names[i] if i != -2 else "undefined!" for i in tree_.feature]
-
-    intervals = {feat: [-np.inf, np.inf] for feat in feature_names}
-
-    if full_save_name is not None:
-        with open(full_save_name, "w+", encoding="utf-8") as f:
-            f.write("###### SAMPLE to explain ######\n")
-
-            for i, k in zip(feature_names, range(len(feature_names))):
-                f.write(f"{str(i):13}: {str(sample[k]):7} \n")
-
-            f.write("\n###############################\n")
-
-            sample = sample.to_numpy().reshape(-1)  # from single column to single line
-
-            def recurse(node, depth, sample, intervals):
-                indent = "  " * depth
-                if tree_.feature[node] != -2:
-                    name = feature_name[node]
-                    threshold = tree_.threshold[node]
-                    if traversed_nodes[node] == 1 and sample[tree_.feature[node]] <= threshold:
-                        intervals[name][1] = threshold  # reduce feature upper bound
-                        traversed_nodes[node] = 0
-                        f.write(f"node.{node}:{indent} if {name} <= {threshold}\n")
-
-                    recurse(tree_.children_left[node], depth + 1, sample, intervals)
-
-                    if traversed_nodes[node] == 1 and sample[tree_.feature[node]] > threshold:
-                        intervals[name][0] = threshold  # increase feature lower bound
-                        traversed_nodes[node] = 0
-                        f.write(f"node.{node}:{indent} if {name} > {threshold}\n")
-                    recurse(tree_.children_right[node], depth + 1, sample, intervals)
-                else:  # it is undefined, it is therefore a leaf (?)
-                    if traversed_nodes[node] == 1:
-                        f.write(f"leafnode.{node}:{indent} return {leaf_print}\n")
-                        f.write(f"predicted:{leaf_print}\n")
-
-            recurse(0, 1, sample, intervals)
-            f.close()
-
-    if full_save_name is not None:
-        with open(
-            full_save_name.split(".")[0] + "-simplif." + full_save_name.split(".")[-1],
-            "w+",
-            encoding="utf-8",
-        ) as f:
-            f.write("###### SAMPLE to explain ######\n")
-
-            for i, k in zip(feature_names, range(len(feature_names))):
-                f.write(f"{str(i):10}: {str(sample[k]):7}\n")
-
-            f.write("\n###### final intervals ########\n")
-
-            for item in intervals:
-                if intervals[item][0] != -np.inf or intervals[item][1] != np.inf:
-                    f.write(
-                        f"{intervals[item][0]:6} < {str(item).center(8)} "
-                        f"<= {intervals[item][1]:6} \n"
-                    )
-            f.close()
-
-            with open(
-                full_save_name, encoding="utf-8"
-            ) as f:  # printing tree-rule structure on console
-                print(f.read())
-
-            print(
-                "###############################"
-            )  # split between tree rule print and leaf interval representation
-
-            with open(
-                full_save_name.split(".")[0] + "-simplif." + full_save_name.split(".")[-1],
-                encoding="utf-8",
-            ) as f:
-                print(f.read())  # printing (simplified) leaf structure on console
-
-
 def custom_axes_limit(bunch_min_value, bunch_max_value, force_in, is_binary):
 
     if force_in is None:
@@ -646,11 +501,8 @@ def custom_formatter(x, pos):  # pos paramter to comply with expected signature
 
 
 def plot_preselected_trees(
-    plot_data_bunch, kmeans, tuned_method, base_font_size=12, show_ax_ticks="auto", colormap=None
+    plot_data_bunch, kmeans, tuned_method, base_font_size=12, show_ax_ticks="auto", colormap=None, alpha_dots=0.5
 ):
-
-    # TODO: add transparency with parameter alpha (default = 1: fully opaque. Accept in [0,1])
-    # accept up to 2 degrees of opaqueness: one for normal dots and one for the selected candidates
 
     small_size = 40
     big_size = 220
@@ -670,9 +522,6 @@ def plot_preselected_trees(
 
     fig = plt.figure(figsize=(10, 4.5))
     axes = fig.subplots(1, 4, gridspec_kw=custom_gridspec)
-    # fig, axes = plt.subplots(1, 4, figsize=(10, 4.5),
-    #                          gridspec_kw=custom_gridspec)
-
     # fig.subplots_adjust(top=0.85)
     # fig.tight_layout()
 
@@ -706,7 +555,7 @@ def plot_preselected_trees(
         cmap=None,
         s=small_size,
         marker="o",
-        edgecolors=(1, 1, 1, 0.5),
+        edgecolors=(1, 1, 1, alpha_dots),
     )
 
     axes[0].scatter(
@@ -820,7 +669,7 @@ def plot_preselected_trees(
             c=real_colors[[not x for x in is_final_candidate]],
             s=small_size,  # cmap=cmap_right,
             marker="o",
-            edgecolors=(1, 1, 1, 0.5),
+            edgecolors=(1, 1, 1, alpha_dots),
         )
 
         axes[2].scatter(
@@ -899,7 +748,7 @@ def plot_preselected_trees(
             norm=norm_preds,
             s=small_size,
             marker="o",
-            edgecolors=(1, 1, 1, 0.5),
+            edgecolors=(1, 1, 1, alpha_dots),
         )
 
         axes[2].scatter(
@@ -928,8 +777,7 @@ def plot_preselected_trees(
         )
         cb2.ax.plot([0, 1], [plot_data_bunch.loss] * 2, color="grey", linewidth=1)
 
-    # end indentation single-target vs multi-target case
-
+    # end of single-target vs multi-target case (de-indent)
     ticks_to_plot = axes[3].get_yticks()
 
     if np.abs(np.min(ticks_to_plot)) < 1e-3 and np.abs(np.max(ticks_to_plot)) > 1e-2:
@@ -949,3 +797,138 @@ def plot_preselected_trees(
         axes[2].set_yticklabels([])
 
     return fig, axes
+
+
+#### LEGACY CODE HERE? COMMENTED OUT, CONSIDER THROWING IT AWAY ####
+
+# def rule_to_code(clf_i, traversed_nodes, sample, full_save_name):
+
+#     leaf_print = predict_helper(clf_i, sample.values)
+
+#     tree_ = clf_i.tree_
+#     feature_names = sample.columns  # it's a pd.DataFrame by now
+
+#     feature_name = [
+#         feature_names[i] if i != _tree.TREE_UNDEFINED else "undefined!" for i in tree_.feature
+#     ]
+
+#     intervals = {feat: [-np.inf, np.inf] for feat in feature_names}
+
+#     if full_save_name is not None:
+#         with open(full_save_name, "w+", encoding="utf-8") as f:
+#             f.write("###### SAMPLE to explain ######\n")
+
+#             for i, k in zip(feature_names, range(len(feature_names))):
+#                 f.write(f"{str(i):13}: {str(sample[k]):7} \n")
+
+#             f.write("\n###############################\n")
+
+#             sample = sample.to_numpy().reshape(-1)  # from single column to single line
+
+#             def recurse(node, depth, sample, intervals):
+#                 indent = "  " * depth
+#                 if tree_.feature[node] != _tree.TREE_UNDEFINED:  # if feature is not undefined (??)
+#                     name = feature_name[node]
+#                     threshold = tree_.threshold[node]
+#                     if traversed_nodes[node] == 1 and sample[tree_.feature[node]] <= threshold:
+#                         intervals[name][1] = threshold  # reduce feature upper bound
+#                         traversed_nodes[node] = 0
+#                         f.write(f"node.{name}:{indent} if {name} <= {threshold}\n")
+
+#                     recurse(tree_.children_left[node], depth + 1, sample, intervals)
+
+#                     if traversed_nodes[node] == 1 and sample[tree_.feature[node]] > threshold:
+#                         intervals[name][0] = threshold  # increase feature lower bound
+#                         traversed_nodes[node] = 0
+#                         f.write(f"node {name}:{indent} if {name} > {threshold}\n")
+#                     recurse(tree_.children_right[node], depth + 1, sample, intervals)
+#                 else:  # it is undefined, it is therefore a leaf (?)
+#                     if traversed_nodes[node] == 1:
+#                         # print("leafnode.{}: {}return {}".format(node, indent, leaf_print2)) #tree_.value[node].ravel()
+#                         f.write(f"leafnode.{name}:{indent} returns {leaf_print}\n")
+#                         f.write(f"predicted:{leaf_print}\n")
+
+#             recurse(0, 1, sample, intervals)
+#             f.close()
+
+
+# def rule_to_code_and_intervals(clf_i, traversed_nodes, sample, feature_names, full_save_name):
+
+#     leaf_print = predict_helper(clf_i, sample)
+
+#     tree_ = clf_i.tree_
+#     feature_name = [feature_names[i] if i != -2 else "undefined!" for i in tree_.feature]
+
+#     intervals = {feat: [-np.inf, np.inf] for feat in feature_names}
+
+#     if full_save_name is not None:
+#         with open(full_save_name, "w+", encoding="utf-8") as f:
+#             f.write("###### SAMPLE to explain ######\n")
+
+#             for i, k in zip(feature_names, range(len(feature_names))):
+#                 f.write(f"{str(i):13}: {str(sample[k]):7} \n")
+
+#             f.write("\n###############################\n")
+
+#             sample = sample.to_numpy().reshape(-1)  # from single column to single line
+
+#             def recurse(node, depth, sample, intervals):
+#                 indent = "  " * depth
+#                 if tree_.feature[node] != -2:
+#                     name = feature_name[node]
+#                     threshold = tree_.threshold[node]
+#                     if traversed_nodes[node] == 1 and sample[tree_.feature[node]] <= threshold:
+#                         intervals[name][1] = threshold  # reduce feature upper bound
+#                         traversed_nodes[node] = 0
+#                         f.write(f"node.{node}:{indent} if {name} <= {threshold}\n")
+
+#                     recurse(tree_.children_left[node], depth + 1, sample, intervals)
+
+#                     if traversed_nodes[node] == 1 and sample[tree_.feature[node]] > threshold:
+#                         intervals[name][0] = threshold  # increase feature lower bound
+#                         traversed_nodes[node] = 0
+#                         f.write(f"node.{node}:{indent} if {name} > {threshold}\n")
+#                     recurse(tree_.children_right[node], depth + 1, sample, intervals)
+#                 else:  # it is undefined, it is therefore a leaf (?)
+#                     if traversed_nodes[node] == 1:
+#                         f.write(f"leafnode.{node}:{indent} return {leaf_print}\n")
+#                         f.write(f"predicted:{leaf_print}\n")
+
+#             recurse(0, 1, sample, intervals)
+#             f.close()
+
+#     if full_save_name is not None:
+#         with open(
+#             full_save_name.split(".")[0] + "-simplif." + full_save_name.split(".")[-1],
+#             "w+",
+#             encoding="utf-8",
+#         ) as f:
+#             f.write("###### SAMPLE to explain ######\n")
+
+#             for i, k in zip(feature_names, range(len(feature_names))):
+#                 f.write(f"{str(i):10}: {str(sample[k]):7}\n")
+
+#             f.write("\n###### final intervals ########\n")
+
+#             for item in intervals:
+#                 if intervals[item][0] != -np.inf or intervals[item][1] != np.inf:
+#                     f.write(
+#                         f"{intervals[item][0]:6} < {str(item).center(8)} "
+#                         f"<= {intervals[item][1]:6} \n"
+#                     )
+#             f.close()
+
+#             with open(
+#                 full_save_name, encoding="utf-8"
+#             ) as f:  # printing tree-rule structure on console
+#                 print(f.read())
+
+#             print(
+#                 "###############################"
+#             )  # split between tree rule print and leaf interval representation
+
+#             with open(
+#                 full_save_name.split(".")[0] + "-simplif." + full_save_name.split(".")[-1],
+#                 encoding="utf-8",
+#             ) as f:
+#                 print(f.read())  # printing (simplified) leaf structure on console
