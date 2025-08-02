@@ -1,8 +1,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-from app.bellatrex.bellatrex_explain import BellatrexExplain
-# from app.bellatrex.wrapper_class import EnsembleWrapper
+from bellatrex.bellatrex_explain import BellatrexExplain
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sksurv.ensemble import RandomSurvivalForest
 
