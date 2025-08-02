@@ -3,17 +3,10 @@ Author: Klest Dedja
 Here we manually test most of the the pipeline, from data loading to model explanation building.
 We cover most of the combinations of tasks, models, and settings.
 """
-
-import os
-
-IS_CI = os.environ.get("CI") == "true"
-
-if IS_CI:
-    import matplotlib
-
-    matplotlib.use("Agg")  # Must be before importing pyplot
-
 import pytest
+import matplotlib
+matplotlib.use("Agg")  # Must be before importing pyplot
+
 import matplotlib.pyplot as plt  # Safe after backend is set
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -30,6 +23,9 @@ from bellatrex.datasets import (
     load_binary_data,
     load_mtr_data,
 )
+
+import os
+IS_CI = os.environ.get("CI") == "true"
 
 MAX_TEST_SAMPLES = 2
 
