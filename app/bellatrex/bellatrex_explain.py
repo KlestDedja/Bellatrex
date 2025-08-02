@@ -443,6 +443,10 @@ class BellatrexExplain:
 
     def plot_overview(self, show=True, plot_max_depth=None, colormap=None, plot_gui=False):
 
+        if self.sample is None or self.tuned_method is None:
+            raise ValueError(
+                "Please call the 'explain()' method first to generate the explanation and set up the sample."
+            )
         sample = self.sample
         tuned_method = self.tuned_method
 
