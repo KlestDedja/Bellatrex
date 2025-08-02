@@ -44,8 +44,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[dev]
 
-      - name: Run core tests only
-        run: pytest -m "not gui"
+      - name: Run only core tests, with coverage:
+        run: pytest -m "not gui" --cov=app.bellatrex --cov-report=xml --cov-report=term
+
+        - name: Upload coverage to Codecov
+          uses: codecov/codecov-action@v4
+          with:
+            token: ${{ secrets.CODECOV_TOKEN }}  # Optional if public repo
+            files: ./coverage.xml
 
   gui-tests:
     name: GUI Tests
