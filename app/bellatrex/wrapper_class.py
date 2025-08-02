@@ -67,9 +67,14 @@ def pack_trained_ensemble(clf, set_up="auto", time_to_bin=None):
         )
 
     tree_list = []
-    for t in range(clf.n_estimators):
-        tree_dict = tree_to_dict(clf, t, output_format=set_up, time_to_bin=time_to_bin)
-        tree_list.append(tree_dict)
+    # Correct access to n_estimators
+    if hasattr(clf, 'n_estimators'):
+        for t in range(clf.n_estimators):
+            tree_dict = tree_to_dict(clf, t, output_format=set_up, time_to_bin=time_to_bin)
+            tree_list.append(tree_dict)
+    else:
+        raise ValueError(f"Unsupported classifier type '{type(clf)}'.")
+
     # load the model in a dict format somewhat compatible with scikit-learn:
     clf_out = tree_list_to_model(tree_list)
 
@@ -230,7 +235,14 @@ class EnsembleWrapper:
         for estimator in self.estimators_:
             path_csr = estimator.decision_path(X)
             all_paths.append(path_csr)
-            n_nodes_ptr.append(n_nodes_ptr[-1] + path_csr.shape[1])
+            # Handle None case for path_csr
+            if path_csr is not None:
+                n_nodes_ptr.append(n_nodes_ptr[-1] + path_csr.shape[1])
+            else:
+                n_nodes_ptr.append(n_nodes_ptr[-1])  # Handle None case gracefully
+                warnings.warn(
+                    "Decision path is None for one of the estimators,  this may have unintendend consequences."
+                )
         all_paths_csr = hstack(all_paths).tocsr()
 
         return all_paths_csr, np.array(n_nodes_ptr)

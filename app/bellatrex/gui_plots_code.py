@@ -351,33 +351,7 @@ def make_interactive_plot(plots, temp_files_dir, plot_size=700, other_inputs=Non
         viewport, height=windowheight + 5 * fullspacing, width=windowwidth + 2 * fullspacing
     )
 
-    # dpg.setup_dearpygui()
-
-    # if not IS_CI:
-    #     dpg.show_viewport()
-    #     dpg.start_dearpygui()
-    # else:
-    #     print("Running in CI: skipping DearPyGui rendering (headless safe)")
-
-    # dpg.destroy_context()
-
     return plots
-
-
-def run_gui(viewport):
-    """
-    Executes the DearPyGui rendering event loop using the provided viewport.
-    This should be called by the user or application logic when ready to display the GUI.
-    Useful in scripts or notebooks. Not suitable for automated testing or CI.
-
-    Parameters:
-        viewport: The DearPyGui viewport object returned by make_interactive_plot.
-    """
-    import dearpygui.dearpygui as dpg
-
-    dpg.show_viewport(viewport)
-    dpg.start_dearpygui()
-    dpg.destroy_context()
 
 
 def plot_with_interface(

@@ -1,14 +1,9 @@
-import os
 import pytest
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sksurv.ensemble import RandomSurvivalForest
 
-import sys
-
-print(sys.path)
-
-from bellatrex import BellatrexExplain
+from bellatrex.bellatrex_explain import BellatrexExplain
 from bellatrex.datasets import (
     load_mlc_data,
     load_regression_data,
