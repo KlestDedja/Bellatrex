@@ -1,6 +1,5 @@
 [project]
 name = "bellatrex"
-# version = "0.3.1"  # For now manually updated in synch with version.txt file, TODO automatic synching
 dynamic = ["version"]
 description = "Explaining Random Forest model predictions by Building Explanations through a LocaLly AccuraTe Rule EXtractor"
 readme = "README.md"
@@ -33,7 +32,8 @@ dev = [
     "pytest-cov",
     "twine",
     "black >= 0.24",
-    "nbstripout >= 0.6"
+    "nbstripout >= 0.6",
+    "vulture >= 2.7"
 
 ]
 gui = [
