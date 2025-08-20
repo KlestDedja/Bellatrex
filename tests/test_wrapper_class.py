@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from scipy.sparse import csr_matrix
-from app.bellatrex.wrapper_class import (
+from bellatrex.wrapper_class import (
     pack_trained_ensemble,
     EnsembleWrapper,
     tree_to_dict,

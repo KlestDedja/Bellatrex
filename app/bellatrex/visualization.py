@@ -24,7 +24,7 @@ def plot_rules(
     base_fontsize=13,
 ):
     """
-    A visualisation tool for BELLATREX, a local random forest explainability
+    A visualization tool for BELLATREX, a local random forest explainability
     toolbox.
 
     @param rules: A list of lists, where each inner list contains strings
@@ -400,7 +400,7 @@ def plot_rules(
 
 
 def parse(rulesplit):
-    """Parses a rulesplit outputted by Bellatrex into a form suitable for visualisation."""
+    """Parses a rulesplit outputted by Bellatrex into a form suitable for visualization."""
 
     # 1) Replace special characters by LaTeX symbols
     rulesplit = rulesplit.replace("≤", r"$\leq$")
