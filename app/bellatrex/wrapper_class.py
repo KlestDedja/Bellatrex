@@ -5,9 +5,9 @@ Created on Mon Oct  9 14:55:55 2023
 @author:       Klest Dedja
 @institution:  KU Leuven
 """
+import warnings
 import numpy as np
 import pandas as pd
-import warnings
 from scipy.sparse import csr_matrix, hstack
 
 from sklearn.utils.validation import check_is_fitted
@@ -50,9 +50,10 @@ def pack_trained_ensemble(clf, set_up="auto", time_to_bin=None):
 
     Notes
     -----
-    This function first checks if the classifier is fitted using the `check_is_fitted` method. The individual trees
-    of the ensemble are then converted into a dictionary format using the `tree_to_dict` function and stored in a
-    list. Finally, the list of tree dictionaries is converted into a model dictionary using `tree_list_to_model`.
+    This function first checks if the classifier is fitted using the `check_is_fitted` method.
+    The individual trees of the ensemble are then converted into a dictionary format using the
+    `tree_to_dict` function and stored in a list. Finally, the list of tree dictionaries is
+    converted into a model dictionary using `tree_list_to_model`.
     """
 
     if not isinstance(clf, (RandomForestRegressor, RandomForestClassifier, RandomSurvivalForest)):
@@ -252,9 +253,7 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
     """
     Compatible with single output trees only, at the moment.
     compatible with SurvivalTree learners of a RandomSurvivalForest
-    (scikit-survival 0.21)
     with DecisionTreeClassifier and DecisionTreeRegressor from RandomForests
-    (scikit-learn 1.2.2)
     """
     tree_obj = clf_obj[idx]
     tree = tree_obj.tree_
