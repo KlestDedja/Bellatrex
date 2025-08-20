@@ -27,7 +27,7 @@ wheels/
 share/python-wheels/
 *.egg-info/
 .installed.cfg
-.coverage
+.coverage*
 *.egg
 MANIFEST
 .pypirc
