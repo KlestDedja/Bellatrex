@@ -9,6 +9,7 @@ class DummyTree:
         self.n_node_samples = np.array([10, 5, 5])
         self.decision_path_called = False
         self.n_features_in_ = n_features
+        self.tree_ = self
     def decision_path(self, X):
         self.decision_path_called = True
         # Return a fake sparse matrix with 1s on the diagonal
