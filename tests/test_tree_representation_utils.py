@@ -1,33 +1,37 @@
-import pytest
-import numpy as np
-import pandas as pd
-from bellatrex import tree_representation_utils as tru
+# Minimal DummyCSR for .toarray() compatibility
+class DummyCSR:
+    def toarray(self):
+        return np.ones(3)
+    def __array__(self, dtype=None):
+        return np.ones(3)
 
+
+# DummyTree for single learner and ensemble
 class DummyTree:
     def __init__(self, n_features=3):
         self.feature = np.array([0, 1, -1])
         self.n_node_samples = np.array([10, 5, 5])
         self.decision_path_called = False
         self.n_features_in_ = n_features
-        self.tree_ = self
+        self.tree_ = self  # For compatibility with code expecting .tree_
     def decision_path(self, X):
         self.decision_path_called = True
-        # Return a fake sparse matrix with 1s on the diagonal
-        class DummyCSR:
-            def toarray(self_inner):
-                return np.eye(X.shape[1])
         return DummyCSR()
 
+# DummyClf for ensemble case
 class DummyClf:
-    def __init__(self):
-        self.estimators_ = [DummyTree()]
-        self.n_features_in_ = 3
-        self.n_estimators = 1
+    def __init__(self, n_features=3):
+        self.estimators_ = [DummyTree(n_features)]
+        self.n_features_in_ = n_features
+        self.tree_ = self.estimators_[0]  # For single-tree compatibility
     def __getitem__(self, idx):
         return self.estimators_[idx]
-    @property
-    def tree_(self):
-        return self.estimators_[0]
+
+
+import pytest
+import numpy as np
+import pandas as pd
+from bellatrex import tree_representation_utils as tru
 
 @pytest.mark.filterwarnings('ignore:MDS matrix has rank 0')
 def test_add_emergency_noise():
@@ -43,12 +47,13 @@ def test_count_rule_length_ensemble():
     assert isinstance(length, (int, float, np.integer, np.floating))
 
 def test_count_rule_length_single():
-    tree = DummyTree()
-    tree.n_features_in_ = 3
     class SingleClf:
-        def __init__(self):
-            self.tree_ = tree
+        def __init__(self, n_features=3):
+            self.tree_ = DummyTree(n_features)
+            self.n_features_in_ = n_features
     clf = SingleClf()
+    # Patch tree.decision_path for single learner case
+    clf.tree_.decision_path = lambda X: np.ones(3)
     sample = pd.DataFrame([[1, 2, 3]])
     length = tru.count_rule_length(clf, 0, sample)
     assert isinstance(length, (int, float, np.integer, np.floating))
