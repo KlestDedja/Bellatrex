@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-from app.bellatrex import tree_representation_utils as tru
+from bellatrex import tree_representation_utils as tru
 
 class DummyTree:
     def __init__(self, n_features=3):
