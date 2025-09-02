@@ -31,19 +31,19 @@ class DummyClf:
 import pytest
 import numpy as np
 import pandas as pd
-from bellatrex import tree_representation_utils as tru
+from bellatrex import tree_representation_utils as tr_utils
 
 @pytest.mark.filterwarnings('ignore:MDS matrix has rank 0')
 def test_add_emergency_noise():
     mat = np.zeros((3, 3))
-    noisy = tru.add_emergency_noise(mat, noise_level=1e-2)
+    noisy = tr_utils.add_emergency_noise(mat, noise_level=1e-2)
     assert noisy.shape == mat.shape
     assert not np.allclose(noisy, mat)
 
 def test_count_rule_length_ensemble():
     clf = DummyClf()
     sample = pd.DataFrame([[1, 2, 3]])
-    length = tru.count_rule_length(clf, 0, sample)
+    length = tr_utils.count_rule_length(clf, 0, sample)
     assert isinstance(length, (int, float, np.integer, np.floating))
 
 def test_count_rule_length_single():
@@ -55,37 +55,37 @@ def test_count_rule_length_single():
     # Patch tree.decision_path for single learner case
     clf.tree_.decision_path = lambda X: np.ones(3)
     sample = pd.DataFrame([[1, 2, 3]])
-    length = tru.count_rule_length(clf, 0, sample)
+    length = tr_utils.count_rule_length(clf, 0, sample)
     assert isinstance(length, (int, float, np.integer, np.floating))
 
 def test_tree_splits_to_vector_simple():
     clf = DummyClf()
-    vec = tru.tree_splits_to_vector(clf, 0, split_weight="simple")
+    vec = tr_utils.tree_splits_to_vector(clf, 0, split_weight="simple")
     assert isinstance(vec, np.ndarray)
     assert vec.shape[0] == clf.n_features_in_
 
 def test_tree_splits_to_vector_by_samples():
     clf = DummyClf()
-    vec = tru.tree_splits_to_vector(clf, 0, split_weight="by_samples")
+    vec = tr_utils.tree_splits_to_vector(clf, 0, split_weight="by_samples")
     assert isinstance(vec, np.ndarray)
     assert vec.shape[0] == clf.n_features_in_
 
 def test_tree_splits_to_vector_invalid():
     clf = DummyClf()
     with pytest.raises(KeyError):
-        tru.tree_splits_to_vector(clf, 0, split_weight="invalid")
+        tr_utils.tree_splits_to_vector(clf, 0, split_weight="invalid")
 
 def test_rule_splits_to_vector_simple():
     clf = DummyClf()
     sample = np.array([1, 2, 3])
-    vec = tru.rule_splits_to_vector(clf, 0, feature_represent="simple", sample=sample)
+    vec = tr_utils.rule_splits_to_vector(clf, 0, feature_represent="simple", sample=sample)
     assert isinstance(vec, np.ndarray)
     assert vec.shape[0] == clf.n_features_in_
 
 def test_rule_splits_to_vector_weighted():
     clf = DummyClf()
     sample = np.array([1, 2, 3])
-    vec = tru.rule_splits_to_vector(clf, 0, feature_represent="weighted", sample=sample)
+    vec = tr_utils.rule_splits_to_vector(clf, 0, feature_represent="weighted", sample=sample)
     assert isinstance(vec, np.ndarray)
     assert vec.shape[0] == clf.n_features_in_
 
@@ -93,4 +93,4 @@ def test_rule_splits_to_vector_invalid():
     clf = DummyClf()
     sample = np.array([1, 2, 3])
     with pytest.raises(KeyError):
-        tru.rule_splits_to_vector(clf, 0, feature_represent="invalid", sample=sample)
+        tr_utils.rule_splits_to_vector(clf, 0, feature_represent="invalid", sample=sample)
