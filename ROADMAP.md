@@ -5,7 +5,8 @@ This file sketches the direction of the project. It’s meant as a _guidepost, n
 ## Near-term goals (v0.x series)
 
 - Expand integration tests
-- Track coverage % in CI and target >80%.
+- Track coverage % in CI and target >80%. To reach this:
+    - Refactor the GUI code completely
 
 ### New features
 
