@@ -201,7 +201,9 @@ class BellatrexExplain:
         else:
             if self.verbose >= 0:
                 print("Fitting the model...", end="")
-            self.clf.fit(X, y, self.n_jobs)
+            if hasattr(self.clf, "n_jobs"):
+                self.clf.n_jobs = self.n_jobs
+            self.clf.fit(X, y)
             if self.verbose >= 0:
                 print("fitting complete")
 
@@ -685,7 +687,7 @@ class BellatrexExplain:
         if not self.set_up in ["surv", "survival"]:
             raise ValueError("Input set-up is not a time-to-event!")
         else:
-            raise ValueError("Not implemented yet")
+            raise NotImplementedError("predict_survival_curve is not implemented yet.")
 
     def predict_median_surv_time(self, X, idx):
         """
@@ -694,4 +696,4 @@ class BellatrexExplain:
         if not self.set_up in ["surv", "survival"]:
             raise ValueError("Input set-up is not a time-to-event!")
         else:
-            raise ValueError("Not implemented yet")
+            raise NotImplementedError("predict_median_surv_time is not implemented yet.")
