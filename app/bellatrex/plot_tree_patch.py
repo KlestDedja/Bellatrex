@@ -203,8 +203,11 @@ class _BaseTreeExporter(object):
             alpha = (value - self.colors["bounds"][0]) / (
                 self.colors["bounds"][1] - self.colors["bounds"][0]
             )
-        # unpack numpy scalars
-        alpha = float(alpha)
+        # unpack numpy scalars (handle deprecation warning)
+        try:
+            alpha = float(alpha.item())
+        except AttributeError:
+            alpha = float(alpha)
         # compute the color as alpha against white
         color = [int(round(alpha * c + (1 - alpha) * 255, 0)) for c in color]
         # Return html color code in #RRGGBB format
