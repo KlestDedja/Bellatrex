@@ -10,6 +10,7 @@
 [![DOI](https://img.shields.io/badge/DOI-10.1109%2FACCESS.2023.3268866-blue)](https://doi.org/10.1109/ACCESS.2023.3268866)
 [![PyPI version](https://img.shields.io/pypi/v/bellatrex.svg)](https://pypi.org/project/bellatrex/)
 [![codecov](https://codecov.io/gh/Klest94/Bellatrex/branch/main-dev/graph/badge.svg)](https://codecov.io/gh/Klest94/Bellatrex)
+[![Roadmap](https://img.shields.io/badge/roadmap-open-blue)](./ROADMAP.md)
 
 
 
