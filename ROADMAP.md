@@ -1,6 +1,7 @@
 # Roadmap
 
-This file sketches the direction of the project. It’s meant as a _guidepost, not a contract_: priorities can shift as we learn more.
+This file sketches the direction of the project. It’s meant as a _guidepost_ and priorities can shift over time.
+No temporal line is suggested, but ratheer a list of things to do and ideas to pursue.
 
 ## Near-term goals (v0.x series)
 
