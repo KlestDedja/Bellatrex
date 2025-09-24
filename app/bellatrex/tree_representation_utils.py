@@ -22,28 +22,6 @@ def add_emergency_noise(tree_matrix, noise_level=1e-5):
     return tree_matrix + noise * noise_level
 
 
-def count_rule_length(clf, idx1, sample):  # it's a SIMILARITY measure
-
-    # DTree1 = clf.estimators_[idx1].tree_ #does it work for both binary and survival data??
-    # for t, idx in zip([idx1, idx2], [0,1]):
-    # DT_splits = clf[idx1].tree_.feature
-    # surv_tree = clf[idx1]
-    # keep only nodes ( indeces) that go through sample's path
-
-    if hasattr(clf, "n_estimators"):  # ensemble case
-
-        tree_path = clf[idx1].tree_.decision_path(
-            sample.to_numpy().reshape(1, -1).astype(np.float32)
-        )
-        tree_path = tree_path.toarray().reshape(-1)
-
-    else:  # single learner case
-
-        tree_path = clf.tree_.decision_path(sample.to_numpy().reshape(1, -1).astype(np.float32))
-
-    return np.sum(tree_path) - 1
-
-
 def tree_splits_to_vector(clf, idx1, split_weight=None):  # it's a SIMILARITY measure
 
     the_tree = clf.estimators_[idx1].tree_  # does it work for both binary and survival data??
@@ -76,16 +54,14 @@ def rule_splits_to_vector(clf, idx1, feature_represent, sample):  # it's a SIMIL
     the_tree = clf.estimators_[idx1].tree_  # does it work for both binary and survival data??
 
     if not isinstance(sample, np.ndarray):  # pd.Series or smth else ( list? or..?)
-        use_sample = sample.to_numpy()
-    else:
-        use_sample = sample
+        sample = sample.to_numpy()
 
     # for t, idx in zip([idx1, idx2], [0,1]):
     tree_splits = clf[idx1].tree_.feature
     # surv_tree = clf[idx1]
 
-    # keep only nodes ( indeces) that go through sample's path
-    tree_path = clf[idx1].tree_.decision_path(use_sample.reshape(1, -1).astype(np.float32))
+    # keep only nodes ( indices) that go through sample's path
+    tree_path = clf[idx1].tree_.decision_path(sample.reshape(1, -1).astype(np.float32))
     tree_path = tree_path.toarray().reshape(-1)
 
     # store feature splits along path ( exclude last element: it's a leaf!)
