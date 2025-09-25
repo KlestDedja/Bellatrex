@@ -67,6 +67,22 @@ version = { attr = "bellatrex.__version__" }
 [tool.setuptools.package-data]
 "bellatrex.datasets" = ["*.csv"]
 
+ # Docker related settings, one of the goals is to obtain consistent coverage reports
+[tool.coverage.run]
+source = ["app/bellatrex"]
+branch = true
+parallel = true
+concurrency = ["thread", "multiprocessing"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+
+
+
 [build-system]
 requires = ["setuptools >= 64"]
 build-backend = "setuptools.build_meta"
+
+

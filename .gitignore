@@ -32,6 +32,11 @@ share/python-wheels/
 MANIFEST
 .pypirc
 
+# docker related content
+*.tar
+*.img
+docker-data/
+
 # Environments
 .env
 .venv

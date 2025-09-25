@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd /work
+
+echo "[btrex-ci] Installing bellatrex in editable mode with dev and gui extras..."
+python -m pip install --upgrade pip >/dev/null
+# If you don't have a "dev" and "gui" extra, change to: pip install -e .
+pip install -e ".[dev,gui]" >/dev/null
+
+# Ensure your package is importable from app/
+export PYTHONPATH="${PYTHONPATH:-}:$(pwd)/app"
+
+# Ensure subprocess/multiprocessing coverage is captured (coverage reads pyproject.toml)
+export COVERAGE_PROCESS_START="$(pwd)/pyproject.toml"
+
+if [[ "${1:-}" == "--help" ]]; then
+  echo "Usage: btrex-ci [pytest-args...]"
+  echo "Examples:"
+  echo "  btrex-ci tests --cov=bellatrex --cov-report=term-missing:skip-covered --cov-report=xml"
+  echo "  btrex-ci tests/test_plot_tree_patch.py --cov=bellatrex.plot_tree_patch -q"
+  exit 0
+fi
+
+echo "[btrex-ci] Running pytest $*"
+pytest "$@"
