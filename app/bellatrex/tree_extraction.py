@@ -167,7 +167,7 @@ class TreeExtraction:  # is it convenient if it inherits?
         # for MDS, a transformation to distance square matrix is needed first
         elif self.proj_method == "MDS":
 
-            tree_matrix = self.tranform_to_symm_matrix(tree_matrix)
+            tree_matrix = self.transform_to_symm_matrix(tree_matrix)
             # in case distances all collapsed to 0
             if np.abs(tree_matrix).max() < 1e-6:
                 tree_matrix = add_emergency_noise(tree_matrix)
@@ -175,7 +175,7 @@ class TreeExtraction:  # is it convenient if it inherits?
         else:
             raise KeyError(f"projection method '{self.proj_method}' not recognised.")
 
-        # at this point, the a tree_matrix has been computed and is in the appropriate format (symmetric)
+        # by now, the tree_matrix has been computed and is in the appropriate format (symmetric)
 
         # dim_reduction inherits self.n_dims and self.proj_method
         # dim_reduction calls either PCA or MDS, according to proj-method variable
@@ -183,7 +183,7 @@ class TreeExtraction:  # is it convenient if it inherits?
             tree_matrix
         )  # from pandas to numpy. Indexes stored in Bunch
 
-        # clustering step (indeces retained in Bunch object)
+        # clustering step (indices retained in Bunch object)
         selected_bunch = Bunch(
             proj_data=proj_trees,
             matrix=tree_matrix,
@@ -193,7 +193,7 @@ class TreeExtraction:  # is it convenient if it inherits?
             rf_pred=rf_pred,
             set_up=self.set_up,
         )
-        # numpy 2d-array (lambda,2), (lamda, lambda), orig. indeces, losses
+        # numpy 2d-array (lambda,2), (lambda, lambda), orig. indices, losses
         if self.n_clusters > 1:  # K-Means is performed on the projected trees
             with (
                 warnings.catch_warnings()
@@ -237,12 +237,6 @@ class TreeExtraction:  # is it convenient if it inherits?
             tree_preds = np.zeros(self.clf.n_estimators)
 
         my_pre_select_loss = np.zeros(self.clf.n_estimators)
-
-        # NOTE:
-        # = As of sklearn v.1.1.3 clf[k] does not inherit feature_names_in_
-        #   from its parent clf (trained tree ensemble on X_train a DataFrame)
-        #   for this reason, whenever clf[k].predict(sample) is called,
-        #   we call it on the sample.values instead
 
         # GOAL HERE is to store tree predictions in a consistent format.
         # Later formatting is performed with other functions
@@ -289,8 +283,8 @@ class TreeExtraction:  # is it convenient if it inherits?
     def jaccard_pair_distance(self, tree_1, tree_2):
         return np.sum(np.minimum(tree_1, tree_2)) / np.sum(np.maximum(tree_1, tree_2))
 
-    def tranform_to_symm_matrix(self, matrix_df_input):
-        # assumes the input is a DatFrame (the DataFrame is create just before this
+    def transform_to_symm_matrix(self, matrix_df_input):
+        # assumes the input is a DataFrame (the DataFrame is create just before this
         # function is called, so I wouldn't even bother checking for type
         matrix_input = matrix_df_input.values  # to np.ndarray
 
@@ -322,7 +316,7 @@ class TreeExtraction:  # is it convenient if it inherits?
 
     def dim_reduction(self, selected_trees):
 
-        # setting up "tru"number of output dimensions, furtrmore
+        # setting up "true" number of output dimensions, furtrmore
         # prevent errors from raising if n_dims > n_samples
         if self.n_dims is None:  # useful for MDS only (PCA can skip this part)
             true_dims = min(selected_trees.shape[0], selected_trees.shape[1])  # keep all dimensions
