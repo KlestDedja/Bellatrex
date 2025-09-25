@@ -41,4 +41,4 @@ ENV/
 env.bak/
 venv.bak/
 .github/instructions/*
-coverage.xml
+coverage.*
