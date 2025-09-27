@@ -537,7 +537,7 @@ class BellatrexExplain:
 
         return fig, axes  # plt.gcf()
 
-    def create_rules_txt(self, out_file=None):
+    def create_rules_txt(self, out_dir="explanations_text", out_file=None):
         """
         create rules in txt file
         """
@@ -548,15 +548,26 @@ class BellatrexExplain:
             self.sample = pd.DataFrame(self.sample)
             self.sample.columns = [f"X_{i}" for i in range(len(self.sample.columns))]
 
-        if out_file is None:
-            current_file_dir = os.path.dirname(os.path.abspath(__file__))  # app/bellatrex
+        # prepare out_dir directory to store txt files
+        current_file_dir = os.path.dirname(os.path.abspath(__file__))  # app/bellatrex
+
+        if isinstance(out_dir, str):
             temp_files_dir = os.path.join(
-                current_file_dir, "explanations_text"
-            )  # app/bellatrex/explanations_text
+                current_file_dir, out_dir
+            )  # default string leads to: app/bellatrex/explanations_text
             os.makedirs(temp_files_dir, exist_ok=True)
+        elif out_dir is None:
+            temp_files_dir = os.path.join(
+                current_file_dir, "temp_files"
+            )  # None points to path: app/bellatrex/temp_files
+            os.makedirs(temp_files_dir, exist_ok=True)
+        else:
+            raise ValueError("out_dir must be a string or None. Found:", type(out_dir))
+
+        if out_file is None:
             out_file = os.path.join(temp_files_dir, f"Btrex_sample_{self.sample_iloc}.txt")
         else:
-            out_file = os.path.join(os.getcwd(), out_file)
+            out_file = os.path.join(temp_files_dir, out_file)
 
         with open(out_file, "w+", encoding="utf8") as f:  # re-initialize file: overwrite in case
             pass

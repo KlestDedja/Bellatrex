@@ -3,8 +3,10 @@ Author: Klest Dedja
 Here we manually test most of the the pipeline, from data loading to model explanation building.
 We cover most of the combinations of tasks, models, and settings.
 """
+
 import pytest
 import matplotlib
+
 matplotlib.use("Agg")  # Must be before importing pyplot
 
 import matplotlib.pyplot as plt  # Safe after backend is set
@@ -25,6 +27,7 @@ from bellatrex.datasets import (
 )
 
 import os
+
 IS_CI = os.environ.get("CI") == "true"
 
 MAX_TEST_SAMPLES = 2
@@ -107,7 +110,9 @@ def test_create_rules_txt():
         for i in range(MAX_TEST_SAMPLES):
             btrex_fitted.explain(X_test, i)
             out_file = "test_rules.txt"
-            btrex_fitted.create_rules_txt(out_file=out_file)
+            out_file, out_file_extra = btrex_fitted.create_rules_txt(
+                out_dir="explanations_text", out_file=out_file
+            )
             assert os.path.exists(out_file), "Rules file was not created"
 
             with open(out_file, "r", encoding="utf8") as f:
@@ -118,9 +123,10 @@ def test_create_rules_txt():
                 btrex_fitted.p_grid["n_clusters"]
             )
             os.remove(out_file)
-            # If there are more trees than clusters, check for extra rules file
+            # If there are more trees than clusters, check for extra rules file and remove it
             if enough_trees:
-                out_file_extra = out_file.replace(".txt", "_extra.txt")
+
+                assert os.path.exists(out_file_extra), "Rules file was not created"
                 with open(out_file_extra, "r", encoding="utf8") as f:
                     content = f.read()
                     assert len(content) > 0, "Rules file is empty."
