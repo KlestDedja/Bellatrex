@@ -1,4 +1,5 @@
 import warnings
+import os
 import numpy as np
 import pandas as pd
 
@@ -27,13 +28,6 @@ from .wrapper_class import EnsembleWrapper
 
 # def is_pytest():
 #     return "PYTEST_CURRENT_TEST" in os.environ
-
-# def configure_matplotlib():
-#     if is_ci() or is_pytest():
-#         mpl.use("Agg")
-
-
-# configure_matplotlib()
 
 
 def safe_element_to_scalar(val):
@@ -286,7 +280,6 @@ def used_feature_set(clf_i, feature_names, sample):
     return unique_features
 
 
-
 def colormap_from_str(colormap):
     """
     Function for the user to customize the colormap.
@@ -501,7 +494,13 @@ def custom_formatter(x, pos):  # pos paramter to comply with expected signature
 
 
 def plot_preselected_trees(
-    plot_data_bunch, kmeans, tuned_method, base_font_size=12, show_ax_ticks="auto", colormap=None, alpha_dots=0.5
+    plot_data_bunch,
+    kmeans,
+    tuned_method,
+    base_font_size=12,
+    show_ax_ticks="auto",
+    colormap=None,
+    alpha_dots=0.5,
 ):
 
     small_size = 40

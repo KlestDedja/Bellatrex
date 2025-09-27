@@ -5,7 +5,7 @@ bellatrex package initializer.
 @author: Klest Dedja
 """
 
-from typing import TYPE_CHECKING  # so that pylance checker does not complain
+# from typing import TYPE_CHECKING  # so that pylance checker does not complain
 
 try:
     from .__version__ import __version__

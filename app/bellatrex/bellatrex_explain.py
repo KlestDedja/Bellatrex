@@ -537,42 +537,56 @@ class BellatrexExplain:
 
         return fig, axes  # plt.gcf()
 
+    def _pick_base_dir(self, out_dir_name="explanations-output"):
+        """
+        Choose a base dir that callers can override via env.
+        No tempfile, no site-packages writes, no __file__.
+        """
+        env_dir = os.getenv("BELLATREX_EXPLAIN_DIR")
+        if env_dir:
+            return env_dir
+        # default to cwd/explanations-output
+        return os.path.join(os.getcwd(), out_dir_name)
+
     def create_rules_txt(self, out_dir="explanations-output", out_file=None):
         """
-        create rules in txt file
+        Create rules with Bellatrex and stores them as txt files.
+
+        Output path management:
+        - 'out_file' is the filename. If None, defaults to 'Btrex_sample_<iloc>.txt'.
+        - 'out_dir' controls location:
+            * absolute path: used as-is
+            * relative path / "." / "": resolved under base = BELLATREX_EXPLAIN_DIR or <cwd>/explanations-output
+        - Never writes near site-packages, no tempfile fallback: ensure Docker/CI sets a writable workdir or env.
         """
         tuned_method = self.tuned_method
 
-        # fixing columns names, making sure they exist:
+        # Ensure DataFrame with stable column names
         if isinstance(self.sample, np.ndarray):
             self.sample = pd.DataFrame(self.sample)
             self.sample.columns = [f"X_{i}" for i in range(len(self.sample.columns))]
 
-        # prepare out_dir directory to store txt files
-        current_file_dir = os.path.dirname(os.path.abspath(__file__))  # app/bellatrex
-
-        if isinstance(out_dir, str):
-            temp_files_dir = os.path.join(
-                current_file_dir, out_dir
-            )  # default string leads to: app/bellatrex/explanations_text
-            os.makedirs(temp_files_dir, exist_ok=True)
-        # elif out_dir is None:
-        #     temp_files_dir = os.path.join(
-        #         current_file_dir, "temp_files"
-        #     )  # None points to path: app/bellatrex/temp_files
-        #     os.makedirs(temp_files_dir, exist_ok=True)
+        # 1) Resolve target_dir from out_dir (absolute respected; relative goes under base)
+        if os.path.isabs(out_dir):
+            target_dir = out_dir
         else:
-            raise ValueError("out_dir must be a string. Found:", out_dir, type(out_dir))
+            base = self._pick_base_dir(out_dir_name="explanations-output")
+            target_dir = base if out_dir in ("", ".") else os.path.join(base, out_dir)
 
-        if out_file is None:
-            out_file = os.path.join(temp_files_dir, f"Btrex_sample_{self.sample_iloc}.txt")
-        else:
-            out_file = os.path.join(temp_files_dir, out_file)
+        # filename comes ONLY from out_file or default; strip any accidental path parts
+        filename = out_file or f"Btrex_sample_{self.sample_iloc}.txt"
+        filename = os.path.basename(filename)  # enforce "filename only"
 
-        with open(out_file, "w+", encoding="utf8") as f:  # re-initialize file: overwrite in case
+        main_path = os.path.join(target_dir, filename)
+        stem, _ = os.path.splitext(main_path)
+        extra_path = f"{stem}_extra.txt"
+
+        os.makedirs(os.path.dirname(main_path), exist_ok=True)
+
+        # 5) Write main file
+        with open(main_path, "w", encoding="utf8"):
             pass
-
-        with open(out_file, "a+", encoding="utf8") as f:
+        with open(main_path, "a", encoding="utf8") as f:
             for idx, clus_size in zip(tuned_method.final_trees_idx, tuned_method.cluster_sizes):
                 rule_to_file(
                     self.clf[idx],
@@ -582,32 +596,26 @@ class BellatrexExplain:
                     f,
                 )
             f.write(f"Bellatrex prediction: {self.surrogate_pred_str}")
-            f.close()
 
-        file_extra = out_file.replace(".txt", "_extra.txt")
-
-        with open(file_extra, "w+", encoding="utf8") as f:
+        # 6) Write extra file
+        with open(extra_path, "w", encoding="utf8"):
             pass
-
-        with open(file_extra, "a+", encoding="utf8") as f:
+        with open(extra_path, "a", encoding="utf8") as f:
             for idx in range(self.clf.n_estimators):
                 if idx not in tuned_method.final_trees_idx:
                     rule_to_file(self.clf[idx], tuned_method.sample, 0, self.MAX_FEATURE_PRINT, f)
-            f.close()
 
+        # 7) Parse & validate
         rules, preds, baselines, weights, other_preds = read_rules(
-            file=out_file, file_extra=file_extra
+            file=main_path, file_extra=extra_path
         )
-
-        # Ensure consistent formatting for multi-output cases
-        if isinstance(preds[0], list):  # Multi-output case
+        if isinstance(preds[0], list):
             preds = [list(map(float, pred)) for pred in preds]
         if isinstance(baselines[0], list):
             baselines = [list(map(float, baseline)) for baseline in baselines]
-
         _input_validation(rules, preds, baselines, weights)
 
-        return out_file, file_extra
+        return main_path, extra_path
 
     def plot_visuals(
         self,

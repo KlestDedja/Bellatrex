@@ -156,24 +156,6 @@ def test_predict_median_surv_time(mock_survival_clf, mock_survival_data):
 #     assert hasattr(explainer, "tuned_method")
 
 
-# def test_plot_overview_verbose(monkeypatch, mock_clf, mock_data):
-#     X, y = mock_data
-#     explainer = BellatrexExplain(mock_clf, verbose=2)
-#     explainer.fit(X, y)
-
-#     class Dummy:
-#         final_trees_idx = [0]
-#         cluster_sizes = [1]
-#         preselect_represent_cluster_trees = lambda self: (None, None)
-
-#     explainer.tuned_method = Dummy()
-#     explainer.sample = X.iloc[[0]]
-#     explainer.surrogate_pred_str = "0.0"
-#     explainer.clf = mock_clf
-#     fig, axes = explainer.plot_overview(show=False)
-#     assert fig is not None
-
-
 def test_create_rules_txt_file(monkeypatch, mock_clf, mock_data):
     X, y = mock_data
     explainer = BellatrexExplain(mock_clf)
@@ -195,7 +177,7 @@ def test_create_rules_txt_file(monkeypatch, mock_clf, mock_data):
     monkeypatch.setattr("bellatrex.visualization.read_rules", lambda **k: ([1], [1], [1], [1], [1]))
     monkeypatch.setattr("bellatrex.visualization_extra._input_validation", lambda *a, **k: None)
     out_file, file_extra = explainer.create_rules_txt(
-        out_dir="temp_files", out_file="testing_rules.txt"
+        out_dir="explanations-output", out_file="testing_rules.txt"
     )
     assert os.path.exists(out_file)
     assert os.path.exists(file_extra)
