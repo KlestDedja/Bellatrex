@@ -7,7 +7,7 @@ No temporal line is suggested, but ratheer a list of things to do and ideas to p
 
 - Expand integration tests
 - Track coverage % in CI and target >80%. To reach this:
-    - Refactor the GUI code completely
+    - Refactor the GUI code completely, possibly get rid of _dearpygui_
 
 ### New features
 
