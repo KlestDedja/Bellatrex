@@ -111,7 +111,7 @@ def test_create_rules_txt():
             btrex_fitted.explain(X_test, i)
             out_file = "test_rules.txt"
             out_file, out_file_extra = btrex_fitted.create_rules_txt(
-                out_dir="explanations_text", out_file=out_file
+                out_dir="explanations-output", out_file=out_file
             )
             assert os.path.exists(out_file), "Rules file was not created"
 

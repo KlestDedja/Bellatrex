@@ -537,7 +537,7 @@ class BellatrexExplain:
 
         return fig, axes  # plt.gcf()
 
-    def create_rules_txt(self, out_dir="explanations_text", out_file=None):
+    def create_rules_txt(self, out_dir="explanations-output", out_file=None):
         """
         create rules in txt file
         """
@@ -556,13 +556,13 @@ class BellatrexExplain:
                 current_file_dir, out_dir
             )  # default string leads to: app/bellatrex/explanations_text
             os.makedirs(temp_files_dir, exist_ok=True)
-        elif out_dir is None:
-            temp_files_dir = os.path.join(
-                current_file_dir, "temp_files"
-            )  # None points to path: app/bellatrex/temp_files
-            os.makedirs(temp_files_dir, exist_ok=True)
+        # elif out_dir is None:
+        #     temp_files_dir = os.path.join(
+        #         current_file_dir, "temp_files"
+        #     )  # None points to path: app/bellatrex/temp_files
+        #     os.makedirs(temp_files_dir, exist_ok=True)
         else:
-            raise ValueError("out_dir must be a string or None. Found:", type(out_dir))
+            raise ValueError("out_dir must be a string. Found:", out_dir, type(out_dir))
 
         if out_file is None:
             out_file = os.path.join(temp_files_dir, f"Btrex_sample_{self.sample_iloc}.txt")
