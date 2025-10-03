@@ -9,7 +9,7 @@
 [![Windows CI](https://github.com/Klest94/Bellatrex/actions/workflows/test-windows.yml/badge.svg?branch=main-dev)](https://github.com/Klest94/Bellatrex/actions/workflows/test-windows.yml)
 [![DOI](https://img.shields.io/badge/DOI-10.1109%2FACCESS.2023.3268866-blue)](https://doi.org/10.1109/ACCESS.2023.3268866)
 [![PyPI version](https://img.shields.io/pypi/v/bellatrex.svg)](https://pypi.org/project/bellatrex/)
-[![codecov](https://codecov.io/gh/Klest94/Bellatrex/branch/main-dev/graph/badge.svg)](https://app.codecov.io/github/KlestDedja/Bellatrex) 
+[![codecov](https://codecov.io/github/KlestDedja/Bellatrex/branch/main-dev/graph/badge.svg)](https://app.codecov.io/github/KlestDedja/Bellatrex) 
 [![Roadmap](https://img.shields.io/badge/roadmap-open-blue)](./ROADMAP.md)
 
 
