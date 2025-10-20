@@ -318,9 +318,7 @@ class BellatrexExplain:
                     candidate = trees_extract.set_params(**params).main_fit()
                     perf = candidate.score(self.fidelity_measure, self.ys_oracle)
                 except ConvergenceWarning as e:
-                    warnings.warn(
-                        f"Something went wrong (ConvergenceWarning). {e}, skipping candidate: {params}"
-                    )
+                    warnings.warn(f"Reached ConvergenceWarning: {e}, skipping candidate: {params}")
                     perf = -np.inf
                 # except KeyboardInterrupt as e:
                 #     raise e
@@ -423,8 +421,7 @@ class BellatrexExplain:
             surrogate_pred += predict_helper(self.clf[tree_idx], sample.values) * cluster_weight
 
         # Store surrogate prediction directly in BellatrexExplain instance
-        self.surrogate_prediction = surrogate_pred
-
+        # self.surrogate_prediction = surrogate_pred
         surrogate_pred_str = frmt_pretty_print(surrogate_pred, digits_single=4)
 
         if self.verbose >= 1:
@@ -443,11 +440,13 @@ class BellatrexExplain:
 
         return self  # Return self for method chaining
 
-    def plot_overview(self, show=True, plot_max_depth=None, colormap=None, plot_gui=False):
+    def plot_overview(
+        self, show=True, plot_max_depth=None, colormap=None, plot_gui=False, temp_gui_dir=None
+    ):
 
         if self.sample is None or self.tuned_method is None:
             raise ValueError(
-                "Please call the 'explain()' method first to generate the explanation and set up the sample."
+                "Call 'explain()' method first, to generate the explanation and set up the sample."
             )
         sample = self.sample
         tuned_method = self.tuned_method
@@ -510,15 +509,18 @@ class BellatrexExplain:
 
             if not show:
                 warnings.warn(
-                    "Plots are shown immediately while in an interactive session (plot_gui = True).\n"
-                    "Show = False is therefore ignored."
+                    "Plots are shown immediately while in an interactive session (plot_gui = True)."
+                    "\nShow = False is therefore ignored."
                 )
 
-            # A 'temporary' directory is used to store, read and clear files created during the User interactions:
-            current_file_dir = os.path.dirname(os.path.abspath(__file__))  # app/bellatrex
-            temp_files_dir = os.path.join(
-                current_file_dir, "temp_files"
-            )  # app/bellatrex/temp_files
+            # A temporary directory is used to store, read and clear files created during
+            #  the User interactions, a writable GUI temp dir (no __file__, no site-packages)
+            base_dir = self._pick_base_dir(out_dir_name="temp-plots")
+            temp_files_dir = (
+                temp_gui_dir
+                if (isinstance(temp_gui_dir, str) and temp_gui_dir.strip())
+                else base_dir
+            )
             os.makedirs(temp_files_dir, exist_ok=True)
 
             # Call plot_with_interface and retrieve the interactive plots
@@ -526,7 +528,7 @@ class BellatrexExplain:
                 plot_data_bunch,
                 plot_kmeans,
                 tuned_method,
-                temp_files_dir,
+                temp_files_dir=temp_files_dir,
                 max_depth=plot_max_depth,
                 colormap=colormap,
             )
@@ -540,12 +542,21 @@ class BellatrexExplain:
     def _pick_base_dir(self, out_dir_name="explanations-output"):
         """
         Choose a base dir that callers can override via env.
-        No tempfile, no site-packages writes, no __file__.
         """
         env_dir = os.getenv("BELLATREX_EXPLAIN_DIR")
+        # if env_dir:
+        #     return env_dir
+        # default to cwd/explanations-output
+        return os.path.join(os.getcwd(), out_dir_name)
+
+    def _pick_runtime_dir(self, out_dir_name="temp-plots"):
+        """
+        Choose a runtime dir that callers can override via env.
+        """
+        env_dir = os.getenv("BELLATREX_RUNTIME_DIR")
         if env_dir:
             return env_dir
-        # default to cwd/explanations-output
+        # default to cwd/temp-plots
         return os.path.join(os.getcwd(), out_dir_name)
 
     def create_rules_txt(self, out_dir="explanations-output", out_file=None):
@@ -606,9 +617,7 @@ class BellatrexExplain:
                     rule_to_file(self.clf[idx], tuned_method.sample, 0, self.MAX_FEATURE_PRINT, f)
 
         # 7) Parse & validate
-        rules, preds, baselines, weights, other_preds = read_rules(
-            file=main_path, file_extra=extra_path
-        )
+        rules, preds, baselines, weights, _ = read_rules(file=main_path, file_extra=extra_path)
         if isinstance(preds[0], list):
             preds = [list(map(float, pred)) for pred in preds]
         if isinstance(baselines[0], list):

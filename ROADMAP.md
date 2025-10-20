@@ -6,6 +6,7 @@ No temporal line is suggested, but ratheer a list of things to do and ideas to p
 ## Near-term goals (v0.x series)
 
 - Expand integration tests
+- Expand compatibility up to Python 3.14
 - Track coverage % in CI and target >80%. To reach this:
     - Refactor the GUI code completely, possibly get rid of _dearpygui_
 
