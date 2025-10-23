@@ -50,7 +50,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}  # Optional if public repo
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
 
   gui-tests:
