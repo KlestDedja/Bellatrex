@@ -1,5 +1,7 @@
 # .github/workflows/coverage-parity.yml
 name: Coverage (consistent between local and Codecov)
+permissions:
+  contents: read
 on:
   push:
     branches:
