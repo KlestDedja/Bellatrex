@@ -3,6 +3,7 @@
 __pycache__/
 *.py[cod]
 *.pyo
+.spyproject/
 *.egg-info/
 build/
 dist/
@@ -11,6 +12,5 @@ htmlcov/
 .pytest_cache/
 .venv/
 venv/
-.env
 .idea/
 .vscode/

@@ -30,6 +30,7 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-cov",
+    "pytest-xdist",
     "twine",
     "black >= 0.24",
     "nbstripout >= 0.6",
