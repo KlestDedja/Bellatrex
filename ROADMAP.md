@@ -6,13 +6,20 @@ No temporal line is suggested, but ratheer a list of things to do and ideas to p
 ## Near-term goals (v0.x series)
 
 - Expand integration tests
-- Expand compatibility up to Python 3.14
+- Expand compatibility up to Python 3.14 (bottleneck is _dearpygui_)
 - Track coverage % in CI and target >80%. To reach this:
     - Refactor the GUI code completely, possibly get rid of _dearpygui_
 
 ### New features
 
-- Enhance vector representation by using leaf prediction (currently only feature nodes splits are used))
+- Enhance vector representation by including leaf predictions in the representation of the trees. The resulting representation could have $d+q$ dimensions, where $q$ is the output dimensionalityt and $d$ is the input dimensionality. Currently only feature splits are used to create the tree representation.
+The weight of the extra $q$ dimensions should be controlled by a new parameter.
+
+- Enhance Bellatrex explanations for multi-output tasks, enable users to:
+    - select a subset of targets to run explanations for;
+    - select a (single) target to run ``plot_visuals()``
+
+
 
 
 ## Mid-term ideas (future versions)
@@ -38,4 +45,4 @@ No temporal line is suggested, but ratheer a list of things to do and ideas to p
 Open a PR directly, either for small fixes or for suggesting new features and roadmap items.
 
 ---
-_Last updated: 2025-09-24_
+_Last updated: 2025-10-23_
