@@ -1,0 +1,31 @@
+# .github/workflows/coverage-parity.yml
+name: Coverage (consistent between local and Codecov)
+on:
+  push:
+    branches:
+      - main-dev
+  pull_request:
+    branches:
+      - main-dev
+
+jobs:
+  parity:
+    runs-on: windows-latest
+    env:
+      PYTHONHASHSEED: "0"
+      PYTHONWARNINGS: default
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -U pip && pip install -e ".[dev]"
+      - name: Test with coverage (same as local)
+        run: pytest -q --cov=bellatrex --cov-report=xml --cov-report=term-missing:skip-covered
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          flags: windows,py312,parity
+          fail_ci_if_error: true
