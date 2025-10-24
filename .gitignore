@@ -16,6 +16,8 @@ build/
 develop-eggs/
 dist/
 downloads/
+*.egg
+*.egg-info/
 eggs/
 .eggs/
 lib/
@@ -25,10 +27,7 @@ sdist/
 var/
 wheels/
 share/python-wheels/
-*.egg-info/
 .installed.cfg
-.coverage*
-*.egg
 MANIFEST
 .pypirc
 
@@ -46,4 +45,3 @@ ENV/
 env.bak/
 venv.bak/
 .github/instructions/*
-coverage.*
