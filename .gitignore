@@ -39,8 +39,10 @@ MANIFEST
 *.img
 docker-data/
 
-# coverage reports (but not coveragerc file)
-coverage.*
+# coverage report output files
+coverage.xml
+htmlcov/
+coverage.json
 
 # Environments
 .env
