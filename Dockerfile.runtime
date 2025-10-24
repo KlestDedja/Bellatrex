@@ -1,0 +1,83 @@
+# syntax=docker/dockerfile:1.7
+
+########## base ##########
+FROM python:3.12-slim AS base
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+RUN useradd -ms /bin/bash appuser
+WORKDIR /app
+
+########## builder (creates a self-contained venv) ##########
+FROM python:3.12-slim AS builder
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# Only build tools here; they won't land in the runtime image
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+  && rm -rf /var/lib/apt/lists/*
+
+# Create virtualenv
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+WORKDIR /app
+
+# Copy metadata first (cacheable)
+COPY pyproject.toml ./
+# COPY requirements.txt ./
+# COPY uv.lock poetry.lock ./
+
+# Upgrade pip once
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --upgrade pip
+
+# Copy full source and install only what you need at runtime
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install ".[gui]" \
+ && python -m compileall -q /opt/venv \
+ || true
+
+# Optional: trim native extensions to reduce size (best-effort)
+RUN find /opt/venv -type f -name "*.so" -exec strip --strip-unneeded {} + || true
+
+########## runtime (what users pull) ##########
+FROM base AS runtime
+
+# Use the ready-to-run venv from the builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy only assets/configs you truly need at runtime (avoid tests/docs)
+# COPY --chown=appuser:appuser assets/ ./assets/
+
+# Run as non-root
+USER appuser
+
+# Best UX: if you define a console_script in pyproject, switch ENTRYPOINT to that
+# [project.scripts]
+# bellatrex = "bellatrex.cli:main"
+# ENTRYPOINT ["bellatrex"]
+
+# Fallback: run the package as a module
+ENTRYPOINT ["python","-m","bellatrex"]
+
+# To build and run:
+# export DOCKER_BUILDKIT=1
+# docker build -f Dockerfile.runtime -t bellatrex:0.3.1 --target runtime .
+# docker run -it --rm bellatrex:0.3.1 --help
+
+# To Publish (example with GHCR):
+
+# docker tag bellatrex:0.3.1 ghcr.io/<you-or-org>/bellatrex:0.3.1
+# docker push ghcr.io/<you-or-org>/bellatrex:0.3.1
+# # users:
+# docker pull ghcr.io/<you-or-org>/bellatrex:0.3.1
+# docker run -it --rm ghcr.io/<you-or-org>/bellatrex:0.3.1 --help

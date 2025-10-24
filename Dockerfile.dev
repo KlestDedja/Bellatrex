@@ -1,0 +1,72 @@
+# syntax=docker/dockerfile:1.7
+
+########## base ##########
+# We make a single-stage Dockerfile for development, we enable BuildKit cache mounts
+
+FROM python:3.12-slim AS base
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONHASHSEED=0 \
+    OPENBLAS_NUM_THREADS=1 \
+    OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    COVERAGE_FILE=/tmp/.coverage
+#       ^ stores temporary coverage files (parallel runs?)
+
+# Minimal system dependencies for building wheels when needed
+# Install OpenGL + X11 runtime libs needed just to import DearPyGui ( LINE 22)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libx11-6 libxext6 libxrandr2 libxinerama1 libxi6 libxxf86vm1 libxcb1 libxcursor1 \
+    build-essential && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user, called appuser
+RUN useradd -ms /bin/bash appuser
+
+# Ensure output and temp directories exist and are writable by appuser
+RUN mkdir -p /app/bellatrex/explanations-output /app/bellatrex/temp-plots \
+    && chown -R appuser:appuser /app/bellatrex
+
+WORKDIR /app
+# RUN chown -R appuser:appuser /app
+# USER appuser
+
+
+########## development part ##########
+FROM base AS dev
+
+# Copy metadata first for better layer caching, and copy .env file
+COPY --chown=appuser:appuser pyproject.toml .env ./
+# If you keep lock files (uv/poetry/pip-tools), copy them too for even better caching:
+# COPY --chown=appuser:appuser uv.lock poetry.lock requirements*.txt ./
+
+# Warm-up pip + cache (BuildKit keeps /root/.cache/pip between builds)
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --upgrade pip
+
+# Copy full source (app tests, etc); ensure files are owned by appuser
+COPY --chown=appuser:appuser . .
+
+# If you have pinned dev/GUI deps listed in pyproject, we can do a no-op install to warm cache:
+# (This uses a trick: install an empty package; but in most cases, skip and rely on final install.)
+
+# Install package with extras needed for tests/dev
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install ".[gui,dev]"
+
+# Drop privileges
+USER appuser
+
+# Default command: run tests with coverage (Codecov-friendly)
+CMD ["pytest","-q","--cov=bellatrex","--cov-report=term-missing","--cov-report=xml:coverage.xml"]
+
+### DONE! To build and run:
+# export DOCKER_BUILDKIT=1
+# docker build -f Dockerfile.dev -t bellatrex:dev .
+# docker scout quickview
+# docker run -it --rm -v "$PWD":/app bellatrex:dev
+#             ^ -interactive + teletypewriter: I can keep typing and I will get a terminal like experience
+#                 ^ --rm: remove container when it exits, keep system tidy
+#                    ^ -v "$PWD":/app: mount current directory to /app in container
