@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: "3.12"  # my local Python version for pytest
 
-      - name: Install dependencies (editable, like local)
+      - name: Install dependencies (editable mode, like in local runs)
         run: |
           python -m pip install -U pip
           pip install -e ".[dev]"
