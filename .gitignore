@@ -1,9 +1,12 @@
+# Editor related files
 __pycache__/
 .vscode
 .vs
 .pylintrc
 .spyderproject
 .spyproject
+.ipynb_checkpoints
+.idea/
 
 
 # Bellatrex specific stuff
@@ -35,6 +38,9 @@ MANIFEST
 *.tar
 *.img
 docker-data/
+
+# coverage reports (but not coveragerc file)
+coverage.*
 
 # Environments
 .env

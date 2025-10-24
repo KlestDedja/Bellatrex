@@ -1,0 +1,43 @@
+# .coveragerc, updated version:
+
+[run]
+branch = True
+source =
+    bellatrex
+    */src/bellatrex
+    */site-packages/bellatrex
+omit =
+    */tests/*
+    */__main__.py
+    */bellatrex/gui_*.py
+    bellatrex/gui_*.py
+
+
+# === Parity & cross-platform helpers ===
+parallel = True
+relative_files = True
+concurrency =
+    thread
+    multiprocessing
+
+[report]
+show_missing = True
+skip_covered = False
+precision = 1
+exclude_lines =
+    if __name__ == .__main__.:
+
+[paths]
+# Map different install locations to a single "source" so coverage can merge across OS/envs
+source =
+    bellatrex
+    */src/bellatrex
+    */site-packages/bellatrex
+
+[html]
+# deterministic local HTML path (default is 'htmlcov' anyway)
+directory = htmlcov
+
+[xml]
+# deterministic CI artifact path
+output = coverage.xml
