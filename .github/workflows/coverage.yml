@@ -1,9 +1,6 @@
 # .github/workflows/coverage-parity.yml
 name: Coverage (consistent between local and Codecov)
 
-permissions:
-  contents: read
-
 on:
   pull_request:
     branches: [ main-dev ]
@@ -16,6 +13,9 @@ on:
       - "docs/**"
       - "**/*.md"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: coverage-${{ github.ref }}
