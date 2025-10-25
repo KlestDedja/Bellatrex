@@ -40,7 +40,7 @@ MANIFEST
 docker-data/
 
 # coverage report output files
-coverage.xml
+# coverage.xml
 htmlcov/
 coverage.json
 
