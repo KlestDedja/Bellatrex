@@ -45,12 +45,13 @@ jobs:
 
       - name: Run tests with coverage, same settings as local
         run: |
-          pytest -q --cov=bellatrex --cov-report=html --cov-report=term-missing:skip-covered --cov-config=.coveragerc
+          pytest -q --cov=bellatrex --cov-report=xml --cov-report=html --cov-report=term-missing:skip-covered --cov-config=.coveragerc
 
       # Upload coverage tests to Codecov
       - name: Upload to Codecov
         uses: codecov/codecov-action@v4
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           flags: coverage-parity
           name: ubuntu-3.12-parity
