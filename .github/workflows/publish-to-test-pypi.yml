@@ -1,0 +1,87 @@
+name: Publish to TestPyPI
+
+on:
+  push:
+    branches:
+      - main-dev
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build/publish (e.g., v1.2.3). Leave empty to use current ref."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-testpypi-${{ github.ref || github.event.inputs.tag || 'manual' }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-publish:
+    name: Build and publish to TestPyPI
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure tag commit is on main-dev (for tag-triggered runs)
+        if: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref_name }})
+          BASE_BRANCH="main-dev"
+          if ! git merge-base --is-ancestor $TAG_COMMIT origin/$BASE_BRANCH; then
+            echo "Tag ${{ github.ref_name }} is not on branch $BASE_BRANCH."
+            exit 1
+          fi
+
+      - name: If manually triggered with a tag, check out that tag
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.tag != '' }}
+        run: |
+          git fetch --tags --force
+          git checkout "tags/${{ inputs.tag }}"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+
+      - name: Build the package (sdist + wheel)
+        run: python -m build
+
+      - name: Show package version (from pyproject.toml if present)
+        id: show_version
+        run: |
+          if [ -f pyproject.toml ]; then
+            V=$(python - <<'PY'
+import tomllib
+with open('pyproject.toml','rb') as f:
+    data = tomllib.load(f)
+print(data.get('project', {}).get('version', '<no version>'))
+PY
+)
+            echo "version=$V" >> "$GITHUB_OUTPUT"
+            echo "Detected version: $V"
+          else
+            echo "pyproject.toml not found"
+          fi
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          skip-existing: true
+          repository-url: https://test.pypi.org/legacy/
