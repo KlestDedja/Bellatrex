@@ -6,7 +6,7 @@
 [![Python Versions](https://img.shields.io/pypi/pyversions/bellatrex)](https://pypi.org/project/bellatrex/)
 [![Downloads](https://static.pepy.tech/badge/bellatrex)](https://pepy.tech/project/bellatrex)
 [![License](https://img.shields.io/github/license/Klest94/Bellatrex)](https://github.com/Klest94/Bellatrex/blob/main-dev/LICENSE.txt)
-[![Windows CI](https://github.com/Klest94/Bellatrex/actions/workflows/test-windows.yml/badge.svg?branch=main-dev)](https://github.com/Klest94/Bellatrex/actions/workflows/test-windows.yml)
+[![Cross OS integration](https://github.com/KlestDedja/Bellatrex/actions/workflows/ci-matrix.yml/badge.svg?branch=main-dev)](https://github.com/KlestDedja/Bellatrex/actions/workflows/ci-matrix.yml)
 [![DOI](https://img.shields.io/badge/DOI-10.1109%2FACCESS.2023.3268866-blue)](https://doi.org/10.1109/ACCESS.2023.3268866)
 [![PyPI version](https://img.shields.io/pypi/v/bellatrex.svg)](https://pypi.org/project/bellatrex/)
 [![codecov](https://codecov.io/github/KlestDedja/Bellatrex/branch/main-dev/graph/badge.svg)](https://app.codecov.io/github/KlestDedja/Bellatrex) 
