@@ -5,7 +5,7 @@
 
 [![Python Versions](https://img.shields.io/pypi/pyversions/bellatrex)](https://pypi.org/project/bellatrex/)
 [![Downloads](https://static.pepy.tech/badge/bellatrex)](https://pepy.tech/project/bellatrex)
-[![License](https://img.shields.io/github/license/Klest94/Bellatrex)](https://github.com/Klest94/Bellatrex/blob/main/LICENSE.txt)
+[![License](https://img.shields.io/github/license/KlestDedja/Bellatrex)](https://github.com/KlestDedja/Bellatrex/blob/main/LICENSE.txt)
 [![Cross OS integration](https://github.com/KlestDedja/Bellatrex/actions/workflows/ci-matrix.yaml/badge.svg?branch=main)](https://github.com/KlestDedja/Bellatrex/actions/workflows/ci-matrix.yaml)
 [![DOI](https://img.shields.io/badge/DOI-10.1109%2FACCESS.2023.3268866-blue)](https://doi.org/10.1109/ACCESS.2023.3268866)
 [![PyPI version](https://img.shields.io/pypi/v/bellatrex.svg)](https://pypi.org/project/bellatrex/)
@@ -18,7 +18,7 @@
 
 Bellatrex is a Python library designed to generate concise, interpretable, and visually appealing explanations for predictions made by Random Forest models. The name says it all: Bellatrex stands for **B**uilding **E**xplanations through a **L**ocal**L**y **A**ccura**T**e **R**ule **EX**tractor.
 
-Curious about the details and inner mechanisms of Bellatrex? Check out [our paper](https://ieeexplore.ieee.org/abstract/document/10105927) and jump into the [reproducibility branch](https://github.com/Klest94/Bellatrex/tree/archive/reproduce-Dedja2023) to dive into the experiments.
+Curious about the details and inner mechanisms of Bellatrex? Check out [our paper](https://ieeexplore.ieee.org/abstract/document/10105927) and jump into the [reproducibility branch](https://github.com/KlestDedja/Bellatrex/tree/archive/reproduce-Dedja2023) to dive into the experiments.
 
 ## How Bellatrex works
 
@@ -59,7 +59,7 @@ To install the standard version of Bellatrex (without an interacting GUI), run:
 pip install bellatrex
 ```
 
-If this step fails and you don't find a solution immediately, please [open an issue](https://github.com/Klest94/Bellatrex/issues). In the meantime, you can also try to [clone](https://github.com/Klest94/Bellatrex) the repository manually.
+If this step fails and you don't find a solution immediately, please [open an issue](https://github.com/KlestDedja/Bellatrex/issues). In the meantime, you can also try to [clone](https://github.com/KlestDedja/Bellatrex) the repository manually.
 
 
 ## Interactive GUI mode
@@ -79,13 +79,13 @@ pip install dearpygui-ext==0.9.5
 
 # Ready to go? Quickstart tutorial
 
-If you have downloaded the content of this folder and installed the packages successfully, you can dive into [`tutorial.ipynb`](https://github.com/Klest94/Bellatrex/blob/main/tutorial.ipynb) and try Bellatrex yourself.
+If you have downloaded the content of this folder and installed the packages successfully, you can dive into [`tutorial.ipynb`](https://github.com/KlestDedja/Bellatrex/blob/main/tutorial.ipynb) and try Bellatrex yourself.
 
 ## Support and Contributions
 
 Bellatrex is an open-source project that was initially developed from research funding by [Flanders AI](https://www.flandersai.be/en). Since the end of that funding period, the project has been maintained through volunteer work, but there is always exiting work ahead: new features, performance improvements, tests for robustness... if you find Bellatrex useful or believe in its goals, there are several meaningful ways you can help support its ongoing development:
 
-- 🐛 **Test and Report Issues:** if you encounter any bugs, inconsistencies, or simply find areas for improvement, open an [issue](https://github.com/Klest94/Bellatrex/issues) and share example code and error traces.
+- 🐛 **Test and Report Issues:** if you encounter any bugs, inconsistencies, or simply find areas for improvement, open an [issue](https://github.com/KlestDedja/Bellatrex/issues) and share example code and error traces.
 - ⭐ **Give a star Bellatrex:** it will make the project more visible to others and motivate ongoing voluntary development.
 
 ## Refrences
