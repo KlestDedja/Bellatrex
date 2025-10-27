@@ -6,6 +6,9 @@ on:
       - 'v*.*.*'            # on version tag push
   workflow_dispatch:       # plus, allow manual runs
 
+permissions:
+  contents: read
+
 env:
   PACKAGE_NAME: bellatrex
   OWNER: klestdedja
