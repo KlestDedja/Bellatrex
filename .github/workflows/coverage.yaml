@@ -3,12 +3,12 @@ name: Coverage (consistent between local and Codecov)
 
 on:
   pull_request:
-    branches: [ main-dev ]
+    branches: [ main ]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
   push:
-    branches: [ main-dev ]
+    branches: [ main ]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
