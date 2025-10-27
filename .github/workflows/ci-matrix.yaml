@@ -2,7 +2,7 @@ name: Cross-Platform Test Matrix
 
 on:
   pull_request:
-    branches: [ main, main-dev ]
+    branches: [ main ]
     paths-ignore: [ "docs/**", "**/*.md" ]
   push:
     branches: [ "**" ]

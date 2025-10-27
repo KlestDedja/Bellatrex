@@ -1,15 +1,15 @@
 <a name="logo-anchor"></a>
 <p align="center">
-<img src="https://github.com/KlestDedja/Bellatrex/blob/main-dev/app/bellatrex-logo.png?raw=true" alt="Bellatrex Logo" width="60%"/>
+<img src="https://github.com/KlestDedja/Bellatrex/blob/main/app/bellatrex-logo.png?raw=true" alt="Bellatrex Logo" width="60%"/>
 </p>
 
 [![Python Versions](https://img.shields.io/pypi/pyversions/bellatrex)](https://pypi.org/project/bellatrex/)
 [![Downloads](https://static.pepy.tech/badge/bellatrex)](https://pepy.tech/project/bellatrex)
-[![License](https://img.shields.io/github/license/Klest94/Bellatrex)](https://github.com/Klest94/Bellatrex/blob/main-dev/LICENSE.txt)
-[![Cross OS integration](https://github.com/KlestDedja/Bellatrex/actions/workflows/ci-matrix.yaml/badge.svg?branch=main-dev)](https://github.com/KlestDedja/Bellatrex/actions/workflows/ci-matrix.yaml)
+[![License](https://img.shields.io/github/license/Klest94/Bellatrex)](https://github.com/Klest94/Bellatrex/blob/main/LICENSE.txt)
+[![Cross OS integration](https://github.com/KlestDedja/Bellatrex/actions/workflows/ci-matrix.yaml/badge.svg?branch=main)](https://github.com/KlestDedja/Bellatrex/actions/workflows/ci-matrix.yaml)
 [![DOI](https://img.shields.io/badge/DOI-10.1109%2FACCESS.2023.3268866-blue)](https://doi.org/10.1109/ACCESS.2023.3268866)
 [![PyPI version](https://img.shields.io/pypi/v/bellatrex.svg)](https://pypi.org/project/bellatrex/)
-[![codecov](https://codecov.io/github/KlestDedja/Bellatrex/branch/main-dev/graph/badge.svg)](https://app.codecov.io/github/KlestDedja/Bellatrex) 
+[![codecov](https://codecov.io/github/KlestDedja/Bellatrex/branch/main/graph/badge.svg)](https://app.codecov.io/github/KlestDedja/Bellatrex)
 [![Roadmap](https://img.shields.io/badge/roadmap-open-blue)](./ROADMAP.md)
 
 
@@ -31,7 +31,7 @@ When explaining a prediction for a specific test instance, Bellatrex:
 <table>
   <tr>
     <td align="center">
-      <img src="https://github.com/KlestDedja/Bellatrex/blob/main-dev/app/illustration-Bellatrex.png?raw=true" alt="Bellatrex image" width="90%"/>
+      <img src="https://github.com/KlestDedja/Bellatrex/blob/main/app/illustration-Bellatrex.png?raw=true" alt="Bellatrex image" width="90%"/>
     </td>
   </tr>
   <tr>
@@ -64,7 +64,7 @@ If this step fails and you don't find a solution immediately, please [open an is
 
 ## Interactive GUI mode
 
-For an enhanced user experience that includes interactive plots, you can run:  
+For an enhanced user experience that includes interactive plots, you can run:
 ```
 pip install bellatrex[gui]
 ```
@@ -79,7 +79,7 @@ pip install dearpygui-ext==0.9.5
 
 # Ready to go? Quickstart tutorial
 
-If you have downloaded the content of this folder and installed the packages successfully, you can dive into [`tutorial.ipynb`](https://github.com/Klest94/Bellatrex/blob/main-dev/tutorial.ipynb) and try Bellatrex yourself.
+If you have downloaded the content of this folder and installed the packages successfully, you can dive into [`tutorial.ipynb`](https://github.com/Klest94/Bellatrex/blob/main/tutorial.ipynb) and try Bellatrex yourself.
 
 ## Support and Contributions
 
