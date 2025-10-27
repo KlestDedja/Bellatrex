@@ -27,14 +27,17 @@ jobs:
         run: |
           if [ "${{ github.ref_type }}" = "tag" ]; then
             TAG_NAME=${GITHUB_REF#refs/tags/}
-            NEW_VERSION=$(echo $TAG_NAME | awk -F'-' '{print $1}')
-            SUFFIX=$(echo $TAG_NAME | grep -oP '[a-z]+[0-9]+' || echo "")
-            echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
-            echo "suffix=$SUFFIX" >> "$GITHUB_OUTPUT"
-            echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
-            echo "Version is $NEW_VERSION"
-            echo "Suffix is $SUFFIX"
-            echo "Tag name is $TAG_NAME"
+            # Remove trailing alpha/dev suffix (letters+digits) if present to get base version
+            NEW_VERSION=$(echo "$TAG_NAME" | sed -E 's/([a-z]+[0-9]+)$//')
+            # Extract the last letter+digit suffix (e.g. dev1, a1) if any
+            SUFFIX=$(echo "$TAG_NAME" | grep -oP '[a-z]+[0-9]+' | tail -n1 || echo "")
+            # Ensure no newlines are emitted into GITHUB_OUTPUT
+            echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+            echo "suffix=${SUFFIX}" >> "$GITHUB_OUTPUT"
+            echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+            echo "Version is ${NEW_VERSION}"
+            echo "Suffix is ${SUFFIX}"
+            echo "Tag name is ${TAG_NAME}"
           else
             echo "No tag found"
             exit 1
