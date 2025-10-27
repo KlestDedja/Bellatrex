@@ -12,6 +12,9 @@ on:
       - 'v*.*.*dev*'
       - 'v*.*.*a*'
 
+permissions:
+  contents: read
+
 env:
   PACKAGE_NAME: bellatrex
   OWNER: klestdedja
