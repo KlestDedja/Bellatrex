@@ -1,6 +1,6 @@
 <a name="logo-anchor"></a>
 <p align="center">
-<img src="https://github.com/Klest94/Bellatrex/blob/main-dev/app/bellatrex-logo.png?raw=true" alt="Bellatrex Logo" width="60%"/>
+<img src="https://github.com/KlestDedja/Bellatrex/blob/main-dev/app/bellatrex-logo.png?raw=true" alt="Bellatrex Logo" width="60%"/>
 </p>
 
 [![Python Versions](https://img.shields.io/pypi/pyversions/bellatrex)](https://pypi.org/project/bellatrex/)
@@ -31,7 +31,7 @@ When explaining a prediction for a specific test instance, Bellatrex:
 <table>
   <tr>
     <td align="center">
-      <img src="https://github.com/Klest94/Bellatrex/blob/main-dev/app/illustration-Bellatrex.png?raw=true" alt="Bellatrex image" width="90%"/>
+      <img src="https://github.com/KlestDedja/Bellatrex/blob/main-dev/app/illustration-Bellatrex.png?raw=true" alt="Bellatrex image" width="90%"/>
     </td>
   </tr>
   <tr>
