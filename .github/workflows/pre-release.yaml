@@ -10,7 +10,6 @@ on:
       # Match tags with prerelease suffixes (devN or aN, at least one digit)
       - 'v[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*dev[0-9][0-9]*'
       - 'v[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*a[0-9][0-9]*'
-  workflow_dispatch:
 
 env:
   PACKAGE_NAME: bellatrex
