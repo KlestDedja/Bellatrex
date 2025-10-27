@@ -1,13 +1,17 @@
-# This workflow handles pre-release tag pushes (dev/alpha tags) and publishes
-# built distributions to TestPyPI. It is intended for tags like v1.2.3dev1 or v1.2.3a1.
+# .github/workflows/pre-release.yaml
+# Handles pre-release tag pushes (dev/alpha tags) and publishes
+# built distributions to TestPyPI. Intended for tags like v1.2.3dev1 or v1.2.3a1.
+
 name: pre-release
 
 on:
   push:
     tags:
-      - 'v*.*.*a*'      # alpha
-      - 'v*.*.*dev*'    # development version
+      # Match tags with prerelease suffixes (devN or aN, at least one digit)
+      - 'v[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*dev[0-9][0-9]*'
+      - 'v[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*a[0-9][0-9]*'
   workflow_dispatch:
+
 env:
   PACKAGE_NAME: bellatrex
   OWNER: klestdedja
@@ -19,25 +23,37 @@ jobs:
       new_version: ${{ steps.pre-release.outputs.new_version }}
       suffix: ${{ steps.pre-release.outputs.suffix }}
       tag_name: ${{ steps.pre-release.outputs.tag_name }}
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Extract tag and Details
         id: pre-release
+        shell: bash
         run: |
+          set -euo pipefail
           if [ "${{ github.ref_type }}" = "tag" ]; then
-            TAG_NAME=${GITHUB_REF#refs/tags/}
-            # Remove trailing alpha/dev suffix (letters+digits) if present to get base version
-            NEW_VERSION=$(echo "$TAG_NAME" | sed -E 's/([a-z]+[0-9]+)$//')
-            # Extract the last letter+digit suffix (e.g. dev1, a1) if any
-            SUFFIX=$(echo "$TAG_NAME" | grep -oP '[a-z]+[0-9]+' | tail -n1 || echo "")
-            # Ensure no newlines are emitted into GITHUB_OUTPUT
-            echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
-            echo "suffix=${SUFFIX}" >> "$GITHUB_OUTPUT"
-            echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
-            echo "Version is ${NEW_VERSION}"
-            echo "Suffix is ${SUFFIX}"
-            echo "Tag name is ${TAG_NAME}"
+            TAG="${GITHUB_REF_NAME}"  # e.g. v0.3.1dev1
+            # Strict prerelease format: vX.Y.Z(devN|aN)
+            if [[ "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)([a-z]+[0-9]+)$ ]]; then
+              CORE="${BASH_REMATCH[1]}"    # 0.3.1
+              SUFFIX="${BASH_REMATCH[2]}"  # dev1 or a1
+            else
+              echo "Tag '$TAG' is not a valid prerelease like vX.Y.ZdevN or vX.Y.ZaN."
+              exit 1
+            fi
+
+            NEW_VERSION="${CORE}${SUFFIX}"  # e.g. 0.3.1dev1
+
+            {
+              printf "new_version=%s\n" "$NEW_VERSION"
+              printf "suffix=%s\n" "$SUFFIX"
+              printf "tag_name=%s\n" "$TAG"
+            } >> "$GITHUB_OUTPUT"
+
+            echo "Version is $NEW_VERSION"
+            echo "Suffix is $SUFFIX"
+            echo "Tag name is $TAG"
           else
             echo "No tag found"
             exit 1
@@ -47,27 +63,41 @@ jobs:
     needs: details
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch information from PyPI
+      - name: Fetch information from TestPyPI
+        shell: bash
         run: |
-          # For pre-release workflow we check TestPyPI for existing pre-release versions
-          response=$(curl -s https://test.pypi.org/pypi/${{ env.PACKAGE_NAME }}/json || echo "{}")
-          latest_previous_version=$(echo $response | jq --raw-output "select(.pre-releases != null) | .pre-releases | keys_unsorted | last")
-          if [ -z "$latest_previous_version" ]; then
-            echo "Package not found on TestPyPI."
+          set -euo pipefail
+          response=$(curl -sf https://test.pypi.org/pypi/${{ env.PACKAGE_NAME }}/json || echo '{}')
+
+          # Safely list all release keys (handles empty/missing .releases)
+          latest_previous_version=$(
+            echo "$response" \
+            | jq -r '(.releases // {}) | keys[]?' \
+            | grep -E '^[0-9]+\.[0-9]+\.[0-9]+([a-z]+[0-9]+)?$' \
+            | sort -V \
+            | tail -n1
+          )
+
+          if [ -z "${latest_previous_version:-}" ]; then
+            echo "No releases found on TestPyPI."
             latest_previous_version="0.0.0"
           fi
-          echo "Latest version on TestPyPI: $latest_previous_version"
-          echo "latest_previous_version=$latest_previous_version" >> $GITHUB_ENV
+
+          echo "Latest TestPyPI version: $latest_previous_version"
+          echo "latest_previous_version=$latest_previous_version" >> "$GITHUB_ENV"
 
       - name: Compare versions and exit if not newer
+        shell: bash
         run: |
-          NEW_VERSION=${{ needs.details.outputs.new_version }}
-          LATEST_VERSION=$latest_previous_version
-          if [ "$(printf '%s\n' "$LATEST_VERSION" "$NEW_VERSION" | sort -rV | head -n 1)" != "$NEW_VERSION" ] || [ "$NEW_VERSION" == "$LATEST_VERSION" ]; then
-            echo "The new version $NEW_VERSION is not greater than the latest version $LATEST_VERSION on PyPI."
+          set -euo pipefail
+          NEW_VERSION="${{ needs.details.outputs.new_version }}"  # e.g. 0.3.1dev1
+          LATEST_VERSION="$latest_previous_version"
+          top=$(printf '%s\n' "$LATEST_VERSION" "$NEW_VERSION" | sort -V | tail -n1)
+          if [ "$top" != "$NEW_VERSION" ]; then
+            echo "The new version $NEW_VERSION is not greater than $LATEST_VERSION on TestPyPI."
             exit 1
           else
-            echo "The new version $NEW_VERSION is greater than the latest version $LATEST_VERSION on PyPI."
+            echo "The new version $NEW_VERSION is greater than $LATEST_VERSION on TestPyPI."
           fi
 
   setup_and_build:
@@ -75,9 +105,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
@@ -107,6 +135,7 @@ jobs:
       name: pre-release
     permissions:
       id-token: write
+
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -116,36 +145,30 @@ jobs:
 
       - name: Publish distribution to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        # with:
-        #   repository-url: https://test.pypi.org/legacy/
-        #   user: __token__
-        #   password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          # user: __token__
+          # password: ${{ secrets.TEST_PYPI_API_TOKEN }}
 
   github_release:
-    name: Create GitHub Release
+    name: Create GitHub Release (pre-release)
     needs: [setup_and_build, details]
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
-
       - name: Create GitHub Release (pre-release)
-        id: create_release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Create a GitHub pre-release and auto-generate release notes
           gh release create ${{ needs.details.outputs.tag_name }} dist/* \
             --title "${{ needs.details.outputs.tag_name }}" \
             --prerelease
-        # --generate-notes not now yet
