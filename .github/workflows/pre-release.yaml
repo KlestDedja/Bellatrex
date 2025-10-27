@@ -7,9 +7,10 @@ name: pre-release
 on:
   push:
     tags:
-      # Match tags with prerelease suffixes (devN or aN, at least one digit)
-      - 'v[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*dev[0-9][0-9]*'
-      - 'v[0-9][0-9]*.[0-9][0-9]*.[0-9][0-9]*a[0-9][0-9]*'
+      # Match tags with prerelease suffixes (devN or aN). Use a relaxed glob;
+      # strict validation is enforced in the details step.
+      - 'v*.*.*dev*'
+      - 'v*.*.*a*'
 
 env:
   PACKAGE_NAME: bellatrex
