@@ -17,7 +17,10 @@ jobs:
   details:
     runs-on: ubuntu-latest
     # Skip this workflow when the tag looks like a pre-release (contains dev or a)
-    if: ${{ !contains(github.ref, 'dev') && !contains(github.ref, 'a') }}
+    # Use `github.ref_name` (the tag name) instead of `github.ref` (which contains the full ref
+    # path like `refs/tags/...` and therefore always contains the letter 'a' from the word
+    # "tags"), otherwise `contains(github.ref, 'a')` is always true and the job is skipped.
+    if: ${{ !contains(github.ref_name, 'dev') && !contains(github.ref_name, 'a') }}
     outputs:
       new_version: ${{ steps.release.outputs.new_version }}
       suffix: ${{ steps.release.outputs.suffix }}

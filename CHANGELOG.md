@@ -21,8 +21,8 @@ An initial test coverage is introduced, with first set of pytest running success
 Many `DeprecationWarning` warnings have been resolved (mainly within numpy and matplotlib), making the package more future-proof
 
 
-
 ## [0.2.3] - 2024-11-15
+
 ### Fixed
 - Fixed bug when running `set_up=multi-label` with `EnsembleWrapper`
 - Updated dependency constraints with `dearpygui`, newest versions are not supported (`lighttheme = create_theme_imgui_light()` raises an error).
