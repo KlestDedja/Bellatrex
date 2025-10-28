@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1] - 2025-10-25
+
+### Enhanced
+- Test coverage has been extended, and `codecov` platform is being used for reporting. Its reports are synchronized with local pytest runs.
+- Improved GitHub workflow actions, they now inlcude: `cross-platform`,  `cross-version` checks, `coverage` checks, `CodeQL`, and automatic `release` to PyPi.
+
+
 ## [0.3.0] - 2025-07-24
 
 ### Enhanced
