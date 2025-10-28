@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0] - 2025-07-24
+
+### Enhanced
+Revamped README.md, which now includes project badges (build status, version, license, etc.), clearer project description and usage instructions
+
+A CI pipeline is now running with the first workflows (e.g., install checks, linting, test execution), which are now functioning correctly. A first version of dependency checks has been set in place.
+
+An initial test coverage is introduced, with first set of pytest running successfully
+
+### Fixed
+
+Many `DeprecationWarning` warnings have been resolved (mainly within numpy and matplotlib), making the package more future-proof
+
+
+
 ## [0.2.3] - 2024-11-15
 ### Fixed
 - Fixed bug when running `set_up=multi-label` with `EnsembleWrapper`
