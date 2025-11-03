@@ -157,6 +157,8 @@ jobs:
     name: Create GitHub Release (pre-release)
     needs: [setup_and_build, details]
     runs-on: ubuntu-latest
+    environment:
+      name: pre-release
     permissions:
       contents: write
 
