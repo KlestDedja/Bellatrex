@@ -10,7 +10,7 @@ __pycache__/
 
 
 # Bellatrex specific stuff
-/expanations-output/*
+explanations-output/*
 app/bellatrex/explanations-output/*
 app/bellatrex/temp-files/*
 
@@ -54,3 +54,4 @@ ENV/
 env.bak/
 venv.bak/
 .github/instructions/*
+
