@@ -10,8 +10,9 @@ __pycache__/
 
 
 # Bellatrex specific stuff
-app/bellatrex/explanations_text/*
-app/bellatrex/temp_files/*
+/expanations-text/*
+app/bellatrex/explanations-output/*
+app/bellatrex/temp-files/*
 
 # Distribution / packaging
 .Python
