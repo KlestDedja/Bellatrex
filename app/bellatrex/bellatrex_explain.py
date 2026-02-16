@@ -574,15 +574,19 @@ class BellatrexExplain:
 
         # Ensure DataFrame with stable column names
         if isinstance(self.sample, np.ndarray):
-            self.sample = pd.DataFrame(self.sample)
-            self.sample.columns = [f"X_{i}" for i in range(len(self.sample.columns))]
+            self.sample = pd.DataFrame(
+                self.sample, columns=[f"X_{i}" for i in range(self.sample.shape[1])]
+            )
 
         # 1) Resolve target_dir from out_dir (absolute respected; relative goes under base)
         if os.path.isabs(out_dir):
             target_dir = out_dir
         else:
             base = self._pick_base_dir(out_dir_name="explanations-output")
-            target_dir = base if out_dir in ("", ".") else os.path.join(base, out_dir)
+            if out_dir in ("", ".", "explanations-output"):
+                target_dir = base
+            else:
+                target_dir = os.path.join(base, out_dir)
 
         # filename comes ONLY from out_file or default; strip any accidental path parts
         filename = out_file or f"Btrex_sample_{self.sample_iloc}.txt"
@@ -624,7 +628,45 @@ class BellatrexExplain:
             baselines = [list(map(float, baseline)) for baseline in baselines]
         _input_validation(rules, preds, baselines, weights)
 
+        self._last_rules_main_path = main_path
+        self._last_rules_extra_path = extra_path
+
         return main_path, extra_path
+
+    def print_rules_txt(self, out_dir=None, out_file=None):
+        """
+        Print the main rules text from an existing rules txt file.
+        """
+        if out_dir is None and out_file is None:
+            main_path = getattr(self, "_last_rules_main_path", None)
+            if not main_path or not os.path.exists(main_path):
+                raise ValueError(
+                    "No existing rules file found. Call create_rules_txt() first or pass out_dir/out_file."
+                )
+        else:
+            base = self._pick_base_dir(out_dir_name="explanations-output")
+            if out_dir is None or out_dir in ("", ".", "explanations-output"):
+                target_dir = base
+            elif os.path.isabs(out_dir):
+                target_dir = out_dir
+            else:
+                target_dir = os.path.join(base, out_dir)
+
+            filename = out_file or f"Btrex_sample_{self.sample_iloc}.txt"
+            filename = os.path.basename(filename)
+            main_path = os.path.join(target_dir, filename)
+
+            if not os.path.exists(main_path):
+                raise ValueError(
+                    "No existing rules file found at the requested path. Call create_rules_txt() first."
+                )
+
+        with open(main_path, "r", encoding="utf8") as f:
+            rules_text = f.read()
+        print("Bellatrex rules (text explanation):")
+        print(rules_text)
+
+        return main_path
 
     def plot_visuals(
         self,
