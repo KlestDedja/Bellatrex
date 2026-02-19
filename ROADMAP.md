@@ -1,7 +1,7 @@
 # Roadmap
 
 This file sketches the direction of the project. It’s meant as a _guidepost_ and priorities can shift over time.
-No temporal line is suggested, but ratheer a list of things to do and ideas to pursue.
+No temporal line is suggested, but rather a list of things to do and ideas to pursue.
 
 ## Near-term goals (v0.x series)
 
@@ -12,7 +12,7 @@ No temporal line is suggested, but ratheer a list of things to do and ideas to p
 
 ### New features
 
-- Enhance vector representation by including leaf predictions in the representation of the trees. The resulting representation could have $d+q$ dimensions, where $q$ is the output dimensionalityt and $d$ is the input dimensionality. Currently only feature splits are used to create the tree representation.
+- Enhance vector representation by including leaf predictions in the representation of the trees. The resulting representation could have $d+q$ dimensions, where $q$ is the output dimensionality and $d$ is the input dimensionality. Currently only feature splits are used to create the tree representation.
 The weight of the extra $q$ dimensions should be controlled by a new parameter.
 
 - Enhance Bellatrex explanations for multi-output tasks, enable users to:
