@@ -22,12 +22,14 @@ dependencies = [
     "scikit-survival >=0.22",
     "scipy >=1.11",
     "pandas >=1.5",
+    "bottleneck", # needed for pandas performance
     "matplotlib >=3.7",
     "joblib >=1.3",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "ipykernel",
     "pytest",
     "pytest-cov",
     "pytest-xdist",
@@ -35,7 +37,6 @@ dev = [
     "black >= 0.24",
     "nbstripout >= 0.6",
     "vulture >= 2.7"
-
 ]
 gui = [
     "dearpygui >=1.6.2, <2.0",
