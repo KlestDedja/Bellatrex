@@ -168,7 +168,7 @@ def test_create_rules_txt_file(monkeypatch, mock_clf, mock_data):
 
     explainer.tuned_method = DummyModel()
     explainer.sample = X.iloc[[0]]
-    explainer.sample_iloc = 0
+    explainer.sample_index = 0
     explainer.surrogate_pred_str = "0.0"
     explainer.clf = mock_clf
     # Monkeypatch rule_to_file and read_rules to avoid file IO

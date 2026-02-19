@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.3.2] - unreleased
+
+### Added
+- `pack_trained_ensemble` and `predict_helper` are now importable directly from `bellatrex`
+  (e.g. `from bellatrex import pack_trained_ensemble`).
+- `BellatrexExplain` now has a `__repr__` method that shows key parameters.
+- `BellatrexExplain.__init__` initialises `sample`, `tuned_method`, `sample_index`, and
+  `surrogate_pred_str` to `None`, so calling visualisation methods before `explain()` raises
+  a clear `ValueError` rather than an `AttributeError`.
+
+### Changed
+- **API**: `explain()` now raises `TypeError` with a helpful message when `X` is not a pandas
+  DataFrame, instead of failing silently with an `AttributeError`.
+- `verbose=0` (the default) is now fully silent.  Fitting and status messages are only printed
+  at `verbose >= 1`, consistent with the scikit-learn convention.
+- The mutable default `p_grid={}` in `__init__` is replaced with `p_grid=None`; the default
+  grid is defined as the class-level constant `_DEFAULT_P_GRID`.
+- `ys_oracle` constructor parameter is now correctly stored (`self.ys_oracle = ys_oracle`
+  instead of being silently dropped).
+- `n_jobs > 1` no longer emits a spurious warning; thread-based parallelism just runs.
+- `create_rules_txt` / `print_rules_txt`: path-resolution logic simplified.  `out_dir=None`
+  resolves to `$BELLATREX_EXPLAIN_DIR` (if set) or `<cwd>/explanations-output`; any other
+  relative path is resolved directly from the current working directory.
+  The env var `BELLATREX_EXPLAIN_DIR` is now actually respected (it was previously commented
+  out).
+- Dead private method `_pick_runtime_dir` removed; a new `_resolve_output_dir` helper
+  centralises the two-method path logic into one place.
+- `tutorial.ipynb` and `tutorial.py` updated to use the new top-level imports.
+
 ## [0.3.1] - 2025-10-25
 
 ### Enhanced

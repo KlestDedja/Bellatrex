@@ -155,7 +155,7 @@ Converts a trained `scikit-learn` / `scikit-survival` forest into a compact dict
 format, useful for serialisation or passing externally trained models to Bellatrex.
 
 ```python
-from bellatrex.wrapper_class import pack_trained_ensemble
+from bellatrex import pack_trained_ensemble
 
 clf_packed = pack_trained_ensemble(clf)  # clf must already be fitted
 explainer = BellatrexExplain(clf_packed).fit(X_train, y_train)
