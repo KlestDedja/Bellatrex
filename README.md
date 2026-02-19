@@ -53,7 +53,13 @@ The current support of Bellatrex focuses on Random Forest models implemented via
 
 # Set-up
 
-To install the standard version of Bellatrex (without an interacting GUI), run:
+To install the standard version of Bellatrex (without an interacting GUI), create an anaconda environment:
+
+```
+conda create -n bellatrex python=3.12
+```
+
+and install the package:
 
 ```
 pip install bellatrex
