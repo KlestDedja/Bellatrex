@@ -7,7 +7,7 @@ __pycache__/
 .spyproject
 .ipynb_checkpoints
 .idea/
-
+tmp*
 
 # Bellatrex specific stuff
 explanations-output/*
