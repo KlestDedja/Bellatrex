@@ -554,6 +554,7 @@ class BellatrexExplain:
                 tuned_method,
                 base_font_size=self.FONT_SIZE,
                 colormap=colormap,
+                sample_index=self.sample_index,
             )
             fig.suptitle("Plot overview", fontsize=16)
 

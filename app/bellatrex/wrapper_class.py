@@ -103,31 +103,42 @@ class EnsembleWrapper:
                 self,
                 feature,
                 n_leaves,
-                n_node_samples,
+                weighted_n_node_samples,
                 children_left,
                 children_right,
                 threshold,
                 value,
+                tree_values_all,
                 max_depth,
                 feature_names_in_,
                 n_features_in_,
                 learner_class,
+                impurity,
+                n_outputs,
+                n_classes,
             ):
                 self.feature = feature
                 self.n_leaves = n_leaves
-                self.n_node_samples = n_node_samples
+                self.weighted_n_node_samples = weighted_n_node_samples
+                # Use weighted samples as fallback for n_node_samples (packed models don't store separately)
+                self.n_node_samples = weighted_n_node_samples
                 self.children_left = children_left
                 self.children_right = children_right
                 self.threshold = threshold
-                self.value = value
+                self.value = tree_values_all if tree_values_all is not None else value  # Use 3D for visualization compatibility
+                self.value_2d = value  # Keep 2D for predictions (backward compat)
                 self.max_depth = max_depth
                 self.feature_names_in_ = feature_names_in_
                 self.n_features_in_ = n_features_in_
                 self.learner_class = learner_class
+                self.impurity = impurity  # Required by plot_tree_patched
+                self.n_outputs = n_outputs  # Direct attribute, not property
+                self.n_classes = n_classes  # Array of n_classes per output
 
             @property
             def n_outputs_(self):
-                return len(self.value[0])
+                """Property version for backward compatibility."""
+                return self.n_outputs
 
             @property
             def node_count(self):
@@ -173,11 +184,15 @@ class EnsembleWrapper:
                 tree_dict.get("children_left"),
                 tree_dict.get("children_right"),
                 tree_dict.get("thresholds"),
-                tree_dict.get("values"),  # Does it need to be spelled as singular? .value?
+                tree_dict.get("values"),  # 2D compressed values for predictions
+                tree_dict.get("tree_values_all"),  # 3D original values for visualization
                 tree_dict.get("max_depth"),
                 tree_dict.get("feature_names_in_"),
                 tree_dict.get("n_features_in_"),
                 tree_dict.get("learner_class"),
+                tree_dict.get("impurity", np.zeros(len(tree_dict.get("features", [])))),
+                tree_dict.get("n_outputs", 1),
+                tree_dict.get("n_classes", np.array([1])),
             )
             self.n_outputs_ = self.tree_.n_outputs_  # Inferred from underlying tree_.
             self.learner_class = self.tree_.learner_class
@@ -185,13 +200,27 @@ class EnsembleWrapper:
             # Add criterion attribute for compatibility with plot_tree_patched
             # Map learner class to appropriate criterion string
             if self.learner_class in ["DecisionTreeClassifier", "RandomForestClassifier"]:
-                self.criterion = tree_dict.get("criterion", "gini")
+                self._criterion = tree_dict.get("criterion", "gini")
             elif self.learner_class in ["DecisionTreeRegressor", "RandomForestRegressor"]:
-                self.criterion = tree_dict.get("criterion", "squared_error")
+                self._criterion = tree_dict.get("criterion", "squared_error")
             elif self.learner_class in ["SurvivalTree", "RandomSurvivalForest"]:
-                self.criterion = "logrank"
+                self._criterion = "logrank"
             else:
-                self.criterion = "unknown"  # fallback
+                self._criterion = "unknown"  # fallback
+
+        @property
+        def criterion(self):
+            """Return criterion, computing it from learner_class if not set (for backward compatibility)."""
+            if hasattr(self, '_criterion'):
+                return self._criterion
+            # Fallback for old pickled models
+            if self.learner_class in ["DecisionTreeClassifier", "RandomForestClassifier"]:
+                return "gini"
+            elif self.learner_class in ["DecisionTreeRegressor", "RandomForestRegressor"]:
+                return "squared_error"
+            elif self.learner_class in ["SurvivalTree", "RandomSurvivalForest"]:
+                return "logrank"
+            return "unknown"
 
         def predict(self, X):
             if isinstance(X, pd.DataFrame):
@@ -202,7 +231,7 @@ class EnsembleWrapper:
 
             for i in range(n_samples):
                 leaf_idx = node_indices[i][-1]  # Assuming the last node is the leaf
-                predictions[i, :] = self.tree_.value[leaf_idx]
+                predictions[i, :] = self.tree_.value_2d[leaf_idx]
 
             return predictions
 
@@ -278,6 +307,11 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
         "features": tree.feature,
         "thresholds": tree.threshold,
         "node_sample_weight": tree.weighted_n_node_samples,
+        # GUI visualization attributes (minimal set)
+        "impurity": getattr(tree, "impurity", np.zeros(len(tree.feature))),
+        "n_outputs": getattr(tree, "n_outputs", getattr(tree, "n_outputs_", 1)),
+        "n_classes": getattr(tree, "n_classes", np.array([1])),
+        "tree_values_all": tree.value.copy(),  # For plot_tree_patched visualization
         "feature_names_in_": getattr(clf_obj, "feature_names_in_", None),
         "n_features_in_": getattr(tree_obj, "n_features_in_", None),
         "unique_times_": getattr(tree_obj, "unique_times_", None),

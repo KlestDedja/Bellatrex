@@ -594,6 +594,101 @@ def custom_formatter(x, pos):  # pos paramter to comply with expected signature
     ## LocalMethod inputs: plot_data_bunch, plot_kmeans, tuned_method, self.clf.n_outputs_
 
 
+def _show_scrollable_figure(fig, fig_width_in, fig_height_in, dpi=100):
+    """
+    Display *fig* in a window.
+
+    If the figure fits within ~90 % of the screen it is shown normally.
+    When it is larger than that a Tkinter window with both scrollbars is
+    created so the user can pan across the full tree.  Falls back to a
+    plain plt.show() if Tkinter is unavailable.
+    """
+    SCREEN_FRAC = 0.90  # use up to 90 % of screen dimensions
+
+    try:
+        import tkinter as tk
+        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+        # --- measure screen in inches ----------------------------------------
+        _root_tmp = tk.Tk()
+        _root_tmp.withdraw()
+        screen_w_px = _root_tmp.winfo_screenwidth()
+        screen_h_px = _root_tmp.winfo_screenheight()
+        _root_tmp.destroy()
+
+        screen_w_in = screen_w_px / dpi
+        screen_h_in = screen_h_px / dpi
+
+        max_w_in = SCREEN_FRAC * screen_w_in
+        max_h_in = SCREEN_FRAC * screen_h_in
+
+        needs_scroll = fig_width_in > max_w_in or fig_height_in > max_h_in
+
+        if not needs_scroll:
+            # Small enough – just use normal Matplotlib window
+            plt.show()
+            return
+
+        # --- build a scrollable Tkinter + Matplotlib window ------------------
+        win_w_px = min(int(fig_width_in  * dpi), int(max_w_in  * dpi))
+        win_h_px = min(int(fig_height_in * dpi), int(max_h_in  * dpi))
+
+        root = tk.Tk()
+        root.title(fig.axes[0].get_title() if fig.axes else "Tree viewer")
+        root.geometry(f"{win_w_px}x{win_h_px}")
+
+        # Outer frame holds canvas + scrollbars
+        outer = tk.Frame(root)
+        outer.pack(fill=tk.BOTH, expand=True)
+
+        vbar = tk.Scrollbar(outer, orient=tk.VERTICAL)
+        hbar = tk.Scrollbar(outer, orient=tk.HORIZONTAL)
+        vbar.pack(side=tk.RIGHT,  fill=tk.Y)
+        hbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # Tkinter canvas that will host the scrollable region
+        tk_canvas = tk.Canvas(
+            outer,
+            yscrollcommand=vbar.set,
+            xscrollcommand=hbar.set,
+        )
+        tk_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vbar.config(command=tk_canvas.yview)
+        hbar.config(command=tk_canvas.xview)
+
+        # Inner frame embedded in the Tkinter canvas
+        inner = tk.Frame(tk_canvas)
+        tk_canvas.create_window((0, 0), window=inner, anchor="nw")
+
+        # Matplotlib figure embedded in the inner frame
+        fig_canvas = FigureCanvasTkAgg(fig, master=inner)
+        fig_canvas.draw()
+        widget = fig_canvas.get_tk_widget()
+        widget.pack()
+
+        # Update scroll region once the inner frame is rendered
+        def _update_scroll(_event=None):
+            tk_canvas.configure(scrollregion=tk_canvas.bbox("all"))
+
+        inner.bind("<Configure>", _update_scroll)
+
+        # Mouse-wheel scrolling (vertical on all platforms, horizontal with Shift)
+        def _on_mousewheel(event):
+            tk_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def _on_shift_mousewheel(event):
+            tk_canvas.xview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        root.bind_all("<MouseWheel>", _on_mousewheel)
+        root.bind_all("<Shift-MouseWheel>", _on_shift_mousewheel)
+
+        root.mainloop()
+
+    except Exception:
+        # Tkinter unavailable or any setup error – fall back gracefully
+        plt.show()
+
+
 def plot_preselected_trees(
     plot_data_bunch,
     kmeans,
@@ -602,6 +697,7 @@ def plot_preselected_trees(
     show_ax_ticks="auto",
     colormap=None,
     alpha_dots=0.5,
+    sample_index=None,
 ):
 
     small_size = 40
@@ -953,9 +1049,9 @@ def plot_preselected_trees(
                     fontsize=8,
                     ax=ax2,
                 )
-                ax2.set_title(f"Tree {tree_index} for sample index {tuned_method.sample_index}")
+                ax2.set_title(f"Tree {tree_index} for sample index {sample_index}")
                 fig2.tight_layout()
-                plt.show()
+                _show_scrollable_figure(fig2, smart_width, smart_height)
             except Exception as e:
                 # If tree rendering fails, print a helpful message but don't crash
                 print(f"Could not render tree {tree_index}: {e}")
