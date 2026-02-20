@@ -24,7 +24,11 @@ def __getattr__(name):
         from .utilities import predict_helper  # pylint: disable=import-outside-toplevel
 
         return predict_helper
+    if name == "TaskType":
+        from .utilities import TaskType  # pylint: disable=import-outside-toplevel
+
+        return TaskType
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
-__all__ = ["BellatrexExplain", "pack_trained_ensemble", "predict_helper"]
+__all__ = ["BellatrexExplain", "pack_trained_ensemble", "predict_helper", "TaskType"]

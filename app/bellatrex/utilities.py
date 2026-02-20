@@ -1,5 +1,6 @@
 import warnings
 import os
+from enum import Enum
 import numpy as np
 import pandas as pd
 
@@ -21,13 +22,25 @@ from matplotlib.colorbar import Colorbar
 
 from .wrapper_class import EnsembleWrapper
 
-
 # def is_ci():
 #     return os.environ.get("CI", "false").lower() == "true"
-
-
 # def is_pytest():
 #     return "PYTEST_CURRENT_TEST" in os.environ
+
+
+class TaskType(str, Enum):
+    """Canonical prediction-task identifiers.
+
+    Because ``TaskType`` inherits from ``str``, members compare equal to their
+    string values (e.g. ``TaskType.BINARY == "binary"`` is ``True``), so all
+    existing string-based comparisons in the codebase continue to work unchanged.
+    """
+
+    BINARY = "binary"
+    REGRESSION = "regression"
+    SURVIVAL = "survival"
+    MULTI_LABEL = "multi-label"
+    MULTI_TARGET = "multi-target"
 
 
 def safe_element_to_scalar(val):
@@ -39,41 +52,41 @@ def safe_element_to_scalar(val):
 def get_auto_setup(y_test):
 
     if isinstance(y_test, np.recarray) and len(y_test.dtype.names) == 2:
-        return "survival"  # single output only, for now
+        return TaskType.SURVIVAL  # single output only, for now
     else:
         y_test = np.array(y_test)
         if y_test.ndim == 1:
             unique_vals = np.unique(y_test).tolist()
             if len(unique_vals) <= 2:
-                return "binary"
+                return TaskType.BINARY
             else:
-                return "regression"
+                return TaskType.REGRESSION
         elif y_test.ndim == 2:  # multi-output case
             unique_vals = np.unique(y_test.ravel()).tolist()
             if len(unique_vals) <= 2:
-                return "multi-label"
+                return TaskType.MULTI_LABEL
             else:
-                return "multi-target"
+                return TaskType.MULTI_TARGET
         else:
             raise ValueError(f"Unexpected case, shape: {y_test.shape}")
 
 
 _SET_UP_ALIASES = {
-    "bin": "binary",
-    "binary": "binary",
-    "regress": "regression",
-    "regr": "regression",
-    "regression": "regression",
-    "surv": "survival",
-    "survival": "survival",
-    "multilabel": "multi-label",
-    "multi-label": "multi-label",
-    "multi_label": "multi-label",
-    "mtc": "multi-label",
-    "multitarget": "multi-target",
-    "multi-target": "multi-target",
-    "multi_target": "multi-target",
-    "mtr": "multi-target",
+    "bin": TaskType.BINARY,
+    "binary": TaskType.BINARY,
+    "regress": TaskType.REGRESSION,
+    "regr": TaskType.REGRESSION,
+    "regression": TaskType.REGRESSION,
+    "surv": TaskType.SURVIVAL,
+    "survival": TaskType.SURVIVAL,
+    "multilabel": TaskType.MULTI_LABEL,
+    "multi-label": TaskType.MULTI_LABEL,
+    "multi_label": TaskType.MULTI_LABEL,
+    "mtc": TaskType.MULTI_LABEL,
+    "multitarget": TaskType.MULTI_TARGET,
+    "multi-target": TaskType.MULTI_TARGET,
+    "multi_target": TaskType.MULTI_TARGET,
+    "mtr": TaskType.MULTI_TARGET,
 }
 
 
@@ -111,12 +124,12 @@ def _infer_set_up(clf, y):
     if isinstance(clf, EnsembleWrapper):
         ec = clf.ensemble_class
         if ec == "RandomForestClassifier":
-            return "binary" if clf.n_outputs_ == 1 else "multi-label"
+            return TaskType.BINARY if clf.n_outputs_ == 1 else TaskType.MULTI_LABEL
         if ec == "RandomForestRegressor":
-            return "regression" if clf.n_outputs_ == 1 else "multi-target"
+            return TaskType.REGRESSION if clf.n_outputs_ == 1 else TaskType.MULTI_TARGET
         if ec == "RandomSurvivalForest":
             if y.shape[1] == 2:
-                return "survival"
+                return TaskType.SURVIVAL
             raise ValueError(
                 f"Shape of recarray labels {y.shape} implies multi-output survival "
                 "analysis, which is not implemented yet"
@@ -126,21 +139,22 @@ def _infer_set_up(clf, y):
             "Please select the set-up manually"
         )
     if isinstance(clf, RandomForestClassifier):
-        return "binary" if clf.n_outputs_ == 1 else "multi-label"
+        return TaskType.BINARY if clf.n_outputs_ == 1 else TaskType.MULTI_LABEL
     if isinstance(clf, RandomForestRegressor):
-        return "regression" if np.array(y).ndim < 2 or clf.n_outputs_ == 1 else "multi-target"
+        return (
+            TaskType.REGRESSION
+            if np.array(y).ndim < 2 or clf.n_outputs_ == 1
+            else TaskType.MULTI_TARGET
+        )
     if isinstance(clf, RandomSurvivalForest):
         if clf.n_outputs_ == clf.unique_times_.shape[0]:
-            return "survival"
+            return TaskType.SURVIVAL
         raise ValueError(
             "n_outputs_ shape != unique_times_ shape: "
             f"{clf.n_outputs_.shape} != {clf.unique_times_.shape}\n"
             "Note that multi-event Survival analysis is not supported yet"
         )
-    raise ValueError(
-        "Provided model is not recognized or compatible with Bellatrex: "
-        f"{clf!r}"
-    )
+    raise ValueError("Provided model is not recognized or compatible with Bellatrex: " f"{clf!r}")
 
 
 def _is_binary_clf(clf):

@@ -1,7 +1,7 @@
 # Roadmap
 
 This file sketches the direction of the project. It’s meant as a _guidepost_ and priorities can shift over time.
-No temporal line is suggested, but rather a list of things to do and ideas to pursue.
+
 
 ## Near-term goals (v0.x series)
 
@@ -10,32 +10,11 @@ No temporal line is suggested, but rather a list of things to do and ideas to pu
 - Track coverage % in CI and target >80%. To reach this:
     - Refactor the GUI code completely, possibly get rid of _dearpygui_
 
-### Bug fixes and correctness (Suggestions from Claude Code)
+### Code quality
 
-- Fix in-place mutation of `self.ys_oracle` inside `.explain()` — it is currently
-  sliced and reassigned on `self`, which breaks repeated calls on different samples.
-  The sliced value should be kept as a local variable inside the method.
-
-### Code quality (Suggestions from Claude Code)
-
-- Replace broad `except Exception:` blocks (notably in `is_fitted()` and the grid
-  search fallback in `explain()`) with specific exception types. Silent failures hide
-  real errors from users.
-- Add input validation in `.explain()` for: feature name consistency with the fitted
-  model, NaN/Inf values in the input, and out-of-bounds sample indices.
-- Deduplicate the setup-detection logic that currently exists in both
-  `bellatrex_explain.py` and `utilities.py`; extract into a single internal helper.
-- Introduce a `TaskType` enum to replace the bare string literals (`"binary"`,
-  `"multi-label"`, `"survival"`, …) used in branching logic throughout the codebase.
-- Pin a minimum version for `bottleneck` in `pyproject.toml` (currently unpinned).
 - Align the supported Python version classifiers in `pyproject.toml` with what the
-  CI matrix actually tests (currently 3.13 is tested but not declared).
-
-### CI / tooling
-
-- Add a linting step to the CI pipeline (flake8 or ruff) and enforce `black`
-  formatting as a required check.
-- Add a `mypy` step to CI so type errors are caught before merge.
+  CI matrix actually tests — blocked on `dearpygui <2.0`, which has no Python 3.13
+  wheels. Will be resolved when the GUI dependency constraint is updated.
 
 
 ## Mid-term ideas (future versions)
