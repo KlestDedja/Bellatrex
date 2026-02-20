@@ -97,6 +97,61 @@ def normalize_set_up(set_up):
     return _SET_UP_ALIASES[key]
 
 
+def _infer_set_up(clf, y):
+    """Infer the prediction task from a fitted classifier and its training labels.
+
+    Returns one of the canonical set_up strings: ``"binary"``, ``"regression"``,
+    ``"survival"``, ``"multi-label"``, or ``"multi-target"``.
+
+    Raises
+    ------
+    ValueError
+        For unsupported or unrecognised classifier / label combinations.
+    """
+    if isinstance(clf, EnsembleWrapper):
+        ec = clf.ensemble_class
+        if ec == "RandomForestClassifier":
+            return "binary" if clf.n_outputs_ == 1 else "multi-label"
+        if ec == "RandomForestRegressor":
+            return "regression" if clf.n_outputs_ == 1 else "multi-target"
+        if ec == "RandomSurvivalForest":
+            if y.shape[1] == 2:
+                return "survival"
+            raise ValueError(
+                f"Shape of recarray labels {y.shape} implies multi-output survival "
+                "analysis, which is not implemented yet"
+            )
+        raise ValueError(
+            f"Classifier {ec} not compatible with 'auto' set-up selection. "
+            "Please select the set-up manually"
+        )
+    if isinstance(clf, RandomForestClassifier):
+        return "binary" if clf.n_outputs_ == 1 else "multi-label"
+    if isinstance(clf, RandomForestRegressor):
+        return "regression" if np.array(y).ndim < 2 or clf.n_outputs_ == 1 else "multi-target"
+    if isinstance(clf, RandomSurvivalForest):
+        if clf.n_outputs_ == clf.unique_times_.shape[0]:
+            return "survival"
+        raise ValueError(
+            "n_outputs_ shape != unique_times_ shape: "
+            f"{clf.n_outputs_.shape} != {clf.unique_times_.shape}\n"
+            "Note that multi-event Survival analysis is not supported yet"
+        )
+    raise ValueError(
+        "Provided model is not recognized or compatible with Bellatrex: "
+        f"{clf!r}"
+    )
+
+
+def _is_binary_clf(clf):
+    """Return True if *clf* is a single-output classification forest."""
+    if isinstance(clf, RandomForestClassifier):
+        return clf.n_outputs_ == 1
+    if isinstance(clf, EnsembleWrapper):
+        return clf.n_outputs_ == 1 and clf.ensemble_class == "RandomForestClassifier"
+    return False
+
+
 def concatenate_helper(y_pred, y_local_pred, axis=0):
 
     if y_pred.shape[0] == 0:  # if still empty (no rows added)
@@ -683,13 +738,7 @@ def plot_preselected_trees(
 
         ### right figure scatterplot here (axes[2] and axes[3]):
 
-        is_binary = False
-        if isinstance(tuned_method.clf, sklearn.ensemble.RandomForestClassifier):
-            is_binary = tuned_method.clf.n_outputs_ == 1
-        elif isinstance(tuned_method.clf, EnsembleWrapper):
-            is_binary = (tuned_method.clf.n_outputs_ == 1) and (
-                tuned_method.clf.ensemble_class == "RandomForestClassifier"
-            )
+        is_binary = _is_binary_clf(tuned_method.clf)
 
         v_min, v_max = custom_axes_limit(
             np.array(plot_data_bunch.pred).min(),

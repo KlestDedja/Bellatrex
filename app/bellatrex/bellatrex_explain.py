@@ -10,12 +10,11 @@ import matplotlib.pyplot as plt
 from sklearn.exceptions import ConvergenceWarning, NotFittedError
 from sklearn.model_selection import ParameterGrid
 from sklearn.utils.validation import check_is_fitted
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 from sksurv.ensemble import RandomSurvivalForest
 
 from .wrapper_class import EnsembleWrapper
-from .utilities import predict_helper, normalize_set_up
+from .utilities import predict_helper, normalize_set_up, _infer_set_up
 from .visualization_extra import _input_validation
 from .tree_extraction import TreeExtraction
 from .utilities import plot_preselected_trees, rule_print_inline
@@ -287,61 +286,7 @@ class BellatrexExplain:
             print(f"oracle_sample is: {self.ys_oracle}")
 
         if self.set_up == "auto":  # automatically determine scenario based on fitted classifier
-
-            if isinstance(self.clf, EnsembleWrapper):
-
-                if self.clf.ensemble_class == "RandomForestClassifier" and self.clf.n_outputs_ == 1:
-                    self.set_up = "binary"
-                elif (
-                    self.clf.ensemble_class == "RandomForestClassifier" and self.clf.n_outputs_ > 1
-                ):
-                    self.set_up = "multi-label"
-                elif (
-                    self.clf.ensemble_class == "RandomForestRegressor" and self.clf.n_outputs_ == 1
-                ):
-                    self.set_up = "regression"
-                elif self.clf.ensemble_class == "RandomForestRegressor" and self.clf.n_outputs_ > 1:
-                    self.set_up = "multi-target"
-                elif (
-                    self.clf.ensemble_class == "RandomSurvivalForest" and y.shape[1] == 2
-                ):  # ideally, check for 1 field boolean and one field numeric
-                    self.set_up = "survival"
-                elif self.clf.ensemble_class == "RandomSurvivalForest" and y.shape[1] > 2:
-                    raise ValueError(
-                        f"Shape of recarray labels {y.shape} implies multi-output survival analysis, "
-                        "which is not implemented yet"
-                    )
-                else:
-                    raise ValueError(
-                        f"Classifier {self.clf.ensemble_class} not compatible "
-                        "with 'auto' set-up selection. Please select the set-up manually"
-                    )
-
-            elif isinstance(self.clf, RandomForestClassifier):
-                if self.clf.n_outputs_ == 1:
-                    self.set_up = "binary"
-                else:
-                    self.set_up = "multi-label"
-            elif isinstance(self.clf, RandomForestRegressor):
-                if np.array(y).ndim < 2 or self.clf.n_outputs_ == 1:
-                    self.set_up = "regression"
-                else:
-                    self.set_up = "multi-target"
-            elif isinstance(self.clf, RandomSurvivalForest):
-                if self.clf.n_outputs_ == self.clf.unique_times_.shape[0]:
-                    self.set_up = "survival"
-                else:
-                    self.set_up = "multi-variate-sa"
-                    raise ValueError(
-                        "n_outputs_ shape != unique_times_ shape:"
-                        f"{self.clf.n_outputs_.shape} != {self.clf.unique_times_.shape} \n"
-                        "Note that multi-event Survival analysis is not supported yet"
-                    )
-            else:
-                raise ValueError(
-                    "Provided model is not recognized or compatible with Bellatrex:", self.clf
-                )
-
+            self.set_up = _infer_set_up(self.clf, y)
             if self.verbose > 0:
                 print(f"Automatically setting prediction task to: {self.set_up}")
 
@@ -374,6 +319,11 @@ class BellatrexExplain:
         ------
         TypeError
             If ``X`` is not a pandas DataFrame.
+        IndexError
+            If ``idx`` is out of bounds for ``X``.
+        ValueError
+            If the sample at ``idx`` contains NaN or infinite values, or if the
+            column names of ``X`` do not match the feature names seen during fit.
         """
         if not isinstance(X, pd.DataFrame):
             raise TypeError(
@@ -381,7 +331,28 @@ class BellatrexExplain:
                 "Wrap your array with: pd.DataFrame(X, columns=feature_names)"
             )
 
+        if not (0 <= idx < len(X)):
+            raise IndexError(
+                f"idx={idx} is out of bounds for X with {len(X)} rows."
+            )
+
         sample = X.iloc[[idx]]
+
+        sample_values = sample.values
+        if np.any(np.isnan(sample_values)):
+            raise ValueError(f"Sample at idx={idx} contains NaN values.")
+        if np.any(np.isinf(sample_values)):
+            raise ValueError(f"Sample at idx={idx} contains infinite values.")
+
+        if hasattr(self.clf, "feature_names_in_") and self.clf.feature_names_in_ is not None:
+            expected = list(self.clf.feature_names_in_)
+            actual = list(X.columns)
+            if expected != actual:
+                raise ValueError(
+                    f"Column names of X do not match the feature names seen during fit.\n"
+                    f"Expected: {expected}\n"
+                    f"Got:      {actual}"
+                )
 
         ys_oracle = self.ys_oracle.iloc[idx] if self.ys_oracle is not None else None
 
