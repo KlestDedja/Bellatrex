@@ -1,5 +1,23 @@
-import os
+"""
+DEPRECATED — DearPyGui-based GUI implementation.
+
+This module is kept for reference only.  The active GUI implementation has
+been replaced by gui_plots_nicegui.py which uses NiceGUI + Plotly.
+
+Do NOT import plot_with_interface from this module; import it from
+gui_plots_nicegui instead (done automatically by bellatrex_explain.py).
+"""
+
 import warnings
+
+warnings.warn(
+    "gui_plots_code.py is deprecated and will be removed in a future release. "
+    "Use gui_plots_nicegui.py instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+import os
 import math
 
 import dearpygui.dearpygui as dpg

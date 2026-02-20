@@ -39,8 +39,8 @@ dev = [
     "vulture >= 2.7"
 ]
 gui = [
-    "dearpygui >=1.6.2, <2.0",
-    "dearpygui-ext >=0.9.5, <1.0"
+    "nicegui >=2.0.0",
+    "plotly >=5.0"
 ]
 
 [tool.black]
