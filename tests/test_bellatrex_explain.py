@@ -156,7 +156,7 @@ def test_predict_median_surv_time(mock_survival_clf, mock_survival_data):
 #     assert hasattr(explainer, "tuned_method")
 
 
-def test_create_rules_txt_file(monkeypatch, mock_clf, mock_data, explanation_out_dir_path):
+def test_create_rules_txt_file(monkeypatch, mock_clf, mock_data, tmp_path):
     X, y = mock_data
     explainer = BellatrexExplain(mock_clf)
     explainer.fit(X, y)
@@ -171,12 +171,14 @@ def test_create_rules_txt_file(monkeypatch, mock_clf, mock_data, explanation_out
     explainer.sample_index = 0
     explainer.surrogate_pred_str = "0.0"
     explainer.clf = mock_clf
-    # Monkeypatch rule_to_file and read_rules to avoid file IO
-    # should paths include app.bellatrex or just bellatrex? TBD and TB fixed
-    monkeypatch.setattr("bellatrex.utilities.rule_to_file", lambda *a, **k: None)
-    monkeypatch.setattr("bellatrex.visualization.read_rules", lambda **k: ([1], [1], [1], [1], [1]))
-    monkeypatch.setattr("bellatrex.visualization_extra._input_validation", lambda *a, **k: None)
+    # Monkeypatch the symbols as imported into bellatrex_explain to avoid file IO
+    monkeypatch.setattr("bellatrex.bellatrex_explain.rule_to_file", lambda *a, **k: None)
+    monkeypatch.setattr(
+        "bellatrex.bellatrex_explain.read_rules", lambda **k: ([1], [1], [1], [1], [1])
+    )
+    monkeypatch.setattr("bellatrex.bellatrex_explain._input_validation", lambda *a, **k: None)
 
+    explanation_out_dir_path = tmp_path
     out_file, file_extra = explainer.create_rules_txt(
         out_dir=str(explanation_out_dir_path), out_file="testing_rules.txt"
     )
