@@ -156,8 +156,9 @@ def test_create_rules_txt():
 @pytest.mark.gui
 def test_gui_workflow():
 
-    dpg = pytest.importorskip(
-        "dearpygui.dearpygui", reason="Install Bellatrex[gui] to run GUI tests"
+    # Require NiceGUI (replaces the previous DearPyGui backend)
+    nicegui = pytest.importorskip(
+        "nicegui", reason="Install Bellatrex[gui] to run GUI tests"
     )
 
     for setup, loader in DATA_LOADERS.items():

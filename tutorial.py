@@ -17,7 +17,7 @@ from bellatrex.utilities import get_auto_setup
 print("Bellatrex version:", bellatrex.__version__)
 print("Working directory:", os.getcwd())
 
-PLOT_GUI = False
+PLOT_GUI = True
 
 # Uncomment the dataset that matches the prediction task you want to explore:
 X, y = load_binary_data(return_X_y=True)  # binary classification

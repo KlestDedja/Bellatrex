@@ -40,7 +40,8 @@ dev = [
 ]
 gui = [
     "nicegui >=2.0.0",
-    "plotly >=5.0"
+    "plotly >=5.0",
+    "pywebview"
 ]
 
 [tool.black]

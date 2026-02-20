@@ -137,10 +137,7 @@ def _infer_set_up(clf, y):
             f"{clf.n_outputs_.shape} != {clf.unique_times_.shape}\n"
             "Note that multi-event Survival analysis is not supported yet"
         )
-    raise ValueError(
-        "Provided model is not recognized or compatible with Bellatrex: "
-        f"{clf!r}"
-    )
+    raise ValueError("Provided model is not recognized or compatible with Bellatrex: " f"{clf!r}")
 
 
 def _is_binary_clf(clf):
@@ -892,6 +889,86 @@ def plot_preselected_trees(
         axes[0].set_yticklabels([])
         axes[2].set_xticklabels([])
         axes[2].set_yticklabels([])
+
+    # Add an interactive Matplotlib click handler: clicking a point opens the
+    # corresponding decision tree in a new Matplotlib figure. This provides a
+    # lightweight interactive fallback when the NiceGUI/Plotly GUI is not used.
+    try:
+        from .plot_tree_patch import plot_tree_patched
+
+        def _on_click(event):
+            # Only respond to clicks inside the scatter axes (left or right)
+            if event.inaxes not in (axes[0], axes[2]):
+                return
+            xclick, yclick = event.xdata, event.ydata
+            if xclick is None or yclick is None:
+                return
+
+            # Compute nearest tree point in PCA space
+            dists = np.hypot(plottable_data[:, 0] - xclick, plottable_data[:, 1] - yclick)
+            idx = int(np.argmin(dists))
+
+            # Use a sensible threshold relative to axis spans to avoid accidental clicks
+            if event.inaxes is axes[0]:
+                xr = axes[0].get_xlim()
+                yr = axes[0].get_ylim()
+            else:
+                xr = axes[2].get_xlim()
+                yr = axes[2].get_ylim()
+            span = np.hypot(xr[1] - xr[0], yr[1] - yr[0])
+            if dists[idx] > max(1e-9, 0.03 * span):
+                return
+
+            # Map selected point to tree index and retrieve the tree
+            tree_index = plot_data_bunch.index[idx]
+            my_clf = tuned_method.clf
+            feature_names = (
+                my_clf.feature_names_in_
+                if hasattr(my_clf, "feature_names_in_")
+                else [f"X{i}" for i in range(my_clf.n_features_in_)]
+            )
+            the_tree = my_clf[int(tree_index)]
+
+            # Estimate figure size from tree complexity
+            try:
+                real_plot_leaves = the_tree.tree_.n_leaves
+                real_plot_depth = the_tree.tree_.max_depth
+            except Exception:
+                real_plot_leaves = 8
+                real_plot_depth = 6
+
+            smart_width = max(8, int(1 + 0.4 * real_plot_leaves))
+            smart_height = max(4, int(real_plot_depth + 1))
+
+            # Render the selected tree in a new Matplotlib window
+            try:
+                fig2, ax2 = plt.subplots(figsize=(smart_width, smart_height))
+                # Draw canvas to ensure renderer is initialized before plot_tree_patched
+                fig2.canvas.draw()
+
+                plot_tree_patched(
+                    the_tree,
+                    max_depth=None,
+                    feature_names=feature_names,
+                    fontsize=8,
+                    ax=ax2,
+                )
+                ax2.set_title(f"Tree {tree_index} for sample index {tuned_method.sample_index}")
+                fig2.tight_layout()
+                plt.show()
+            except Exception as e:
+                # If tree rendering fails, print a helpful message but don't crash
+                print(f"Could not render tree {tree_index}: {e}")
+                return
+
+        fig.canvas.mpl_connect("button_press_event", _on_click)
+    except Exception as e:
+        # If the interactive click handler setup fails, continue without it
+        # (the plot will still work, just without click interactivity)
+        if plt.get_backend() != "agg":  # Only warn if not in headless mode
+            import warnings
+
+            warnings.warn(f"Could not set up interactive click handler: {e}", UserWarning)
 
     return fig, axes
 

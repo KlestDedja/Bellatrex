@@ -69,7 +69,7 @@ def pack_trained_ensemble(clf, set_up="auto", time_to_bin=None):
 
     tree_list = []
     # Correct access to n_estimators
-    if hasattr(clf, 'n_estimators'):
+    if hasattr(clf, "n_estimators"):
         for t in range(clf.n_estimators):
             tree_dict = tree_to_dict(clf, t, output_format=set_up, time_to_bin=time_to_bin)
             tree_list.append(tree_dict)
@@ -182,6 +182,17 @@ class EnsembleWrapper:
             self.n_outputs_ = self.tree_.n_outputs_  # Inferred from underlying tree_.
             self.learner_class = self.tree_.learner_class
 
+            # Add criterion attribute for compatibility with plot_tree_patched
+            # Map learner class to appropriate criterion string
+            if self.learner_class in ["DecisionTreeClassifier", "RandomForestClassifier"]:
+                self.criterion = tree_dict.get("criterion", "gini")
+            elif self.learner_class in ["DecisionTreeRegressor", "RandomForestRegressor"]:
+                self.criterion = tree_dict.get("criterion", "squared_error")
+            elif self.learner_class in ["SurvivalTree", "RandomSurvivalForest"]:
+                self.criterion = "logrank"
+            else:
+                self.criterion = "unknown"  # fallback
+
         def predict(self, X):
             if isinstance(X, pd.DataFrame):
                 X = X.to_numpy()
@@ -274,11 +285,14 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
         "random_state": getattr(tree_obj, "random_state", None),
         "ensemble_class": clf_obj.__class__.__name__,
         "learner_class": tree_obj.__class__.__name__,
+        "criterion": getattr(
+            tree_obj, "criterion", None
+        ),  # Store criterion for plot_tree compatibility
     }
 
     tree_dict["output_format"] = output_format
 
-    if isinstance(tree_obj, SurvivalTree): # case SETUP=survival
+    if isinstance(tree_obj, SurvivalTree):  # case SETUP=survival
 
         if tree_dict["unique_times_"] is None and output_format not in ["probability"]:
             raise KeyError("Missing 'unique_times_' in the tree ensemble.")
@@ -328,7 +342,7 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
         partials = tree.value[:, 0, :]  # output for 2 classes, now take average
         tree_dict["values"] = (partials[:, 1] / (partials[:, 0] + partials[:, 1])).reshape(-1, 1)
 
-    elif ( #case SETUP=multi-label
+    elif (  # case SETUP=multi-label
         isinstance(tree_obj, DecisionTreeClassifier)
         and tree_obj.n_outputs_ > 1
         and output_format in ["probability", "auto"]
@@ -336,14 +350,14 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
         partials = tree.value
         tree_dict["values"] = partials[:, :, 1] / (partials[:, :, 0] + partials[:, :, 1])
 
-    elif ( # case SETUP=regression
+    elif (  # case SETUP=regression
         isinstance(tree_obj, DecisionTreeRegressor)
         and tree_obj.n_outputs_ == 1
         and output_format in ["probability", "auto"]
     ):
         tree_dict["values"] = tree.value[:, 0, 0].reshape(-1, 1)  # output (n_nodes, 1)
 
-    elif ( # case SETUP=multi-target
+    elif (  # case SETUP=multi-target
         isinstance(tree_obj, DecisionTreeRegressor)
         and tree_obj.n_outputs_ > 1
         and output_format in ["probability", "auto"]

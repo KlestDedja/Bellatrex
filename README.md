@@ -85,10 +85,9 @@ For an enhanced user experience that includes interactive plots, you can run:
 pip install bellatrex[gui]
 ```
 
-or manually install the following additional packages:
+or manually install the following additional packages (NiceGUI + Plotly):
 ```
-pip install dearpygui==1.6.2
-pip install dearpygui-ext==0.9.5
+pip install nicegui plotly
 ```
 
 **Note:** When running Bellatrex with the GUI for multiple test samples, the program will generate an interactive window. The process may take a couple of seconds, and the user might have to click at least once within the generated window in order to activate the interactive mode. Once this is done, the user can explore the generated rules by clicking on the corresponding representation. To show the Bellatrex explanation for the next sample, close the interactive window and wait until Bellatrex generates the explanation for the new sample.

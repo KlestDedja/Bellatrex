@@ -567,10 +567,14 @@ class BellatrexExplain:
 
             matplotlib.use("Agg")
             print("Matplotlib set in a non-interactive backend, with: \"matplotlib.use('Agg')\"")
+            # Ensure the optional NiceGUI/Plotly GUI deps are available
             from .gui_utils import check_and_import_gui_dependencies
 
-            dearpygui, dearpygui_ext = check_and_import_gui_dependencies()
-            from .gui_plots_code import plot_with_interface
+            # This helper raises ImportError with guidance if the optional
+            # GUI dependencies are missing (nicegui, plotly).
+            nicegui, plotly = check_and_import_gui_dependencies()
+            # Use the NiceGUI-based interactive implementation
+            from .gui_plots_nicegui import plot_with_interface
 
             if not show:
                 warnings.warn(
