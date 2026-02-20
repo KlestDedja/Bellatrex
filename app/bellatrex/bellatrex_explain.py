@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 
-from sklearn.exceptions import ConvergenceWarning
+from sklearn.exceptions import ConvergenceWarning, NotFittedError
 from sklearn.model_selection import ParameterGrid
 from sklearn.utils.validation import check_is_fitted
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -223,7 +223,7 @@ class BellatrexExplain:
             try:
                 check_is_fitted(self.clf)  # only with sklearn models (but works with all of them)
                 return True
-            except Exception:  # if 'check_is_fitted' throws exception, we need it to output 'False'
+            except NotFittedError:
                 return False
         # Note that from sklearn 1.3. we can simply use return _is_fitted(self.clf) # returns boolean already
 
@@ -383,8 +383,7 @@ class BellatrexExplain:
 
         sample = X.iloc[[idx]]
 
-        if self.ys_oracle is not None:
-            self.ys_oracle = self.ys_oracle.iloc[idx]
+        ys_oracle = self.ys_oracle.iloc[idx] if self.ys_oracle is not None else None
 
         param_grid = {"n_trees": self.n_trees, "n_dims": self.n_dims, "n_clusters": self.n_clusters}
 
@@ -405,7 +404,7 @@ class BellatrexExplain:
             self.pre_select_trees,
             self.fidelity_measure,
             self.clf,
-            self.ys_oracle,
+            ys_oracle,
             self.set_up,
             sample,
             self.verbose,
@@ -421,7 +420,7 @@ class BellatrexExplain:
             for params in grid_list:
                 try:
                     candidate = trees_extract.set_params(**params).main_fit()
-                    perf = candidate.score(self.fidelity_measure, self.ys_oracle)
+                    perf = candidate.score(self.fidelity_measure, ys_oracle)
                 except ConvergenceWarning as e:
                     warnings.warn(f"Reached ConvergenceWarning: {e}, skipping candidate: {params}")
                     perf = -np.inf
@@ -462,8 +461,8 @@ class BellatrexExplain:
                     etrees_instance = create_instance_func(constant_params, **params)
                     candidate = etrees_instance.main_fit()
                     perf = candidate.score(fidelity_measure, ys_oracle)
-                except Exception as e:
-                    warnings.warn(f"Something went wrong ({e}), skipping candidate: {params}")
+                except (ConvergenceWarning, ValueError) as e:
+                    warnings.warn(f"Skipping candidate {params}: {e}")
                     perf = -np.inf
                 return perf, params
 
@@ -471,7 +470,7 @@ class BellatrexExplain:
                 delayed(run_candidate)(
                     create_btrex_candidate,
                     self.fidelity_measure,
-                    self.ys_oracle,
+                    ys_oracle,
                     constant_params,
                     **params,
                 )
@@ -492,7 +491,7 @@ class BellatrexExplain:
                 )
 
         tuned_method = trees_extract.set_params(**best_params).main_fit()
-        tuned_method.sample_score = tuned_method.score(self.fidelity_measure, self.ys_oracle)
+        tuned_method.sample_score = tuned_method.score(self.fidelity_measure, ys_oracle)
 
         # Ensure final_trees_idx and cluster_sizes are not None and are arrays
         if tuned_method.final_trees_idx is not None:
