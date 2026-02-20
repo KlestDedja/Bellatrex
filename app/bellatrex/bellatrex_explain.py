@@ -15,7 +15,7 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sksurv.ensemble import RandomSurvivalForest
 
 from .wrapper_class import EnsembleWrapper
-from .utilities import predict_helper
+from .utilities import predict_helper, normalize_set_up
 from .visualization_extra import _input_validation
 from .tree_extraction import TreeExtraction
 from .utilities import plot_preselected_trees, rule_print_inline
@@ -101,7 +101,7 @@ class BellatrexExplain:
         ys_oracle=None,
     ):
         self.clf = clf
-        self.set_up = set_up
+        self.set_up = set_up if set_up == "auto" else normalize_set_up(set_up)
         self.force_refit = force_refit
         self.proj_method = proj_method
         self.dissim_method = dissim_method
@@ -867,7 +867,7 @@ class BellatrexExplain:
         """
         To be implemented
         """
-        if not self.set_up in ["surv", "survival"]:
+        if self.set_up != "survival":
             raise ValueError("Input set-up is not a time-to-event!")
         else:
             raise NotImplementedError("predict_survival_curve is not implemented yet.")
@@ -876,7 +876,7 @@ class BellatrexExplain:
         """
         To be implemented
         """
-        if not self.set_up in ["surv", "survival"]:
+        if self.set_up != "survival":
             raise ValueError("Input set-up is not a time-to-event!")
         else:
             raise NotImplementedError("predict_median_surv_time is not implemented yet.")

@@ -460,7 +460,7 @@ def plot_with_interface(
             # binary, regression, survival case (single-output cases)
             if isinstance(plot_data_bunch.rf_pred, float) or plot_data_bunch.rf_pred.size == 1:
 
-                is_binary = plot_data_bunch.set_up == "bin"
+                is_binary = plot_data_bunch.set_up == "binary"
 
                 plot_data_bunch.rf_pred = np.array(plot_data_bunch.rf_pred).squeeze()
 

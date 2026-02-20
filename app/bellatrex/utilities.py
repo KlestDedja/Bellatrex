@@ -58,6 +58,45 @@ def get_auto_setup(y_test):
             raise ValueError(f"Unexpected case, shape: {y_test.shape}")
 
 
+_SET_UP_ALIASES = {
+    "bin": "binary",
+    "binary": "binary",
+    "regress": "regression",
+    "regr": "regression",
+    "regression": "regression",
+    "surv": "survival",
+    "survival": "survival",
+    "multilabel": "multi-label",
+    "multi-label": "multi-label",
+    "multi_label": "multi-label",
+    "mtc": "multi-label",
+    "multitarget": "multi-target",
+    "multi-target": "multi-target",
+    "multi_target": "multi-target",
+    "mtr": "multi-target",
+}
+
+
+def normalize_set_up(set_up):
+    """Map any accepted set_up alias to its canonical form.
+
+    Canonical forms: ``"binary"``, ``"regression"``, ``"survival"``,
+    ``"multi-label"``, ``"multi-target"``.
+
+    Raises
+    ------
+    ValueError
+        If *set_up* is not a recognised alias.
+    """
+    key = set_up.lower() if isinstance(set_up, str) else set_up
+    if key not in _SET_UP_ALIASES:
+        raise ValueError(
+            f"Unknown set_up value: {set_up!r}. "
+            f"Valid choices: {sorted(set(_SET_UP_ALIASES.values()))}"
+        )
+    return _SET_UP_ALIASES[key]
+
+
 def concatenate_helper(y_pred, y_local_pred, axis=0):
 
     if y_pred.shape[0] == 0:  # if still empty (no rows added)
