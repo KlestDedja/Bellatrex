@@ -84,7 +84,7 @@ def test_core_workflow():
 
 
 # --- Rules and file handling test ---
-def test_create_rules_txt():
+def test_create_rules_txt(explanation_out_dir_path):
     for setup, loader in DATA_LOADERS.items():
         X, y = loader(return_X_y=True)
         X_train, X_test, y_train, _ = train_test_split(X, y, test_size=0.3, random_state=0)
@@ -111,7 +111,7 @@ def test_create_rules_txt():
             btrex_fitted.explain(X_test, i)
             out_file = "test_rules.txt"
             out_file, out_file_extra = btrex_fitted.create_rules_txt(
-                out_dir="explanations-output", out_file=out_file
+                out_dir=str(explanation_out_dir_path), out_file=out_file
             )
             assert os.path.exists(out_file), "Rules file was not created"
 

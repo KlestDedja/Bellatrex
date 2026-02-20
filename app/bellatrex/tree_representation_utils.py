@@ -86,3 +86,26 @@ def rule_splits_to_vector(clf, idx1, feature_represent, sample):  # it's a SIMIL
     rule_vector[: len(rule_vec_no_pad)] += rule_vec_no_pad
 
     return rule_vector
+
+
+def tree_to_vector(clf, idx, method="trees", feature_represent=None, sample=None):
+    """Unified wrapper to obtain a vector representation for a tree or a rule-path.
+
+    - method: 'trees' for full-tree split representation, 'rules' for sample path.
+    """
+    if method == "trees":
+        # default split_weight interpreted as 'by_samples' for trees
+        return tree_splits_to_vector(clf, idx, split_weight="by_samples")
+    elif method == "rules":
+        if feature_represent is None:
+            feature_represent = "weighted"
+        if sample is None:
+            raise ValueError("sample must be provided when method='rules'")
+        return rule_splits_to_vector(clf, idx, feature_represent, sample)
+    else:
+        raise ValueError(f"Unknown method {method}")
+
+
+def rules_to_vector(clf, idx, feature_represent, sample):
+    """Alias for rule_splits_to_vector for clearer external API."""
+    return rule_splits_to_vector(clf, idx, feature_represent, sample)

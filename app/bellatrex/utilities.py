@@ -21,6 +21,7 @@ from matplotlib.ticker import FuncFormatter
 from matplotlib.colorbar import Colorbar
 
 from .wrapper_class import EnsembleWrapper
+from typing import Any, List, Optional, Tuple, Union
 
 # def is_ci():
 #     return os.environ.get("CI", "false").lower() == "true"
@@ -90,7 +91,7 @@ _SET_UP_ALIASES = {
 }
 
 
-def normalize_set_up(set_up):
+def normalize_set_up(set_up: str) -> str:
     """Map any accepted set_up alias to its canonical form.
 
     Canonical forms: ``"binary"``, ``"regression"``, ``"survival"``,
@@ -110,7 +111,7 @@ def normalize_set_up(set_up):
     return _SET_UP_ALIASES[key]
 
 
-def _infer_set_up(clf, y):
+def _infer_set_up(clf: Any, y: Any) -> str:
     """Infer the prediction task from a fitted classifier and its training labels.
 
     Returns one of the canonical set_up strings: ``"binary"``, ``"regression"``,
@@ -166,7 +167,7 @@ def _is_binary_clf(clf):
     return False
 
 
-def concatenate_helper(y_pred, y_local_pred, axis=0):
+def concatenate_helper(y_pred: np.ndarray, y_local_pred: np.ndarray, axis: int = 0) -> np.ndarray:
 
     if y_pred.shape[0] == 0:  # if still empty (no rows added)
 
@@ -180,7 +181,7 @@ def concatenate_helper(y_pred, y_local_pred, axis=0):
     return np.concatenate((y_pred, y_local_pred), axis=axis)
 
 
-def predict_helper(clf, X):
+def predict_helper(clf: Any, X: Any) -> Any:
     """
     Return consistent predictions across classifiers, regressors, and wrapped models.
 

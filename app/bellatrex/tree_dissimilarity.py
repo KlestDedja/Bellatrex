@@ -56,18 +56,25 @@ class TreeDissimilarity:
         return vectors
 
     def vectors_to_dissim_matrix(self, vector_list: list):
+        # Vectorized computation of pairwise Jaccard-like similarity for non-negative vectors
+        if len(vector_list) == 0:
+            return np.zeros((0, 0))
 
-        size = len(vector_list)
-        A = np.zeros([size, size])
+        V = np.vstack(vector_list).astype(float)  # shape (n_trees, n_features)
 
-        for i in range(size):
-            for j in range(i, size):
-                A[i, j] = np.sum(np.minimum(vector_list[i], vector_list[j])) / np.sum(
-                    np.maximum(vector_list[i], vector_list[j])
-                )
-                A[j, i] = A[i, j]
+        # Compute pairwise intersections and unions using broadcasting. This will
+        # allocate an (n, n, m) temporary array; acceptable for modest n.
+        # intersection[i,j] = sum_k min(V[i,k], V[j,k])
+        mins = np.minimum(V[:, None, :], V[None, :, :])
+        intersections = mins.sum(axis=2)
+        maxs = np.maximum(V[:, None, :], V[None, :, :])
+        unions = maxs.sum(axis=2)
 
-        return 1 - A  # dissimilarity instead of similarity (A[i,i]= 0)
+        # Avoid division by zero: where union == 0, define similarity as 1.0
+        with np.errstate(divide="ignore", invalid="ignore"):
+            sim = np.where(unions == 0, 1.0, intersections / unions)
+
+        return 1.0 - sim
 
     def compute_avg_dissimilarity(self, dist_matrix: np.ndarray):
         # averages the OFF_DIAGONAL elements of the matrix

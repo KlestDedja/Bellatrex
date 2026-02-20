@@ -156,7 +156,7 @@ def test_predict_median_surv_time(mock_survival_clf, mock_survival_data):
 #     assert hasattr(explainer, "tuned_method")
 
 
-def test_create_rules_txt_file(monkeypatch, mock_clf, mock_data):
+def test_create_rules_txt_file(monkeypatch, mock_clf, mock_data, explanation_out_dir_path):
     X, y = mock_data
     explainer = BellatrexExplain(mock_clf)
     explainer.fit(X, y)
@@ -176,8 +176,9 @@ def test_create_rules_txt_file(monkeypatch, mock_clf, mock_data):
     monkeypatch.setattr("bellatrex.utilities.rule_to_file", lambda *a, **k: None)
     monkeypatch.setattr("bellatrex.visualization.read_rules", lambda **k: ([1], [1], [1], [1], [1]))
     monkeypatch.setattr("bellatrex.visualization_extra._input_validation", lambda *a, **k: None)
+
     out_file, file_extra = explainer.create_rules_txt(
-        out_dir="explanations-output", out_file="testing_rules.txt"
+        out_dir=str(explanation_out_dir_path), out_file="testing_rules.txt"
     )
     assert os.path.exists(out_file)
     assert os.path.exists(file_extra)
