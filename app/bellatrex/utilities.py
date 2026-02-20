@@ -423,21 +423,31 @@ def rule_to_file(clf_i, sample, rule_weight, max_features_print, f):
         else:  # if feature split is == _tree.TREE_UNDEFINED (that is, -2), then we are in a leaf
             if is_traversed_node[node] == 1:
                 partial_preds_str = frmt_pretty_print(partial_preds[node], 6)
-                f.write(f"leaf.{node:4}: {indent}returns {partial_preds_str}\n")
+                f.write(f"leaf.{node:4}: {indent}returns {partial_preds_str}\n\n")
 
     tree_structure = clf_i.tree_
     unique_features = used_feature_set(clf_i, feature_names, sample)
 
     # Take care of selection of sample columns so that
     # it stays in the pd.DataFrame format. This works:
-    # store values with at most 6 digits in the file ( whjta baout col_space = 5 though?)
+    # store values with at most 6 digits in the file ( what about col_space = 5 though?)
     unique_features_formatted = sample[unique_features].apply(
         lambda col: col.map(lambda x: frmt_pretty_print(x, 6))
     )
 
+    if len(unique_features) > 0:
+        col_widths = [max(len(str(name)), 1) for name in unique_features]
+    else:
+        col_widths = []
+
     if len(unique_features) <= max_features_print:
         f.write("#" * 24 + "  SAMPLE  " + "#" * 24 + "\n")
-        f.write(unique_features_formatted.to_string(col_space=5) + "\n")
+        header = " | ".join(f"{name:^{width}}" for name, width in zip(unique_features, col_widths))
+        f.write(header + "\n")
+        # f.write("-" * len(header) + "\n")
+        for row in unique_features_formatted.itertuples(index=False):
+            row_str = " | ".join(f"{val:^{width}}" for val, width in zip(row, col_widths))
+            f.write(row_str + "\n")
     else:
         f.write("#" * 58 + "\n")
 

@@ -24,9 +24,66 @@ from .visualization import read_rules, plot_rules
 
 
 class BellatrexExplain:
+    """
+    Explain individual predictions of a Random Forest model using Bellatrex.
+
+    Bellatrex pre-selects a subset of trees used to make a prediction, projects
+    their rule representations into a low-dimensional space, clusters them, and
+    returns one representative rule per cluster as the explanation.
+
+    Parameters
+    ----------
+    clf : RandomForestClassifier, RandomForestRegressor, RandomSurvivalForest,
+          EnsembleWrapper, or dict
+        The (possibly pre-fitted) Random Forest model to explain.  A packed
+        dictionary produced by ``pack_trained_ensemble`` is also accepted.
+    set_up : str, default="auto"
+        Prediction task.  ``"auto"`` infers the task from the fitted model.
+        Explicit choices: ``"binary"``, ``"regression"``, ``"survival"``,
+        ``"multi-label"``, ``"multi-target"``.
+    force_refit : bool, default=False
+        If ``True``, always re-fit ``clf`` even when it is already trained.
+    verbose : int, default=0
+        Verbosity level.  ``0`` = silent; ``1`` = summary; ``>=3`` = detailed.
+    proj_method : str or None, default="PCA"
+        Dimensionality-reduction method applied to rule vectors.  ``None``
+        disables projection.
+    dissim_method : str, default="rules"
+        Dissimilarity metric used to compare tree rules.
+    feature_represent : str, default="weighted"
+        Strategy for building per-tree feature vectors.
+    p_grid : dict or None, default=None
+        Hyperparameter search grid.  Bellatrex selects the combination with
+        the highest fidelity to the original model prediction.  Recognised
+        keys and their defaults::
+
+            {
+                "n_trees":    [0.6, 0.8, 1.0],  # fraction or count of trees
+                "n_dims":     [2, None],          # PCA output dimensions
+                "n_clusters": [1, 2, 3],          # number of rules returned
+            }
+
+        Pass a subset of keys to override only those defaults.
+    pre_select_trees : str, default="L2"
+        Method used to pre-select trees before clustering.
+    fidelity_measure : str, default="L2"
+        Metric used to score candidate hyperparameter combinations.
+    n_jobs : int, default=1
+        Number of parallel jobs for the hyperparameter search.  Values > 1
+        use thread-based parallelism (experimental).
+    ys_oracle : array-like or None, default=None
+        Optional ground-truth labels for the test set, used for oracle-aware
+        fidelity scoring.  Rarely needed in practice.
+    """
 
     FONT_SIZE = 14
     MAX_FEATURE_PRINT = 10
+
+    _DEFAULT_P_GRID = {
+        "n_trees": [0.6, 0.8, 1.0],
+        "n_dims": [2, None],
+        "n_clusters": [1, 2, 3],
+    }
 
     def __init__(
         self,
@@ -37,29 +94,30 @@ class BellatrexExplain:
         proj_method="PCA",
         dissim_method="rules",
         feature_represent="weighted",
-        p_grid={
-            "n_trees": [0.6, 0.8, 1.0],
-            "n_dims": [2, None],
-            "n_clusters": [1, 2, 3],
-        },
+        p_grid=None,
         pre_select_trees="L2",
         fidelity_measure="L2",
         n_jobs=1,
         ys_oracle=None,
     ):
-
-        self.clf = clf  # (un)fitted instance of R(S)F
+        self.clf = clf
         self.set_up = set_up
         self.force_refit = force_refit
         self.proj_method = proj_method
         self.dissim_method = dissim_method
         self.feature_represent = feature_represent
-        self.p_grid = p_grid
+        self.p_grid = p_grid if p_grid is not None else dict(self._DEFAULT_P_GRID)
         self.pre_select_trees = pre_select_trees
         self.fidelity_measure = fidelity_measure
         self.n_jobs = n_jobs
         self.verbose = verbose
-        self.ys_oracle = None
+        self.ys_oracle = ys_oracle
+
+        # Initialised by explain(); guards plot/txt methods against being called early.
+        self.sample = None
+        self.tuned_method = None
+        self.sample_index = None
+        self.surrogate_pred_str = None
 
     def _validate_p_grid(self):
         """
@@ -169,6 +227,21 @@ class BellatrexExplain:
                 return False
         # Note that from sklearn 1.3. we can simply use return _is_fitted(self.clf) # returns boolean already
 
+    def __repr__(self):
+        clf_name = (
+            self.clf.__class__.__name__
+            if not isinstance(self.clf, dict)
+            else "dict (packed ensemble)"
+        )
+        return (
+            f"BellatrexExplain("
+            f"clf={clf_name}, "
+            f"set_up={self.set_up!r}, "
+            f"proj_method={self.proj_method!r}, "
+            f"n_jobs={self.n_jobs}, "
+            f"verbose={self.verbose})"
+        )
+
     def fit(self, X, y):
         """
         Fits the classifier to the data if not already fitted or if force refit is requested.
@@ -191,20 +264,20 @@ class BellatrexExplain:
         Notes:
         - If 'force_refit' is False and the model is already fitted, it skips the fitting process
             and proceeds to build an explanation.
-        - If 'verbose' is set to 0 or higher, it will print the fitting status.
+        - If 'verbose' is 1 or higher, it will print the fitting status.
         - Automatically determines the prediction task ('set_up') based on classifier properties.
         """
 
         if self.force_refit is False and self.is_fitted():
-            if self.verbose >= 0:
+            if self.verbose >= 1:
                 print("Model is already fitted, building explanation.")
         else:
-            if self.verbose >= 0:
+            if self.verbose >= 1:
                 print("Fitting the model...", end="")
             if hasattr(self.clf, "n_jobs"):
                 self.clf.n_jobs = self.n_jobs
             self.clf.fit(X, y)
-            if self.verbose >= 0:
+            if self.verbose >= 1:
                 print("fitting complete")
 
         # then check whether the input grid values are admissible
@@ -275,11 +348,43 @@ class BellatrexExplain:
         return self
 
     def explain(self, X, idx):
+        """
+        Run Bellatrex for a single test sample and store the results.
+
+        This method performs the full hyperparameter search (over ``p_grid``),
+        selects the best tree subset and clustering, and prepares the explanation
+        objects used by ``plot_overview``, ``plot_visuals``, ``create_rules_txt``,
+        and ``print_rules_txt``.  Returns ``self`` to allow method chaining.
+
+        Parameters
+        ----------
+        X : pandas.DataFrame, shape (n_samples, n_features)
+            Test dataset.  Must be a pandas DataFrame so that feature names are
+            preserved in the explanation.  Use ``pd.DataFrame(arr, columns=names)``
+            to wrap a NumPy array if needed.
+        idx : int
+            Positional (iloc) index of the sample to explain within ``X``.
+
+        Returns
+        -------
+        self : BellatrexExplain
+            The fitted explainer, ready for visualisation or text output.
+
+        Raises
+        ------
+        TypeError
+            If ``X`` is not a pandas DataFrame.
+        """
+        if not isinstance(X, pd.DataFrame):
+            raise TypeError(
+                "X must be a pandas DataFrame. "
+                "Wrap your array with: pd.DataFrame(X, columns=feature_names)"
+            )
 
         sample = X.iloc[[idx]]
 
         if self.ys_oracle is not None:
-            self.ys_oracle = self.ys_oracle.iloc[idx]  # pick needed one
+            self.ys_oracle = self.ys_oracle.iloc[idx]
 
         param_grid = {"n_trees": self.n_trees, "n_dims": self.n_dims, "n_clusters": self.n_clusters}
 
@@ -310,7 +415,7 @@ class BellatrexExplain:
             "n_clusters": 2,
             "n_dims": None,
             "n_trees": 80,
-        }  # default combination, in case everything fails
+        }  # fallback if all grid candidates fail
 
         if self.n_jobs == 1:
             for params in grid_list:
@@ -320,8 +425,6 @@ class BellatrexExplain:
                 except ConvergenceWarning as e:
                     warnings.warn(f"Reached ConvergenceWarning: {e}, skipping candidate: {params}")
                     perf = -np.inf
-                # except KeyboardInterrupt as e:
-                #     raise e
 
                 if self.verbose >= 5:
                     print("params:", params)
@@ -337,11 +440,7 @@ class BellatrexExplain:
                     " setting default parameters"
                 )
         elif self.n_jobs > 1:
-            warnings.warn(
-                "Multi-processing is not optimized in this version and the"
-                " speed-up gain is marginal. Set n_jobs = 1 to avoid this warning"
-            )
-
+            # Thread-based parallelism; speed-up is dataset-dependent.
             def missing_params_dict(given_params, class_instance):
                 param_names = class_instance.__init__.__code__.co_varnames[1:]
                 param_values = {name: getattr(class_instance, name) for name in param_names}
@@ -351,8 +450,7 @@ class BellatrexExplain:
                 return missing_params
 
             provided_params = list(grid_list[0].keys())
-            class_instance = trees_extract
-            constant_params = missing_params_dict(provided_params, class_instance)
+            constant_params = missing_params_dict(provided_params, trees_extract)
 
             def create_btrex_candidate(constant_params, **params):
                 return TreeExtraction(**constant_params, **params)
@@ -360,7 +458,6 @@ class BellatrexExplain:
             def run_candidate(
                 create_instance_func, fidelity_measure, ys_oracle, constant_params, **params
             ):
-                candidate = None
                 try:
                     etrees_instance = create_instance_func(constant_params, **params)
                     candidate = etrees_instance.main_fit()
@@ -416,12 +513,10 @@ class BellatrexExplain:
             if len(final_cluster_sizes) > 0:
                 cluster_weight = cluster_size / np.sum(final_cluster_sizes)
             else:
-                cluster_weight = 0  # Default value
+                cluster_weight = 0
 
             surrogate_pred += predict_helper(self.clf[tree_idx], sample.values) * cluster_weight
 
-        # Store surrogate prediction directly in BellatrexExplain instance
-        # self.surrogate_prediction = surrogate_pred
         surrogate_pred_str = frmt_pretty_print(surrogate_pred, digits_single=4)
 
         if self.verbose >= 1:
@@ -432,13 +527,13 @@ class BellatrexExplain:
             print(f"final trees indices: {final_extract_trees}")
             print(f"final cluster sizes: {final_cluster_sizes}")
 
-        # Store for use in plot_overview (offer possibility for method chaining)
+        # Store state for method chaining into plot/txt methods.
         self.sample = X.iloc[[idx]]
-        self.sample_iloc = idx
+        self.sample_index = idx
         self.tuned_method = tuned_method
         self.surrogate_pred_str = surrogate_pred_str
 
-        return self  # Return self for method chaining
+        return self  # enables method chaining
 
     def plot_overview(
         self, show=True, plot_max_depth=None, colormap=None, plot_gui=False, temp_gui_dir=None
@@ -540,67 +635,74 @@ class BellatrexExplain:
         return fig, axes  # plt.gcf()
 
     def _pick_base_dir(self, out_dir_name="explanations-output"):
-        """
-        Choose a base dir that callers can override via env.
-        """
+        """Return the base output directory, honouring the BELLATREX_EXPLAIN_DIR env var."""
         env_dir = os.getenv("BELLATREX_EXPLAIN_DIR")
-        # if env_dir:
-        #     return env_dir
-        # default to cwd/explanations-output
-        return os.path.join(os.getcwd(), out_dir_name)
-
-    def _pick_runtime_dir(self, out_dir_name="temp-plots"):
-        """
-        Choose a runtime dir that callers can override via env.
-        """
-        env_dir = os.getenv("BELLATREX_RUNTIME_DIR")
         if env_dir:
             return env_dir
-        # default to cwd/temp-plots
         return os.path.join(os.getcwd(), out_dir_name)
 
-    def create_rules_txt(self, out_dir="explanations-output", out_file=None):
+    def _resolve_output_dir(self, out_dir):
         """
-        Create rules with Bellatrex and stores them as txt files.
+        Resolve *out_dir* to an absolute path.
 
-        Output path management:
-        - 'out_file' is the filename. If None, defaults to 'Btrex_sample_<iloc>.txt'.
-        - 'out_dir' controls location:
-            * absolute path: used as-is
-            * relative path / "." / "": resolved under base = BELLATREX_EXPLAIN_DIR or <cwd>/explanations-output
-        - Never writes near site-packages, no tempfile fallback: ensure Docker/CI sets a writable workdir or env.
+        - ``None``           → ``_pick_base_dir()``  (env var or ``<cwd>/explanations-output``)
+        - absolute path      → used as-is
+        - relative path      → resolved relative to the current working directory
+        """
+        if out_dir is None:
+            return self._pick_base_dir()
+        if os.path.isabs(out_dir):
+            return out_dir
+        return os.path.join(os.getcwd(), out_dir)
+
+    def create_rules_txt(self, out_dir=None, out_file=None):
+        """
+        Write the Bellatrex explanation rules to a pair of ``.txt`` files and return their paths.
+
+        Parameters
+        ----------
+        out_dir : str or None, default=None
+            Directory to write rule files to.
+
+            * ``None`` → ``$BELLATREX_EXPLAIN_DIR`` if set, otherwise
+              ``<cwd>/explanations-output``.
+            * Absolute path → used as-is.
+            * Relative path → resolved relative to the current working directory.
+        out_file : str or None, default=None
+            Filename for the main rule file.  Only the basename is used; any
+            directory portion is ignored.  Defaults to
+            ``"Btrex_sample_<sample_index>.txt"``.
+
+        Returns
+        -------
+        main_path : str
+            Path to the main rule file (selected rules only).
+        extra_path : str
+            Path to the extra rule file (all remaining rules, weight = 0).
         """
         tuned_method = self.tuned_method
 
-        # Ensure DataFrame with stable column names
+        # Ensure the sample is a DataFrame with stable column names.
         if isinstance(self.sample, np.ndarray):
-            self.sample = pd.DataFrame(self.sample)
-            self.sample.columns = [f"X_{i}" for i in range(len(self.sample.columns))]
+            self.sample = pd.DataFrame(
+                self.sample, columns=[f"X_{i}" for i in range(self.sample.shape[1])]
+            )
 
-        # 1) Resolve target_dir from out_dir (absolute respected; relative goes under base)
-        if os.path.isabs(out_dir):
-            target_dir = out_dir
-        else:
-            base = self._pick_base_dir(out_dir_name="explanations-output")
-            target_dir = base if out_dir in ("", ".") else os.path.join(base, out_dir)
-
-        # filename comes ONLY from out_file or default; strip any accidental path parts
-        filename = out_file or f"Btrex_sample_{self.sample_iloc}.txt"
-        filename = os.path.basename(filename)  # enforce "filename only"
-
+        target_dir = self._resolve_output_dir(out_dir)
+        filename = os.path.basename(out_file or f"Btrex_sample_{self.sample_index}.txt")
         main_path = os.path.join(target_dir, filename)
-        stem, _ = os.path.splitext(main_path)
+        stem = os.path.splitext(main_path)[0]
         extra_path = f"{stem}_extra.txt"
 
-        os.makedirs(os.path.dirname(main_path), exist_ok=True)
+        os.makedirs(target_dir, exist_ok=True)
 
-        # 5) Write main file
-        with open(main_path, "w", encoding="utf8"):
-            pass
-        with open(main_path, "a", encoding="utf8") as f:
-            for idx, clus_size in zip(tuned_method.final_trees_idx, tuned_method.cluster_sizes):
+        # Write main file (selected rules).
+        with open(main_path, "w", encoding="utf-8") as f:
+            for tree_idx, clus_size in zip(
+                tuned_method.final_trees_idx, tuned_method.cluster_sizes
+            ):
                 rule_to_file(
-                    self.clf[idx],
+                    self.clf[tree_idx],
                     self.sample,
                     clus_size / np.sum(tuned_method.cluster_sizes),
                     self.MAX_FEATURE_PRINT,
@@ -608,15 +710,15 @@ class BellatrexExplain:
                 )
             f.write(f"Bellatrex prediction: {self.surrogate_pred_str}")
 
-        # 6) Write extra file
-        with open(extra_path, "w", encoding="utf8"):
-            pass
-        with open(extra_path, "a", encoding="utf8") as f:
-            for idx in range(self.clf.n_estimators):
-                if idx not in tuned_method.final_trees_idx:
-                    rule_to_file(self.clf[idx], tuned_method.sample, 0, self.MAX_FEATURE_PRINT, f)
+        # Write extra file (all non-selected rules, assigned weight 0).
+        with open(extra_path, "w", encoding="utf-8") as f:
+            for tree_idx in range(self.clf.n_estimators):
+                if tree_idx not in tuned_method.final_trees_idx:
+                    rule_to_file(
+                        self.clf[tree_idx], tuned_method.sample, 0, self.MAX_FEATURE_PRINT, f
+                    )
 
-        # 7) Parse & validate
+        # Parse & validate the written files.
         rules, preds, baselines, weights, _ = read_rules(file=main_path, file_extra=extra_path)
         if isinstance(preds[0], list):
             preds = [list(map(float, pred)) for pred in preds]
@@ -624,7 +726,60 @@ class BellatrexExplain:
             baselines = [list(map(float, baseline)) for baseline in baselines]
         _input_validation(rules, preds, baselines, weights)
 
+        self._last_rules_main_path = main_path
+        self._last_rules_extra_path = extra_path
+
         return main_path, extra_path
+
+    def print_rules_txt(self, out_dir=None, out_file=None):
+        """
+        Print the Bellatrex explanation rules to stdout.
+
+        If ``out_dir`` and ``out_file`` are both ``None``, the most recently
+        created rules file (from ``create_rules_txt``) is read.  Otherwise the
+        path is resolved using the same logic as ``create_rules_txt``.
+
+        Parameters
+        ----------
+        out_dir : str or None, default=None
+            Directory where the rules file is located.  Same resolution rules
+            as in ``create_rules_txt``.
+        out_file : str or None, default=None
+            Filename of the rules file.  Defaults to
+            ``"Btrex_sample_<sample_index>.txt"``.
+
+        Returns
+        -------
+        main_path : str
+            Path of the file that was printed.
+
+        Raises
+        ------
+        ValueError
+            If no rules file can be found at the resolved path.
+        """
+        if out_dir is None and out_file is None:
+            main_path = getattr(self, "_last_rules_main_path", None)
+            if not main_path or not os.path.exists(main_path):
+                raise ValueError(
+                    "No existing rules file found. Call create_rules_txt() first, "
+                    "or pass out_dir / out_file to point to an existing file."
+                )
+        else:
+            target_dir = self._resolve_output_dir(out_dir)
+            filename = os.path.basename(out_file or f"Btrex_sample_{self.sample_index}.txt")
+            main_path = os.path.join(target_dir, filename)
+            if not os.path.exists(main_path):
+                raise ValueError(
+                    f"No rules file found at '{main_path}'. " "Call create_rules_txt() first."
+                )
+
+        with open(main_path, "r", encoding="utf-8") as f:
+            rules_text = f.read()
+        print("Bellatrex rules (text explanation):")
+        print(rules_text)
+
+        return main_path
 
     def plot_visuals(
         self,

@@ -7,11 +7,12 @@ __pycache__/
 .spyproject
 .ipynb_checkpoints
 .idea/
-
+tmp*
 
 # Bellatrex specific stuff
-app/bellatrex/explanations_text/*
-app/bellatrex/temp_files/*
+explanations-output/*
+app/bellatrex/explanations-output/*
+app/bellatrex/temp-files/*
 
 # Distribution / packaging
 .Python
@@ -53,3 +54,4 @@ ENV/
 env.bak/
 venv.bak/
 .github/instructions/*
+
