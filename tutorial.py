@@ -1,6 +1,12 @@
+"""
+This files serves as a tutorial that is less focused on being interactive
+(for that, check tutorial.ipynb) and more focused into debugging.
+The idea is that this file included most of the features, and by
+running it we can spot potential issues in the codebase.
+We also test the GUI with NiceGUI here, since it is not easily testable in an automated way.
+"""
+
 import os
-import numpy as np
-import pandas as pd
 import bellatrex
 import matplotlib.pyplot as plt
 import joblib
@@ -10,14 +16,24 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 
 from bellatrex import BellatrexExplain, pack_trained_ensemble, predict_helper
-from bellatrex.datasets import load_mtr_data, load_mlc_data
-from bellatrex.datasets import load_survival_data, load_binary_data, load_regression_data
+from bellatrex.datasets import (
+    load_mtr_data,
+    load_mlc_data,
+    load_survival_data,
+    load_binary_data,
+    load_regression_data,
+)
 from bellatrex.utilities import get_auto_setup
 
 print("Bellatrex version:", bellatrex.__version__)
 print("Working directory:", os.getcwd())
 
 PLOT_GUI = True
+print("PLOT_GUI =", PLOT_GUI)
+print(
+    "Note: If PLOT_GUI is True, a browser window will open with the NiceGUI interface.\n"
+    "Close the browser tab to continue with the rest of the script."
+)
 
 # Uncomment the dataset that matches the prediction task you want to explore:
 X, y = load_binary_data(return_X_y=True)  # binary classification
@@ -54,7 +70,7 @@ print("Model fitting complete.")
 # To save your own model, uncomment and adjust the line below:
 # joblib.dump(clf, os.path.join('app', 'bellatrex', 'datasets', 'model_example.pkl'))
 
-model_path = os.path.join("app", "bellatrex", "datasets", "model_example.pkl")
+model_path = os.path.join("app", "bellatrex", "datasets", f"{SETUP}_example.pkl")
 if os.path.exists(model_path):
     clf = joblib.load(model_path)
     print(f"Loaded pre-trained model from {model_path}")
@@ -77,7 +93,7 @@ Btrex_fitted = BellatrexExplain(
 # Pre-compute training predictions once, used as background distribution in plot_visuals
 y_train_pred = predict_helper(clf, X_train)
 
-N_TEST_SAMPLES = 3
+N_TEST_SAMPLES = 2
 for i in range(N_TEST_SAMPLES):
     print(f"\n--- Explaining sample i={i} ---")
 
@@ -93,3 +109,12 @@ for i in range(N_TEST_SAMPLES):
             plot_max_depth=5, preds_distr=y_train_pred, conf_level=0.9, tot_digits=4, show=False
         )
         plt.show(block=True)
+
+    if PLOT_GUI:
+        print("A browser window will open shortly. Close the browser tab to exit.")
+        print("=" * 60 + "\n")
+
+        # Launch the NiceGUI interface (this call blocks while the server runs)
+        fig, obj = tuned_method.plot_overview(plot_gui=True, show=True)
+        plt.show(block=True)
+        print("=" * 60 + "\n")

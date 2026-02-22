@@ -1,5 +1,4 @@
 import warnings
-import os
 import numpy as np
 import pandas as pd
 
@@ -598,12 +597,17 @@ def _show_scrollable_figure(fig, fig_width_in, fig_height_in, dpi=100):
     """
     Display *fig* in a window.
 
-    If the figure fits within ~90 % of the screen it is shown normally.
-    When it is larger than that a Tkinter window with both scrollbars is
+    If the figure fits within ~90 % of the screen width and ~70% of the
+    screen height it is shown normally. When it is larger than that a
+    Tkinter window with both scrollbars is created so the user can pan
     created so the user can pan across the full tree.  Falls back to a
     plain plt.show() if Tkinter is unavailable.
     """
-    SCREEN_FRAC = 0.90  # use up to 90 % of screen dimensions
+    # previous behavior used a single SCREEN_FRAC = 0.90 for both
+    # width and height. The former value was 0.90 (90%). We now cap
+    # width at 90% and height at 70% to avoid overly tall windows.
+    SCREEN_FRAC_W = 0.90  # use up to 90% of screen width
+    SCREEN_FRAC_H = 0.70  # use up to 70% of screen height
 
     try:
         import tkinter as tk
@@ -619,8 +623,8 @@ def _show_scrollable_figure(fig, fig_width_in, fig_height_in, dpi=100):
         screen_w_in = screen_w_px / dpi
         screen_h_in = screen_h_px / dpi
 
-        max_w_in = SCREEN_FRAC * screen_w_in
-        max_h_in = SCREEN_FRAC * screen_h_in
+        max_w_in = SCREEN_FRAC_W * screen_w_in
+        max_h_in = SCREEN_FRAC_H * screen_h_in
 
         needs_scroll = fig_width_in > max_w_in or fig_height_in > max_h_in
 
@@ -630,8 +634,8 @@ def _show_scrollable_figure(fig, fig_width_in, fig_height_in, dpi=100):
             return
 
         # --- build a scrollable Tkinter + Matplotlib window ------------------
-        win_w_px = min(int(fig_width_in  * dpi), int(max_w_in  * dpi))
-        win_h_px = min(int(fig_height_in * dpi), int(max_h_in  * dpi))
+        win_w_px = min(int(fig_width_in * dpi), int(max_w_in * dpi))
+        win_h_px = min(int(fig_height_in * dpi), int(max_h_in * dpi))
 
         root = tk.Tk()
         root.title(fig.axes[0].get_title() if fig.axes else "Tree viewer")
@@ -643,7 +647,7 @@ def _show_scrollable_figure(fig, fig_width_in, fig_height_in, dpi=100):
 
         vbar = tk.Scrollbar(outer, orient=tk.VERTICAL)
         hbar = tk.Scrollbar(outer, orient=tk.HORIZONTAL)
-        vbar.pack(side=tk.RIGHT,  fill=tk.Y)
+        vbar.pack(side=tk.RIGHT, fill=tk.Y)
         hbar.pack(side=tk.BOTTOM, fill=tk.X)
 
         # Tkinter canvas that will host the scrollable region
