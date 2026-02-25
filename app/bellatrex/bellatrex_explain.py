@@ -313,7 +313,7 @@ class BellatrexExplain:
         Returns
         -------
         self : BellatrexExplain
-            The fitted explainer, ready for visualisation or text output.
+            The fitted explainer, ready for visualization or text output.
 
         Raises
         ------
@@ -332,9 +332,7 @@ class BellatrexExplain:
             )
 
         if not (0 <= idx < len(X)):
-            raise IndexError(
-                f"idx={idx} is out of bounds for X with {len(X)} rows."
-            )
+            raise IndexError(f"idx={idx} is out of bounds for X with {len(X)} rows.")
 
         sample = X.iloc[[idx]]
 
