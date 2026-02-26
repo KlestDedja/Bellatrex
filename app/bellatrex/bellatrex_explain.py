@@ -332,9 +332,7 @@ class BellatrexExplain:
             )
 
         if not (0 <= idx < len(X)):
-            raise IndexError(
-                f"idx={idx} is out of bounds for X with {len(X)} rows."
-            )
+            raise IndexError(f"idx={idx} is out of bounds for X with {len(X)} rows.")
 
         sample = X.iloc[[idx]]
 
@@ -559,12 +557,12 @@ class BellatrexExplain:
             fig.suptitle("Plot overview", fontsize=16)
 
         else:  # Interactive GUI plotting
-            if isinstance(self.clf, EnsembleWrapper):
-                raise ValueError(
-                    "GUI interface is not compatible with packed EnsembleWrapper yet."
-                    "\nPlease use the original sklearn.ensemble class and do not call"
-                    "the pack_trained_ensemble function on it."
-                )
+            # if isinstance(self.clf, EnsembleWrapper):
+            #     raise ValueError(
+            #         "GUI interface is not compatible with packed EnsembleWrapper yet."
+            #         "\nPlease use the original sklearn.ensemble class and do not call"
+            #         "the pack_trained_ensemble function on it."
+            #     )
 
             matplotlib.use("Agg")
             print("Matplotlib set in a non-interactive backend, with: \"matplotlib.use('Agg')\"")

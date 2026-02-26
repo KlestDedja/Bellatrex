@@ -15,12 +15,14 @@ import pytest
 import numpy as np
 import pandas as pd
 import matplotlib
+
 matplotlib.use("Agg")
 
 from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 
 import sys, os
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "app"))
 
 from bellatrex.gui_plots_nicegui import (
@@ -78,6 +80,7 @@ def _make_input_method(final_count=3):
 # Helper colour utilities
 # ---------------------------------------------------------------------------
 
+
 class TestColourHelpers:
     def test_mpl_rgba_to_plotly_black(self):
         result = _mpl_rgba_to_plotly((0.0, 0.0, 0.0, 1.0))
@@ -92,7 +95,7 @@ class TestColourHelpers:
         assert result.startswith("rgba(")
         assert result.endswith(")")
         # Four comma-separated integers inside
-        inner = result[len("rgba("):-1]
+        inner = result[len("rgba(") : -1]
         parts = inner.split(",")
         assert len(parts) == 4
         assert all(p.strip().isdigit() for p in parts)
@@ -102,21 +105,22 @@ class TestColourHelpers:
         _cluster_colour_for_index(0)
         _cluster_colour_for_index(1000)
         _cluster_colour_for_index(11)
-        _cluster_colour_for_index(12)   # wraps to index 0
+        _cluster_colour_for_index(12)  # wraps to index 0
         # Palette has 12 entries; index 12 == index 0
         assert _cluster_colour_for_index(12) == _cluster_colour_for_index(0)
 
     def test_cluster_colours_are_hex(self):
         hex_pat = re.compile(r"^#[0-9a-fA-F]{6}$")
         for idx in range(15):
-            assert hex_pat.match(_cluster_colour_for_index(idx)), (
-                f"Cluster colour {idx!r} is not a 6-digit hex string"
-            )
+            assert hex_pat.match(
+                _cluster_colour_for_index(idx)
+            ), f"Cluster colour {idx!r} is not a 6-digit hex string"
 
 
 # ---------------------------------------------------------------------------
 # InteractPoint and InteractPlot data models
 # ---------------------------------------------------------------------------
+
 
 class TestInteractPoint:
     def test_name_is_string(self):
@@ -130,8 +134,13 @@ class TestInteractPoint:
 
     def test_custom_attrs(self):
         pt = InteractPoint(
-            name=3, pos=(1.0, -1.0), color="rgba(1,2,3,255)", size=16.0,
-            shape="star", cluster_memb="2", value="0.453",
+            name=3,
+            pos=(1.0, -1.0),
+            color="rgba(1,2,3,255)",
+            size=16.0,
+            shape="star",
+            cluster_memb="2",
+            value="0.453",
         )
         assert pt.shape == "star"
         assert pt.cluster_memb == "2"
@@ -152,6 +161,7 @@ class TestInteractPlot:
 # ---------------------------------------------------------------------------
 # _build_interact_plots — regression set-up (single output)
 # ---------------------------------------------------------------------------
+
 
 class TestBuildInteractPlotsRegression:
     @pytest.fixture(autouse=True)
@@ -225,6 +235,7 @@ class TestBuildInteractPlotsRegression:
 # _build_interact_plots — binary classification set-up
 # ---------------------------------------------------------------------------
 
+
 class TestBuildInteractPlotsBinary:
     def test_binary_setup(self):
         bunch = _make_plot_data_bunch(set_up="binary")
@@ -242,6 +253,7 @@ class TestBuildInteractPlotsBinary:
 # ---------------------------------------------------------------------------
 # _build_interact_plots — single-plot mode
 # ---------------------------------------------------------------------------
+
 
 class TestBuildInteractPlotsSinglePanel:
     def test_single_clustered_panel(self):
@@ -265,14 +277,13 @@ class TestBuildInteractPlotsSinglePanel:
 # _build_interact_plots — empty-cluster guard
 # ---------------------------------------------------------------------------
 
+
 class TestBuildInteractPlotsEdgeCases:
     def test_empty_cluster_raises(self):
         bunch = _make_plot_data_bunch()
         bad_kmeans = _make_kmeans()
         # Labels skip cluster index 1: np.bincount gives [18, 0, 2] → min == 0
-        bad_kmeans.labels_ = np.array(
-            [0] * 18 + [2] * 2, dtype=np.int32
-        )
+        bad_kmeans.labels_ = np.array([0] * 18 + [2] * 2, dtype=np.int32)
         method = _make_input_method()
         with pytest.raises(KeyError, match="Empty clusters"):
             _build_interact_plots(bunch, bad_kmeans, method)
@@ -292,6 +303,7 @@ class TestBuildInteractPlotsEdgeCases:
 # _build_plotly_scatter
 # ---------------------------------------------------------------------------
 
+
 class TestBuildPlotlyScatter:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -302,6 +314,7 @@ class TestBuildPlotlyScatter:
 
     def test_returns_plotly_figure(self):
         import plotly.graph_objects as go
+
         for ip in self.plots:
             fig = _build_plotly_scatter(ip)
             assert isinstance(fig, go.Figure)
@@ -357,6 +370,7 @@ class TestBuildPlotlyScatter:
 # plot_with_interface — API compatibility (gui mocked out)
 # ---------------------------------------------------------------------------
 
+
 class TestPlotWithInterfaceAPI:
     """
     Verify the public API contract without launching a real GUI window.
@@ -368,9 +382,7 @@ class TestPlotWithInterfaceAPI:
         self.bunch = _make_plot_data_bunch()
         self.kmeans = _make_kmeans()
         # input_method needs .sample.index[0] (used for the window title)
-        sample_df = pd.DataFrame(
-            RNG.random((1, 3)), columns=["f0", "f1", "f2"], index=[42]
-        )
+        sample_df = pd.DataFrame(RNG.random((1, 3)), columns=["f0", "f1", "f2"], index=[42])
         self.method = SimpleNamespace(
             final_trees_idx=[0, 1],
             sample=sample_df,
@@ -382,12 +394,18 @@ class TestPlotWithInterfaceAPI:
             mock_ui.page = lambda path: (lambda f: f)  # no-op decorator
             mock_ui.dialog = MagicMock(return_value=MagicMock())
             mock_ui.label = MagicMock()
-            mock_ui.row = MagicMock(return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None))
-            mock_ui.card = MagicMock(return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None))
+            mock_ui.row = MagicMock(
+                return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None)
+            )
+            mock_ui.card = MagicMock(
+                return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None)
+            )
             mock_ui.plotly = MagicMock(return_value=MagicMock())
 
             result = plot_with_interface(
-                self.bunch, self.kmeans, self.method,
+                self.bunch,
+                self.kmeans,
+                self.method,
                 temp_files_dir=None,  # must be accepted (backwards compat)
             )
         assert isinstance(result, list)
@@ -400,13 +418,19 @@ class TestPlotWithInterfaceAPI:
             mock_ui.page = lambda path: (lambda f: f)
             mock_ui.dialog = MagicMock(return_value=MagicMock())
             mock_ui.label = MagicMock()
-            mock_ui.row = MagicMock(return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None))
-            mock_ui.card = MagicMock(return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None))
+            mock_ui.row = MagicMock(
+                return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None)
+            )
+            mock_ui.card = MagicMock(
+                return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None)
+            )
             mock_ui.plotly = MagicMock(return_value=MagicMock())
 
             # Should not raise even though "/tmp/nonexistent" doesn't exist
             result = plot_with_interface(
-                self.bunch, self.kmeans, self.method,
+                self.bunch,
+                self.kmeans,
+                self.method,
                 temp_files_dir="/tmp/nonexistent",
             )
         assert result is not None
@@ -417,8 +441,12 @@ class TestPlotWithInterfaceAPI:
             mock_ui.page = lambda path: (lambda f: f)
             mock_ui.dialog = MagicMock(return_value=MagicMock())
             mock_ui.label = MagicMock()
-            mock_ui.row = MagicMock(return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None))
-            mock_ui.card = MagicMock(return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None))
+            mock_ui.row = MagicMock(
+                return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None)
+            )
+            mock_ui.card = MagicMock(
+                return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None)
+            )
             mock_ui.plotly = MagicMock(return_value=MagicMock())
 
             plot_with_interface(self.bunch, self.kmeans, self.method)
@@ -430,8 +458,12 @@ class TestPlotWithInterfaceAPI:
             mock_ui.page = lambda path: (lambda f: f)
             mock_ui.dialog = MagicMock(return_value=MagicMock())
             mock_ui.label = MagicMock()
-            mock_ui.row = MagicMock(return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None))
-            mock_ui.card = MagicMock(return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None))
+            mock_ui.row = MagicMock(
+                return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None)
+            )
+            mock_ui.card = MagicMock(
+                return_value=MagicMock(__enter__=lambda s: s, __exit__=lambda *a: None)
+            )
             mock_ui.plotly = MagicMock(return_value=MagicMock())
 
             plot_with_interface(self.bunch, self.kmeans, self.method, native=False)

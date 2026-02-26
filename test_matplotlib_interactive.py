@@ -4,12 +4,15 @@ Test the Matplotlib interactive click handler (non-GUI fallback).
 Automatically simulates a click on a scatter point and verifies that a
 tree figure opens. Run with:  python test_matplotlib_interactive.py
 """
+
 import sys
 import os
+
 sys.path.insert(0, os.path.join(os.getcwd(), "app"))
 
 import matplotlib
-matplotlib.use("Agg")   # headless – no GUI window needed
+
+matplotlib.use("Agg")  # headless – no GUI window needed
 
 import matplotlib.pyplot as plt
 from matplotlib.backend_bases import MouseEvent
@@ -47,7 +50,7 @@ print("Simulating a programmatic click on the nearest scatter point...")
 
 # Extract the first plotted scatter point's data coordinates from axes[0]
 scatter_col = axes[0].collections[0]
-offsets = scatter_col.get_offsets()   # (N, 2) data coords
+offsets = scatter_col.get_offsets()  # (N, 2) data coords
 assert len(offsets) > 0, "No scatter points found in axes[0]"
 
 target_x, target_y = float(offsets[0, 0]), float(offsets[0, 1])
@@ -60,8 +63,8 @@ n_figs_before = len(plt.get_fignums())
 
 event = MouseEvent("button_press_event", fig.canvas, x=x_disp, y=y_disp, button=1)
 event.inaxes = axes[0]
-event.xdata  = target_x
-event.ydata  = target_y
+event.xdata = target_x
+event.ydata = target_y
 
 fig.canvas.callbacks.process("button_press_event", event)
 
