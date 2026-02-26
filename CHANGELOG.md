@@ -7,7 +7,7 @@
   (e.g. `from bellatrex import pack_trained_ensemble`).
 - `BellatrexExplain` now has a `__repr__` method that shows key parameters.
 - `BellatrexExplain.__init__` initialises `sample`, `tuned_method`, `sample_index`, and
-  `surrogate_pred_str` to `None`, so calling visualisation methods before `explain()` raises
+  `surrogate_pred_str` to `None`, so calling visualization methods before `explain()` raises
   a clear `ValueError` rather than an `AttributeError`.
 
 ### Changed
@@ -90,7 +90,7 @@ Many `DeprecationWarning` warnings have been resolved (mainly within numpy and m
 
 ### Refactored
 - Refactored code in the BellatrexExplain class, and gui_plots_code script.
-- Refactored code in the visualisation script for compatibiility with BellatrexExplain.
+- Refactored code in the visualization script for compatibiility with BellatrexExplain.
 
 ## [0.1.3] - 2024-07-24
 ### Fixed

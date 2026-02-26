@@ -1,2 +1,2 @@
 # python way of storing the version number
-__version__ = "0.3.2.dev"
+__version__ = "0.4.0.dev"
