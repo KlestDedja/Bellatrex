@@ -35,11 +35,6 @@ share/python-wheels/
 MANIFEST
 .pypirc
 
-# docker related content
-*.tar
-*.img
-docker-data/
-
 # coverage report output files
 # coverage.xml
 htmlcov/
