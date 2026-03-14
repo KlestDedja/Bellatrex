@@ -13,6 +13,8 @@ tmp*
 explanations-output/*
 app/bellatrex/explanations-output/*
 app/bellatrex/temp-files/*
+app/bellatrex/temp-plots/*
+
 
 # Distribution / packaging
 .Python
