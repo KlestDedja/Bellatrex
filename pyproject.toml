@@ -39,8 +39,9 @@ dev = [
     "vulture >= 2.7"
 ]
 gui = [
-    "dearpygui >=1.6.2, <2.0",
-    "dearpygui-ext >=0.9.5, <1.0"
+    "nicegui",
+    "pywebview",
+    "plotly",
 ]
 
 [tool.black]
@@ -69,7 +70,6 @@ version = { attr = "bellatrex.__version__" }
 [tool.setuptools.package-data]
 "bellatrex.datasets" = ["*.csv"]
 
- # Docker related settings, one of the goals is to obtain consistent coverage reports
 [tool.coverage.run]
 source = ["app/bellatrex"]
 branch = true

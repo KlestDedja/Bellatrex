@@ -563,18 +563,10 @@ class BellatrexExplain:
                     "the pack_trained_ensemble function on it."
                 )
 
-            matplotlib.use("Agg")
-            print("Matplotlib set in a non-interactive backend, with: \"matplotlib.use('Agg')\"")
             from .gui_utils import check_and_import_gui_dependencies
 
-            dearpygui, dearpygui_ext = check_and_import_gui_dependencies()
-            from .gui_plots_code import plot_with_interface
-
-            if not show:
-                warnings.warn(
-                    "Plots are shown immediately while in an interactive session (plot_gui = True)."
-                    "\nShow = False is therefore ignored."
-                )
+            check_and_import_gui_dependencies()  # raises ImportError if nicegui is absent
+            from .nicegui_plots_code import plot_with_interface, launch_nicegui_window
 
             # A temporary directory is used to store, read and clear files created during
             #  the User interactions, a writable GUI temp dir (no __file__, no site-packages)
@@ -594,6 +586,18 @@ class BellatrexExplain:
                 temp_files_dir=temp_files_dir,
                 max_depth=plot_max_depth,
                 colormap=colormap,
+            )
+
+            # Launch the NiceGUI window (blocking until the window is closed).
+            launch_nicegui_window(
+                plots,
+                temp_files_dir,
+                render_context={
+                    "clf": tuned_method.clf,
+                    "sample": tuned_method.sample,
+                    "sample_index": self.sample_index,
+                    "max_depth": plot_max_depth,
+                },
             )
 
             # Create a placeholder figure and axes to match the expected output format

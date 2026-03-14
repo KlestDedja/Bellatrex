@@ -1,11 +1,16 @@
 def check_and_import_gui_dependencies():
+    """Import the NiceGUI backend.
+
+    Returns the ``nicegui`` module.
+
+    Raises :class:`ImportError` when NiceGUI is not installed.
+    """
     try:
-        import dearpygui
-        import dearpygui_ext
+        import nicegui
+
+        return nicegui
     except ImportError as e:
         raise ImportError(
-            "Optional dependencies for the GUI are not installed, "
-            "Namely dearpygui>=1.6.2 and dearpygui-ext>=0.9.5. "
-            "Please install them using: pip install bellatrex[gui]"
+            "Optional dependency 'nicegui' is not installed. "
+            "Install it with: pip install bellatrex[gui]"
         ) from e
-    return dearpygui, dearpygui_ext

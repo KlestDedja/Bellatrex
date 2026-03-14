@@ -150,15 +150,13 @@ def test_create_rules_txt():
 #                 assert fig is not None
 #                 plt.close(fig)
 #             else:
-#                 assert obj is not None  # DearPyGui plot objects
+#                 assert obj is not None  # NiceGUI plot objects
 
 
 @pytest.mark.gui
 def test_gui_workflow():
 
-    dpg = pytest.importorskip(
-        "dearpygui.dearpygui", reason="Install Bellatrex[gui] to run GUI tests"
-    )
+    pytest.importorskip("nicegui", reason="Install Bellatrex[gui] to run GUI tests")
 
     for setup, loader in DATA_LOADERS.items():
         btrex_fitted, X_test = prepare_fitted_bellatrex(setup, loader)

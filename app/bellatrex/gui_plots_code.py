@@ -1,9 +1,15 @@
-import os
+"""DEPRECATED – DearPyGUI backend removed.
+
+The GUI has been migrated to NiceGUI. See nicegui_plots_code.py.
+This file is kept for historical reference only and is no longer imported.
+"""
+
+# Guarded imports — this module is not loaded at runtime.
+raise ImportError("gui_plots_code is deprecated. Use nicegui_plots_code instead.")
+
+import os  # noqa: F401 – unreachable, kept for historical reference
 import warnings
 import math
-
-import dearpygui.dearpygui as dpg
-from dearpygui_ext.themes import create_theme_imgui_light
 
 import numpy as np
 import matplotlib as mpl
