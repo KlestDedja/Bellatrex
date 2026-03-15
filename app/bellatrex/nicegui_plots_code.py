@@ -433,10 +433,13 @@ def _run_nicegui_app(
                             ui.label(subtitle).classes("text-sm text-gray-500")
                         ui.link("Open image directly", tree_source, new_tab=True).classes("text-xs")
                     ui.button("Close", on_click=lambda: tree_dialog.close())
-                # min-height:0 is required so the flex child can shrink below its
-                # content size and both scroll axes work correctly.
+                # width:100% pins the div to the card boundary so the vertical
+                # scrollbar always appears at the right edge of the visible card,
+                # not at the far right of the (potentially very wide) image.
+                # min-width:0 lets the flex child shrink below its content size.
                 with ui.element("div").style(
-                    "flex:1; min-height:0; overflow:auto;"
+                    "flex:1; min-height:0; min-width:0; width:100%; "
+                    "overflow-x:auto; overflow-y:auto;"
                     "border:1px solid #e5e7eb; border-radius:4px"
                 ):
                     ui.html(
@@ -444,95 +447,125 @@ def _run_nicegui_app(
                     )
             tree_dialog.open()
 
-        with ui.row().classes("w-full items-start gap-6 px-4 pb-4"):
+        # Outer page-level scroll: only kicks in when both pairs exceed the window width.
+        with ui.element("div").style(
+            "display:flex; flex-direction:row; align-items:flex-start; "
+            "gap:2rem; overflow-x:auto; padding:0 1rem 1rem 1rem;"
+        ):
             for idx, interactplot in enumerate(plots):
-                with ui.column().classes("items-center gap-2"):
-                    fig = go.Figure()
+                # Each pair is a flat flex-row: [plot] [colorbar].
+                # Both children are flex-shrink:0 so the colorbar is ALWAYS
+                # visible right next to its plot without any nested scrolling.
+                with ui.element("div").style(
+                    "display:flex; flex-direction:row; align-items:flex-start; "
+                    "gap:6px; flex-shrink:0;"
+                ):
+                    with ui.element("div").style("flex-shrink:0;"):
+                        fig = go.Figure()
 
-                    circle_pts = [pt for pt in interactplot.points if pt.shape != "star"]
-                    star_pts = [pt for pt in interactplot.points if pt.shape == "star"]
+                        circle_pts = [pt for pt in interactplot.points if pt.shape != "star"]
+                        star_pts = [pt for pt in interactplot.points if pt.shape == "star"]
 
-                    def _add_trace(
-                        pts: list,
-                        symbol: str,
-                        size: float,
-                        trace_name: str,
-                        figure,
-                        clustered: bool,
-                    ) -> None:
-                        if not pts:
-                            return
-                        xs = [float(pt.pos[0]) for pt in pts]
-                        ys = [float(pt.pos[1]) for pt in pts]
-                        colors = [
-                            "rgba({},{},{},{:.2f})".format(
-                                int(pt.color[0]),
-                                int(pt.color[1]),
-                                int(pt.color[2]),
-                                float(pt.color[3]) / 255.0,
+                        def _add_trace(
+                            pts: list,
+                            symbol: str,
+                            size: float,
+                            trace_name: str,
+                            figure,
+                            clustered: bool,
+                        ) -> None:
+                            if not pts:
+                                return
+                            xs = [float(pt.pos[0]) for pt in pts]
+                            ys = [float(pt.pos[1]) for pt in pts]
+                            colors = [
+                                "rgba({},{},{},{:.2f})".format(
+                                    int(pt.color[0]),
+                                    int(pt.color[1]),
+                                    int(pt.color[2]),
+                                    float(pt.color[3]) / 255.0,
+                                )
+                                for pt in pts
+                            ]
+                            if clustered:
+                                texts = [
+                                    f"Tree {pt.name} | Cluster {pt.cluster_memb}" for pt in pts
+                                ]
+                            else:
+                                texts = [f"Tree {pt.name} | Pred {pt.value}" for pt in pts]
+                            tree_ids = [pt.name for pt in pts]
+                            figure.add_trace(
+                                go.Scatter(
+                                    x=xs,
+                                    y=ys,
+                                    mode="markers",
+                                    marker=dict(
+                                        symbol=symbol,
+                                        size=size,
+                                        color=colors,
+                                        line=dict(width=1, color="DarkSlateGrey"),
+                                    ),
+                                    text=texts,
+                                    customdata=tree_ids,
+                                    hoverinfo="text",
+                                    name=trace_name,
+                                )
                             )
-                            for pt in pts
-                        ]
-                        if clustered:
-                            texts = [f"Tree {pt.name} | Cluster {pt.cluster_memb}" for pt in pts]
-                        else:
-                            texts = [f"Tree {pt.name} | Pred {pt.value}" for pt in pts]
-                        tree_ids = [pt.name for pt in pts]
-                        figure.add_trace(
-                            go.Scatter(
-                                x=xs,
-                                y=ys,
-                                mode="markers",
-                                marker=dict(
-                                    symbol=symbol,
-                                    size=size,
-                                    color=colors,
-                                    line=dict(width=1, color="DarkSlateGrey"),
-                                ),
-                                text=texts,
-                                customdata=tree_ids,
-                                hoverinfo="text",
-                                name=trace_name,
-                            )
+
+                        _add_trace(
+                            circle_pts, "circle", 9, "Candidate trees", fig, interactplot.clustered
                         )
 
-                    _add_trace(
-                        circle_pts, "circle", 9, "Candidate trees", fig, interactplot.clustered
-                    )
-                    _add_trace(star_pts, "star", 16, "Selected trees", fig, interactplot.clustered)
+                        _add_trace(
+                            star_pts, "star", 16, "Selected trees", fig, interactplot.clustered
+                        )
 
-                    plot_title = "Cluster colors" if interactplot.clustered else "Prediction colors"
-                    fig.update_layout(
-                        title=plot_title,
-                        xaxis_title=interactplot.xlabel,
-                        yaxis_title=interactplot.ylabel,
-                        clickmode="event+select",
-                        width=520,
-                        height=430,
-                        legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01),
-                        margin=dict(l=40, r=20, t=50, b=40),
-                    )
+                        plot_title = (
+                            "Cluster colors" if interactplot.clustered else "Prediction colors"
+                        )
+                        fig.update_layout(
+                            title=plot_title,
+                            xaxis_title=interactplot.xlabel,
+                            yaxis_title=interactplot.ylabel,
+                            clickmode="event+select",
+                            width=520,
+                            height=430,
+                            legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01),
+                            margin=dict(l=40, r=20, t=50, b=40),
+                        )
 
-                    plot_elem = ui.plotly(fig)
+                        plot_elem = ui.plotly(fig)
 
-                    def _on_plotly_click(event, lbl=info_label) -> None:
-                        args = getattr(event, "args", None)
-                        if isinstance(args, dict):
-                            text = args.get("text") or "Point selected"
-                            lbl.set_text(text)
-                            tree_name = _normalize_tree_name(args.get("tree_name"))
-                            if tree_name is not None:
-                                _open_tree_dialog(tree_name, text)
+                        def _on_plotly_click(event, lbl=info_label) -> None:
+                            args = getattr(event, "args", None)
+                            if isinstance(args, dict):
+                                text = args.get("text") or "Point selected"
+                                lbl.set_text(text)
+                                tree_name = _normalize_tree_name(args.get("tree_name"))
+                                if tree_name is not None:
+                                    _open_tree_dialog(tree_name, text)
 
-                    plot_elem.on(
-                        "plotly_click",
-                        _on_plotly_click,
-                        js_handler="(event) => { const cd = event?.points?.[0]?.customdata; emit({tree_name: Array.isArray(cd) ? cd[0] : cd, text: event?.points?.[0]?.text}); }",
-                    )
+                        plot_elem.on(
+                            "plotly_click",
+                            _on_plotly_click,
+                            js_handler="(event) => { const cd = event?.points?.[0]?.customdata; emit({tree_name: Array.isArray(cd) ? cd[0] : cd, text: event?.points?.[0]?.text}); }",
+                        )
 
+                    # Colorbar: direct sibling of the plot div, never inside a scroll container.
                     cb_path = colorbar_paths[idx] if idx < len(colorbar_paths) else None
                     if cb_path and os.path.exists(cb_path):
-                        ui.image(cb_path).classes("w-12")
+                        cb_source = (
+                            f"/bellatrex_tmp/{os.path.basename(cb_path)}"
+                            f"?v={int(os.path.getmtime(cb_path))}"
+                        )
+                        # ~80% of 430px plot height; flex-shrink:0 keeps it always visible.
+                        ui.html(
+                            f'<img src="{cb_source}" '
+                            'style="height:344px; width:auto; max-width:120px; '
+                            'margin-top:32px; display:block; flex-shrink:0;" />'
+                        )
+                    else:
+                        ui.label("Colorbar missing").classes("text-xs text-red-600")
 
     def _cleanup() -> None:
         for path in colorbar_paths:
@@ -553,12 +586,16 @@ def _run_nicegui_app(
 
     ng_app.on_shutdown(_cleanup)
 
+    # Initial native window size
+    initial_window_size = (1360, 680)
+
     ui.run(
         native=native,
         port=port,
         reload=False,
         title="Bellatrex Explorer",
         show=not native,
+        window_size=initial_window_size,
     )
 
 

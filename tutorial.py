@@ -35,7 +35,10 @@ if SETUP.lower() == "survival":
     clf = RandomSurvivalForest(n_estimators=100, min_samples_split=10, n_jobs=-2, random_state=0)
 elif SETUP.lower() in ["binary", "multi-label"]:
     clf = RandomForestClassifier(
-        n_estimators=100, min_samples_split=5, n_jobs=-2, random_state=0, max_depth=3
+        n_estimators=100,
+        min_samples_split=5,
+        n_jobs=-2,
+        random_state=0,
     )
 elif SETUP.lower() in ["regression", "multi-target"]:
     clf = RandomForestRegressor(n_estimators=100, min_samples_split=5, n_jobs=-2, random_state=0)
