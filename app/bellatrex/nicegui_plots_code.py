@@ -465,7 +465,7 @@ def _run_nicegui_app(
 
                         circle_pts = [pt for pt in interactplot.points if pt.shape != "star"]
                         star_pts = [pt for pt in interactplot.points if pt.shape == "star"]
-                        neutral_fill = "rgba(235,235,235,1.0)"
+                        neutral_fill = "rgba(220,220,220,1.0)"
 
                         def _add_trace(
                             pts: list,
