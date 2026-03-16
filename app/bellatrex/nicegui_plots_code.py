@@ -202,7 +202,10 @@ def plot_with_interface(
     for plotindex, clustered in enumerate(clusterplots):
 
         if clustered:
-            fig, ax = plt.subplots(1, 1, figsize=(1, 4.5), dpi=120)
+            fig, ax = plt.subplots(
+                1, 1, figsize=(1.0, 4.5), dpi=120
+            )  # for some reason, this is rendered with a different
+            # aspect ratio compared to the right-hand plot, so we use a different width to keep the colorbar height consistent.
 
             freqs = np.bincount(cluster_memb)
             if np.min(freqs) == 0:
@@ -236,7 +239,7 @@ def plot_with_interface(
             norms = [norm(norm_bins[cluster_memb[i]]) for i in range(len(cluster_memb))]
 
         else:
-            fig, ax = plt.subplots(1, 1, figsize=(1.2, 4.5), dpi=110)
+            fig, ax = plt.subplots(1, 1, figsize=(1.35, 4.65), dpi=100)
 
             if isinstance(plot_data_bunch.rf_pred, float) or plot_data_bunch.rf_pred.size == 1:
 
@@ -255,9 +258,8 @@ def plot_with_interface(
 
                 pred_tick = np.round(plot_data_bunch.rf_pred, 3)
 
-                cb2 = Colorbar(
-                    ax, cmap=color_map_right, norm=norm_preds, label="RF pred: " + str(pred_tick)
-                )
+                cb2 = Colorbar(ax, cmap=color_map_right, norm=norm_preds)
+                ax.set_title("RF pred: " + str(pred_tick), fontsize=8, pad=6)
 
                 plot_data_bunch.pred = np.array(plot_data_bunch.pred).squeeze()
 
@@ -276,12 +278,8 @@ def plot_with_interface(
 
                 norm_preds = BoundaryNorm(np.linspace(v_min, v_max, 256), color_map_right.N)
 
-                cb2 = Colorbar(
-                    ax,
-                    cmap=color_map_right,
-                    norm=norm_preds,
-                    label=str(input_method.fidelity_measure) + " loss",
-                )
+                cb2 = Colorbar(ax, cmap=color_map_right, norm=norm_preds)
+                ax.set_title(str(input_method.fidelity_measure) + " loss", fontsize=8, pad=6)
                 cb2.ax.plot([0, 1], [plot_data_bunch.loss] * 2, color="grey", linewidth=1)
 
             ticks_to_plot = ax.get_yticks()
@@ -302,7 +300,11 @@ def plot_with_interface(
                 norms = [norm_preds(plot_data_bunch.loss[i]) for i in range(len(cluster_memb))]
 
         fig.tight_layout()
-        fig.savefig(os.path.join(temp_files_dir, f"temp_colourbar{plotindex}.png"))
+        fig.savefig(
+            os.path.join(temp_files_dir, f"temp_colourbar{plotindex}.png"),
+            bbox_inches="tight",
+            pad_inches=0.02,
+        )
         plt.close(fig)
 
         cmap_gui = color_map_left if clustered else color_map_right
@@ -629,12 +631,12 @@ def _run_nicegui_app(
                         )
                         # Keep colorbar at 75% of the 430px plot height and vertically centered.
                         with ui.element("div").style(
-                            "height:430px; display:flex; align-items:center; "
-                            "padding-right:8px; flex-shrink:0;"
+                            "height:430px; width:100px; display:flex; align-items:center; "
+                            "justify-content:center; padding-right:8px; flex-shrink:0;"
                         ):
                             ui.html(
                                 f'<img src="{cb_source}" '
-                                'style="height:323px; width:auto; '
+                                'style="height:323px; width:110px; object-fit:contain; '
                                 'display:block; flex-shrink:0;" />'
                             )
                     else:
