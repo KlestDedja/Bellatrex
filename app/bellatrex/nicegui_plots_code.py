@@ -343,6 +343,35 @@ def _find_free_port() -> int:
         return int(sock.getsockname()[1])
 
 
+def _cleanup_temp_artifacts(
+    temp_files_dir: str,
+    colorbar_paths: list[str] | None = None,
+    dialog_image_paths: list[str] | None = None,
+    payload_path: str | None = None,
+) -> None:
+    paths_to_remove = set(colorbar_paths or [])
+    paths_to_remove.update(dialog_image_paths or [])
+    if payload_path:
+        paths_to_remove.add(payload_path)
+
+    if os.path.isdir(temp_files_dir):
+        for entry in os.listdir(temp_files_dir):
+            if (
+                entry.startswith("temp_colourbar")
+                and entry.endswith(".png")
+                or entry.startswith("tree_")
+                and entry.endswith(".png")
+                or entry.endswith(".bellatrex-gui.pkl")
+            ):
+                paths_to_remove.add(os.path.join(temp_files_dir, entry))
+
+    for path in paths_to_remove:
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+
+
 def _run_nicegui_app(
     plots,
     colorbar_paths,
@@ -450,7 +479,7 @@ def _run_nicegui_app(
         # Outer page-level scroll: only kicks in when both pairs exceed the window width.
         with ui.element("div").style(
             "display:flex; flex-direction:row; align-items:flex-start; "
-            "gap:2rem; overflow-x:auto; padding:0 1rem 1rem 1rem;"
+            "gap:2rem; overflow-x:auto; padding:0 2rem 1rem 1rem;"
         ):
             for idx, interactplot in enumerate(plots):
                 # Each pair is a flat flex-row: [plot] [colorbar].
@@ -515,7 +544,11 @@ def _run_nicegui_app(
                             )
 
                         def _add_legend_trace(
-                            symbol: str, size: float, trace_name: str, figure
+                            symbol: str,
+                            size: float,
+                            trace_name: str,
+                            figure,
+                            fill_color: str = "rgba(220,220,220,1.0)",
                         ) -> None:
                             figure.add_trace(
                                 go.Scatter(
@@ -525,7 +558,7 @@ def _run_nicegui_app(
                                     marker=dict(
                                         symbol=symbol,
                                         size=size,
-                                        color=neutral_fill,
+                                        color=fill_color,
                                         line=dict(width=1, color="black"),
                                     ),
                                     hoverinfo="skip",
@@ -582,31 +615,22 @@ def _run_nicegui_app(
                             f"/bellatrex_tmp/{os.path.basename(cb_path)}"
                             f"?v={int(os.path.getmtime(cb_path))}"
                         )
-                        # ~80% of 430px plot height; flex-shrink:0 keeps it always visible.
+                        # Display the colorbar at 75% of the previous size; flex-shrink:0 keeps it visible.
                         ui.html(
                             f'<img src="{cb_source}" '
-                            'style="height:344px; width:auto; max-width:120px; '
+                            'style="height:240px; width:auto; max-width:82px; '
                             'margin-top:32px; display:block; flex-shrink:0;" />'
                         )
                     else:
                         ui.label("Colorbar missing").classes("text-xs text-red-600")
 
     def _cleanup() -> None:
-        for path in colorbar_paths:
-            try:
-                os.remove(path)
-            except FileNotFoundError:
-                pass
-        for path in dialog_image_paths:
-            try:
-                os.remove(path)
-            except FileNotFoundError:
-                pass
-        if payload_path:
-            try:
-                os.remove(payload_path)
-            except FileNotFoundError:
-                pass
+        _cleanup_temp_artifacts(
+            temp_files_dir,
+            colorbar_paths=colorbar_paths,
+            dialog_image_paths=dialog_image_paths,
+            payload_path=payload_path,
+        )
 
     ng_app.on_shutdown(_cleanup)
 
@@ -659,6 +683,12 @@ def launch_nicegui_window(
             plots, colorbar_paths, render_context, native, port, temp_files_dir
         )
         _run_subprocess_app(payload_path, blocking)
+        if blocking:
+            _cleanup_temp_artifacts(
+                temp_files_dir,
+                colorbar_paths=colorbar_paths,
+                payload_path=payload_path,
+            )
         return
 
     ctx = get_context("spawn")
@@ -671,6 +701,7 @@ def launch_nicegui_window(
 
     if blocking:
         proc.join()
+        _cleanup_temp_artifacts(temp_files_dir, colorbar_paths=colorbar_paths)
         if proc.exitcode not in (0, None):
             raise RuntimeError(f"NiceGUI window process exited with code {proc.exitcode}.")
 
