@@ -21,6 +21,9 @@ from .utilities import colormap_from_str
 from .utilities import custom_axes_limit, custom_formatter
 from .utilities import rule_print_inline
 
+SIZE_SIMPLE = 9.0
+SIZE_SELECTED = 15.0
+
 
 class InteractPoint:  # Object containg all information of a point
     def __init__(self, name, pos, color, size, shape, cluster_memb=None, value=None):
@@ -169,7 +172,7 @@ def plot_with_interface(
         return "star" if in_shape is True else "circle"
 
     def sizer(in_size):
-        return 16.0 if in_size is True else 9.0
+        return SIZE_SELECTED if in_size is True else SIZE_SIMPLE
 
     def rgbaconv(mpl_rgba):
         return [i * 255 for i in mpl_rgba]
@@ -566,15 +569,25 @@ def _run_nicegui_app(
                             )
 
                         _add_trace(
-                            circle_pts, "circle", 9, "Candidate trees", fig, interactplot.clustered
+                            circle_pts,
+                            "circle",
+                            SIZE_SIMPLE,
+                            "Candidate trees",
+                            fig,
+                            interactplot.clustered,
                         )
 
                         _add_trace(
-                            star_pts, "star", 16, "Selected trees", fig, interactplot.clustered
+                            star_pts,
+                            "star",
+                            SIZE_SELECTED,
+                            "Selected trees",
+                            fig,
+                            interactplot.clustered,
                         )
 
-                        _add_legend_trace("circle", 9, "Candidate trees", fig)
-                        _add_legend_trace("star", 16, "Selected trees", fig)
+                        _add_legend_trace("circle", SIZE_SIMPLE, "Candidate trees", fig)
+                        _add_legend_trace("star", SIZE_SELECTED, "Selected trees", fig)
 
                         plot_title = (
                             "Cluster colors" if interactplot.clustered else "Prediction colors"
@@ -614,12 +627,16 @@ def _run_nicegui_app(
                             f"/bellatrex_tmp/{os.path.basename(cb_path)}"
                             f"?v={int(os.path.getmtime(cb_path))}"
                         )
-                        # Display the colorbar at 75% of the previous size; flex-shrink:0 keeps it visible.
-                        ui.html(
-                            f'<img src="{cb_source}" '
-                            'style="height:240px; width:auto; max-width:82px; '
-                            'margin-top:32px; display:block; flex-shrink:0;" />'
-                        )
+                        # Keep colorbar at 75% of the 430px plot height and vertically centered.
+                        with ui.element("div").style(
+                            "height:430px; display:flex; align-items:center; "
+                            "padding-right:8px; flex-shrink:0;"
+                        ):
+                            ui.html(
+                                f'<img src="{cb_source}" '
+                                'style="height:323px; width:auto; '
+                                'display:block; flex-shrink:0;" />'
+                            )
                     else:
                         ui.label("Colorbar missing").classes("text-xs text-red-600")
 

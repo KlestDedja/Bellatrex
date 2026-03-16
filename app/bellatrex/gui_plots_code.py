@@ -378,7 +378,7 @@ def plot_with_interface(
 
     def sizer(in_size):
         if in_size is True:
-            return 16.0
+            return 15.0
         else:
             return 9.0
 
