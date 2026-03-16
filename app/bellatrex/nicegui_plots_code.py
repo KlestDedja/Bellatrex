@@ -465,6 +465,7 @@ def _run_nicegui_app(
 
                         circle_pts = [pt for pt in interactplot.points if pt.shape != "star"]
                         star_pts = [pt for pt in interactplot.points if pt.shape == "star"]
+                        neutral_fill = "rgba(235,235,235,1.0)"
 
                         def _add_trace(
                             pts: list,
@@ -509,6 +510,26 @@ def _run_nicegui_app(
                                     customdata=tree_ids,
                                     hoverinfo="text",
                                     name=trace_name,
+                                    showlegend=False,
+                                )
+                            )
+
+                        def _add_legend_trace(
+                            symbol: str, size: float, trace_name: str, figure
+                        ) -> None:
+                            figure.add_trace(
+                                go.Scatter(
+                                    x=[None],
+                                    y=[None],
+                                    mode="markers",
+                                    marker=dict(
+                                        symbol=symbol,
+                                        size=size,
+                                        color=neutral_fill,
+                                        line=dict(width=1, color="black"),
+                                    ),
+                                    hoverinfo="skip",
+                                    name=trace_name,
                                 )
                             )
 
@@ -519,6 +540,9 @@ def _run_nicegui_app(
                         _add_trace(
                             star_pts, "star", 16, "Selected trees", fig, interactplot.clustered
                         )
+
+                        _add_legend_trace("circle", 9, "Candidate trees", fig)
+                        _add_legend_trace("star", 16, "Selected trees", fig)
 
                         plot_title = (
                             "Cluster colors" if interactplot.clustered else "Prediction colors"
