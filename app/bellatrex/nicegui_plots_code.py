@@ -3,10 +3,14 @@ import io
 import importlib.util
 import os
 import pickle
+import re
 import subprocess
 import sys
 import tempfile
 from uuid import uuid4
+import plotly.graph_objects as go
+from nicegui import app as ng_app
+from nicegui import ui
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -37,12 +41,13 @@ class InteractPoint:  # Object containg all information of a point
 
 
 class InteractPlot:
-    def __init__(self, name, points, clustered=False, xlabel="PC1", ylabel="PC2"):
+    def __init__(self, name, points, clustered=False, xlabel="PC1", ylabel="PC2", sample_idx=None):
         self.name = str(name)
         self.points = points
         self.clustered = clustered
         self.xlabel = xlabel
         self.ylabel = ylabel
+        self.sample_idx = sample_idx
 
 
 def _feature_names_for_clf(clf) -> list[str]:
@@ -177,8 +182,8 @@ def plot_with_interface(
     def rgbaconv(mpl_rgba):
         return [i * 255 for i in mpl_rgba]
 
-    PCA_fitted = PCA(n_components=2).fit(plot_data_bunch.proj_data)
-    plottable_data = PCA_fitted.transform(plot_data_bunch.proj_data)
+    pca_fitted = PCA(n_components=2).fit(plot_data_bunch.proj_data)
+    plottable_data = pca_fitted.transform(plot_data_bunch.proj_data)
 
     cluster_memb = kmeans.labels_
 
@@ -203,7 +208,7 @@ def plot_with_interface(
 
         if clustered:
             fig, ax = plt.subplots(
-                1, 1, figsize=(1.0, 4.5), dpi=120
+                1, 1, figsize=(0.8, 4.0), dpi=90
             )  # for some reason, this is rendered with a different
             # aspect ratio compared to the right-hand plot, so we use a different width to keep the colorbar height consistent.
 
@@ -239,7 +244,7 @@ def plot_with_interface(
             norms = [norm(norm_bins[cluster_memb[i]]) for i in range(len(cluster_memb))]
 
         else:
-            fig, ax = plt.subplots(1, 1, figsize=(1.35, 4.65), dpi=100)
+            fig, ax = plt.subplots(1, 1, figsize=(0.8, 4.0), dpi=90)
 
             if isinstance(plot_data_bunch.rf_pred, float) or plot_data_bunch.rf_pred.size == 1:
 
@@ -333,7 +338,7 @@ def plot_with_interface(
                 else:
                     raise ValueError("expecting float, got {type(plot_data_bunch.loss)} instead")
 
-        plots.append(InteractPlot(plotindex, points, clustered=clustered))
+        plots.append(InteractPlot(plotindex, points, clustered=clustered, sample_idx=plotindex))
 
     # NOTE: colorbar PNGs are kept here so the NiceGUI window can display them.
     # launch_nicegui_window() is responsible for deleting them on shutdown.
@@ -386,9 +391,6 @@ def _run_nicegui_app(
     temp_files_dir: str,
     payload_path: str | None = None,
 ) -> None:
-    import plotly.graph_objects as go
-    from nicegui import app as ng_app
-    from nicegui import ui
 
     # Serve temporary render assets (tree PNGs and colorbars) via HTTP paths.
     ng_app.add_static_files("/bellatrex_tmp", temp_files_dir)
@@ -396,7 +398,12 @@ def _run_nicegui_app(
 
     @ui.page("/")
     def main_page() -> None:
-        ui.label("Bellatrex Explorer").classes("text-2xl font-bold p-4")
+        sample_indices = [str(p.sample_idx) for p in plots]
+        sample_index = sample_indices[0] if len(sample_indices) >= 1 else "unknown"
+        # sample_str = ", ".join(sample_indices) if sample_indices else "unknown"
+        ui.label(f"Bellatrex visual explanation, sample {sample_index}").classes(
+            "text-2xl font-bold p-4"
+        )
         info_label = ui.label("Click on a point to open the corresponding tree").classes(
             "text-sm italic text-gray-500 px-4 pb-2"
         )
@@ -418,15 +425,38 @@ def _run_nicegui_app(
                     return None
                 tree_name = tree_name[0]
             elif isinstance(tree_name, dict):
-                # Pick the first non-None value deterministically.
-                for value in tree_name.values():
-                    if value is not None:
-                        tree_name = value
+                # Plotly point dicts include several numeric fields; prefer tree-specific keys.
+                preferred_keys = ("tree_name", "customdata", "name", "text")
+                for key in preferred_keys:
+                    if key in tree_name and tree_name[key] is not None:
+                        tree_name = tree_name[key]
                         break
+                else:
+                    for value in tree_name.values():
+                        if value is not None:
+                            tree_name = value
+                            break
 
             if tree_name is None:
                 return None
-            return str(tree_name)
+
+            if isinstance(tree_name, (list, tuple)):
+                if not tree_name:
+                    return None
+                tree_name = tree_name[0]
+
+            if isinstance(tree_name, str):
+                # Accept either a plain integer string ("17") or embedded forms ("Tree 17 | ...").
+                match = re.search(r"-?\d+", tree_name)
+                return match.group(0) if match else None
+
+            if isinstance(tree_name, dict):
+                return None
+
+            try:
+                return str(int(tree_name))
+            except (TypeError, ValueError):
+                return None
 
         def _open_tree_dialog(tree_name: str, subtitle: str | None = None) -> None:
             if render_context is None:
@@ -459,7 +489,7 @@ def _run_nicegui_app(
             ):
                 with ui.row().style(
                     "width:100%; display:flex; align-items:center;"
-                    "justify-content:space-between; flex-shrink:0"
+                    "justify-content:space-between; flex-shrink:0; min-width:0"
                 ):
                     with ui.column().style("gap:0"):
                         ui.label(title).classes("text-lg font-semibold")
@@ -472,12 +502,12 @@ def _run_nicegui_app(
                 # not at the far right of the (potentially very wide) image.
                 # min-width:0 lets the flex child shrink below its content size.
                 with ui.element("div").style(
-                    "flex:1; min-height:0; min-width:0; width:100%; "
-                    "overflow-x:auto; overflow-y:auto;"
+                    "flex:1 1 auto; min-height:0; min-width:0; width:100%; max-width:100%; "
+                    "overflow:scroll; display:inline-block;"
                     "border:1px solid #e5e7eb; border-radius:4px"
                 ):
-                    ui.html(
-                        f'<img src="{tree_source}" style="max-width:none; height:auto; display:block;" />'
+                    ui.image(tree_source).props("fit=none").style(
+                        "display:block; width:auto; height:auto; max-width:none;"
                     )
             tree_dialog.open()
 
@@ -609,17 +639,41 @@ def _run_nicegui_app(
 
                         def _on_plotly_click(event, lbl=info_label) -> None:
                             args = getattr(event, "args", None)
+                            text = "Point selected"
+                            raw_tree_name = None
+
+                            # Handle both raw Plotly payloads and simplified payloads.
                             if isinstance(args, dict):
-                                text = args.get("text") or "Point selected"
-                                lbl.set_text(text)
-                                tree_name = _normalize_tree_name(args.get("tree_name"))
-                                if tree_name is not None:
-                                    _open_tree_dialog(tree_name, text)
+                                if "tree_name" in args:
+                                    raw_tree_name = args.get("tree_name")
+                                    text = args.get("text") or text
+                                else:
+                                    points = args.get("points")
+                                    if isinstance(points, list) and points:
+                                        point = points[0]
+                                        if isinstance(point, dict):
+                                            raw_tree_name = point.get("customdata")
+                                            text = point.get("text") or text
+                            elif isinstance(args, list) and args:
+                                point = args[0]
+                                if isinstance(point, dict):
+                                    raw_tree_name = point.get("customdata")
+                                    text = point.get("text") or text
+
+                            lbl.set_text(text)
+                            tree_name = _normalize_tree_name(raw_tree_name)
+                            if tree_name is not None:
+                                _open_tree_dialog(tree_name, text)
 
                         plot_elem.on(
                             "plotly_click",
                             _on_plotly_click,
-                            js_handler="(event) => { const cd = event?.points?.[0]?.customdata; emit({tree_name: Array.isArray(cd) ? cd[0] : cd, text: event?.points?.[0]?.text}); }",
+                            js_handler=(
+                                "(event) => {"
+                                " const p = event?.points?.[0] || {};"
+                                " emit({tree_name: p.customdata, text: p.text});"
+                                "}"
+                            ),
                         )
 
                     # Colorbar: direct sibling of the plot div, never inside a scroll container.
@@ -629,19 +683,20 @@ def _run_nicegui_app(
                             f"/bellatrex_tmp/{os.path.basename(cb_path)}"
                             f"?v={int(os.path.getmtime(cb_path))}"
                         )
-                        # Keep colorbar at 75% of the 430px plot height and vertically centered.
+                        # Align colorbar with the plot data area (below title/legend space).
+                        # Use fit=contain to avoid QImg's default cover-cropping.
                         with ui.element("div").style(
-                            "height:430px; width:100px; display:flex; align-items:center; "
-                            "justify-content:center; padding-right:8px; flex-shrink:0;"
+                            "height:330px; width:100px; display:flex; align-items:center; "
+                            "justify-content:flex-start; padding-top:80px; "
+                            "padding-right:8px; flex-shrink:0;"
                         ):
-                            ui.html(
-                                f'<img src="{cb_source}" '
-                                'style="height:323px; width:110px; object-fit:contain; '
-                                'display:block; flex-shrink:0;" />'
+                            ui.image(cb_source).props("fit=contain").style(
+                                "height:330px; width:100px; " "display:block; flex-shrink:0;"
                             )
                     else:
                         ui.label("Colorbar missing").classes("text-xs text-red-600")
 
+    # Ensure temporary files are cleaned up when the app shuts down, no need for the user to call cleanup.
     def _cleanup() -> None:
         _cleanup_temp_artifacts(
             temp_files_dir,

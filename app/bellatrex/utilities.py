@@ -137,10 +137,7 @@ def _infer_set_up(clf, y):
             f"{clf.n_outputs_.shape} != {clf.unique_times_.shape}\n"
             "Note that multi-event Survival analysis is not supported yet"
         )
-    raise ValueError(
-        "Provided model is not recognized or compatible with Bellatrex: "
-        f"{clf!r}"
-    )
+    raise ValueError("Provided model is not recognized or compatible with Bellatrex: " f"{clf!r}")
 
 
 def _is_binary_clf(clf):
@@ -615,10 +612,10 @@ def plot_preselected_trees(
 
     # PCA to 2 dimensions for projected trees
     # (original proj dimension can be > 2)
-    PCA_fitted = PCA(n_components=2).fit(plot_data_bunch.proj_data)
-    plottable_data = PCA_fitted.transform(plot_data_bunch.proj_data)  # (lambda,2)
+    pca_fitted = PCA(n_components=2).fit(plot_data_bunch.proj_data)
+    plottable_data = pca_fitted.transform(plot_data_bunch.proj_data)  # (lambda,2)
 
-    centers = PCA_fitted.transform(kmeans.cluster_centers_)
+    centers = pca_fitted.transform(kmeans.cluster_centers_)
     class_memb = kmeans.labels_
 
     custom_gridspec = {"width_ratios": [3, 0.2, 3, 0.2]}

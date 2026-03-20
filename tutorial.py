@@ -1,3 +1,9 @@
+"""
+This is a Python script with the tutorial, to demonstrate how to use Bellatrex.
+Less user friendly compare to the notebook, but easier to run tests.
+For a more user-friendly tutorial, please check the Jupyter notebook with the same name.
+"""
+
 import os
 
 import bellatrex
@@ -34,12 +40,7 @@ print("Detected prediction task 'SETUP':", SETUP)
 if SETUP.lower() == "survival":
     clf = RandomSurvivalForest(n_estimators=100, min_samples_split=10, n_jobs=-2, random_state=0)
 elif SETUP.lower() in ["binary", "multi-label"]:
-    clf = RandomForestClassifier(
-        n_estimators=100,
-        min_samples_split=5,
-        n_jobs=-2,
-        random_state=0,
-    )
+    clf = RandomForestClassifier(n_estimators=100, min_samples_split=5, n_jobs=-2, random_state=0)
 elif SETUP.lower() in ["regression", "multi-target"]:
     clf = RandomForestRegressor(n_estimators=100, min_samples_split=5, n_jobs=-2, random_state=0)
 else:
@@ -87,7 +88,10 @@ for i in range(N_TEST_SAMPLES):
     # Plot 1: cluster overview (shows pre-selected trees and selected rules)
     tuned_method.plot_overview(plot_gui=PLOT_GUI, show=False)
     # When plot_gui=True the NiceGUI window blocks until closed, then the loop continues.
-    if not PLOT_GUI:
+    if PLOT_GUI:
+        # Ensure no placeholder matplotlib figure leaks from overview when NiceGUI is used.
+        plt.close("all")
+    else:
         plt.show(block=True)
 
     # Plot 2: rule-level detail (single-output tasks only)
@@ -97,3 +101,4 @@ for i in range(N_TEST_SAMPLES):
         )
         # plot_visuals is always a plain matplotlib figure; show it regardless of GUI mode.
         plt.show(block=True)
+        plt.close("all")
