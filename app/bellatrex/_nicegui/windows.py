@@ -14,8 +14,8 @@ from .runtime import cleanup_temp_artifacts, detect_native_window_support
 from .runtime import find_free_port, prepare_session_temp_dir
 from .runtime import prepare_tree_window_temp_dir, run_subprocess_app
 
-MAIN_WINDOW_SIZE = (1360, 680)
-TREE_WINDOW_SIZE = (1400, 900)
+MAIN_WINDOW_SIZE = (1440, 720)
+TREE_WINDOW_SIZE = (1440, 900)
 
 TREE_WINDOW_HEAD_CSS = """
 <style>
@@ -32,8 +32,7 @@ TREE_WINDOW_HEAD_CSS = """
 """
 
 TREE_WINDOW_LAYOUT_STYLE = (
-    "width:100%; height:100%; gap:0.75rem; padding:1rem; "
-    "box-sizing:border-box; overflow:hidden;"
+    "width:100%; height:100%; gap:0.75rem; padding:1rem; " "box-sizing:border-box; overflow:hidden;"
 )
 TREE_WINDOW_VIEWPORT_STYLE = (
     "flex:1 1 auto; min-height:0; min-width:0; width:100%; overflow-x:auto; "
@@ -49,13 +48,13 @@ MAIN_PLOTS_CONTAINER_STYLE = (
     "gap:2rem; overflow-x:auto; padding:0 2rem 1rem 1rem;"
 )
 PLOT_PAIR_STYLE = (
-    "display:flex; flex-direction:row; align-items:flex-start; gap:6px; flex-shrink:0;"
+    "display:flex; flex-direction:row; align-items:flex-start; gap:4px; flex-shrink:0;"
 )
 COLORBAR_CONTAINER_STYLE = (
-    "height:330px; width:100px; display:flex; align-items:center; "
-    "justify-content:flex-start; padding-top:80px; padding-right:8px; flex-shrink:0;"
+    "height:484px; width:134px; display:flex; align-items:center; "
+    "justify-content:flex-start; padding-top:-50px; padding-right:4px; flex-shrink:0;"
 )
-COLORBAR_IMAGE_STYLE = "height:330px; width:100px; display:block; flex-shrink:0;"
+COLORBAR_IMAGE_STYLE = "height:440px; width:134px; display:block; flex-shrink:0;"
 
 
 def _extract_click_selection(args: Any) -> tuple[str, Any]:
@@ -303,7 +302,7 @@ def _run_nicegui_app(
         native=native,
         port=port,
         reload=False,
-        title="Bellatrex Explorer",
+        title="Bellatrex",
         show=not native,
         window_size=MAIN_WINDOW_SIZE,
     )

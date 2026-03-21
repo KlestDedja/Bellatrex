@@ -25,12 +25,23 @@ SIZE_SIMPLE = 9.0
 SIZE_SELECTED = 15.0
 PLOT_WIDTH = 520
 PLOT_HEIGHT = 430
+COLORBAR_FIGSIZE = (1.94, 4.84)
+COLORBAR_DPI = 110
+CLUSTER_COLORBAR_CAX_RECT = [0.40, 0.06, 0.18, 0.88]
+PREDICTION_COLORBAR_CAX_RECT = [0.50, 0.06, 0.18, 0.88]
 
 
 def _feature_names_for_clf(clf) -> list[str]:
     if hasattr(clf, "feature_names_in_") and clf.feature_names_in_ is not None:
         return list(clf.feature_names_in_)
     return [f"X{i}" for i in range(clf.n_features_in_)]
+
+
+def _create_colorbar_figure(cax_rect: list[float]) -> tuple[plt.Figure, plt.Axes]:
+    """Create a fixed canvas with an explicitly positioned colorbar axis."""
+    figure = plt.figure(figsize=COLORBAR_FIGSIZE, dpi=COLORBAR_DPI)
+    axis = figure.add_axes(cax_rect)
+    return figure, axis
 
 
 def print_tree_rule(tree_index, render_context: dict) -> None:
@@ -258,7 +269,7 @@ def plot_with_interface(
 
     for plotindex, clustered in enumerate(clusterplots):
         if clustered:
-            fig, ax = plt.subplots(1, 1, figsize=(0.8, 4.0), dpi=90)
+            fig, ax = _create_colorbar_figure(CLUSTER_COLORBAR_CAX_RECT)
 
             freqs = np.bincount(cluster_memb)
             if np.min(freqs) == 0:
@@ -284,7 +295,7 @@ def plot_with_interface(
             ax.yaxis.set_ticks_position("left")
             norms = [norm(norm_bins[cluster_memb[i]]) for i in range(len(cluster_memb))]
         else:
-            fig, ax = plt.subplots(1, 1, figsize=(0.8, 4.0), dpi=90)
+            fig, ax = _create_colorbar_figure(PREDICTION_COLORBAR_CAX_RECT)
             if rf_pred_is_scalar:
                 is_binary = plot_data_bunch.set_up == "binary"
                 v_min, v_max = custom_axes_limit(
@@ -324,11 +335,8 @@ def plot_with_interface(
             else:
                 norms = [norm_preds(loss_values[i]) for i in range(len(cluster_memb))]
 
-        fig.tight_layout()
         fig.savefig(
             os.path.join(temp_files_dir, f"temp_colourbar{plotindex}.png"),
-            bbox_inches="tight",
-            pad_inches=0.02,
         )
         plt.close(fig)
 
