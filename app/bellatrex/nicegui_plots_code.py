@@ -1,5 +1,4 @@
 import argparse
-import base64
 import io
 import importlib.util
 import os
@@ -112,24 +111,51 @@ def _build_colorbar_paths(plots, temp_files_dir: str) -> list[str]:
     ]
 
 
-def _build_subprocess_payload(
-    plots, colorbar_paths, render_context: dict | None, native: bool, port: int, temp_files_dir: str
-) -> str:
+def _write_subprocess_payload(payload: dict, temp_files_dir: str) -> str:
     with tempfile.NamedTemporaryFile(
         mode="wb", suffix=".bellatrex-gui.pkl", delete=False, dir=temp_files_dir
     ) as handle:
-        pickle.dump(
-            {
-                "plots": plots,
-                "colorbar_paths": colorbar_paths,
-                "render_context": render_context,
-                "native": native,
-                "port": port,
-                "temp_files_dir": temp_files_dir,
-            },
-            handle,
-        )
+        pickle.dump(payload, handle)
         return handle.name
+
+
+def _build_main_window_payload(
+    plots, colorbar_paths, render_context: dict | None, native: bool, port: int, temp_files_dir: str
+) -> str:
+    return _write_subprocess_payload(
+        {
+            "kind": "main_window",
+            "plots": plots,
+            "colorbar_paths": colorbar_paths,
+            "render_context": render_context,
+            "native": native,
+            "port": port,
+            "temp_files_dir": temp_files_dir,
+        },
+        temp_files_dir,
+    )
+
+
+def _build_tree_window_payload(
+    image_name: str,
+    title: str,
+    subtitle: str | None,
+    native: bool,
+    port: int,
+    temp_files_dir: str,
+) -> str:
+    return _write_subprocess_payload(
+        {
+            "kind": "tree_window",
+            "image_name": image_name,
+            "title": title,
+            "subtitle": subtitle,
+            "native": native,
+            "port": port,
+            "temp_files_dir": temp_files_dir,
+        },
+        temp_files_dir,
+    )
 
 
 def _run_subprocess_app(payload_path: str, blocking: bool) -> None:
@@ -145,6 +171,19 @@ def _run_subprocess_app(payload_path: str, blocking: bool) -> None:
 def _serve_payload_file(payload_path: str) -> None:
     with open(payload_path, "rb") as handle:
         payload = pickle.load(handle)
+
+    kind = payload.get("kind", "main_window")
+    if kind == "tree_window":
+        _run_tree_window_app(
+            payload["image_name"],
+            payload["title"],
+            payload.get("subtitle"),
+            native=payload["native"],
+            port=payload["port"],
+            temp_files_dir=payload["temp_files_dir"],
+            payload_path=payload_path,
+        )
+        return
 
     _run_nicegui_app(
         payload["plots"],
@@ -383,6 +422,55 @@ def _cleanup_temp_artifacts(
             pass
 
 
+def _cleanup_payload_file(payload_path: str | None) -> None:
+    if not payload_path:
+        return
+    try:
+        os.remove(payload_path)
+    except FileNotFoundError:
+        pass
+
+
+def _run_tree_window_app(
+    image_name: str,
+    title: str,
+    subtitle: str | None,
+    native: bool,
+    port: int,
+    temp_files_dir: str,
+    payload_path: str | None = None,
+) -> None:
+    ng_app.add_static_files("/bellatrex_tmp", temp_files_dir)
+    tree_source = f"/bellatrex_tmp/{image_name}"
+
+    @ui.page("/")
+    def tree_window_page() -> None:
+        with ui.column().style("width:100%; gap:0.75rem; padding:1rem;"):
+            ui.label(title).classes("text-xl font-semibold")
+            if subtitle:
+                ui.label(subtitle).classes("text-sm text-gray-500")
+            ui.link("Open in browser", tree_source, new_tab=True).classes("text-sm")
+            with ui.element("div").style(
+                "width:100%; min-height:0; border:1px solid #e5e7eb; border-radius:4px; "
+                "background:#f5f5f5; padding:12px; display:flex; "
+                "align-items:center; justify-content:center;"
+            ):
+                ui.element("img").props(f'src="{tree_source}" alt="{title}"').style(
+                    "display:block; max-width:100%; max-height:85vh; width:auto; height:auto;"
+                )
+
+    ng_app.on_shutdown(lambda: _cleanup_payload_file(payload_path))
+
+    ui.run(
+        native=native,
+        port=port,
+        reload=False,
+        title=title,
+        show=not native,
+        window_size=(1400, 900),
+    )
+
+
 def _run_nicegui_app(
     plots,
     colorbar_paths,
@@ -408,18 +496,6 @@ def _run_nicegui_app(
         info_label = ui.label("Click on a point to open the corresponding tree").classes(
             "text-sm italic text-gray-500 px-4 pb-2"
         )
-        tree_preview = ui.element("div").style("padding:0 1rem 1rem 1rem; width:100%;")
-        with tree_preview:
-            ui.label("Click a point to preview the corresponding tree.").classes(
-                "text-sm text-gray-500"
-            )
-
-        def _clear_tree_preview() -> None:
-            tree_preview.clear()
-            with tree_preview:
-                ui.label("Click a point to preview the corresponding tree.").classes(
-                    "text-sm text-gray-500"
-                )
 
         def _normalize_tree_name(raw_tree_name) -> str | None:
             """Return a scalar tree id from Plotly click payloads.
@@ -469,7 +545,7 @@ def _run_nicegui_app(
             except (TypeError, ValueError):
                 return None
 
-        def _open_tree_dialog(tree_name: str, subtitle: str | None = None) -> None:
+        def _open_tree_window(tree_name: str, subtitle: str | None = None) -> None:
             if render_context is None:
                 ui.notify("Tree rendering context is unavailable.", color="warning")
                 return
@@ -489,39 +565,27 @@ def _run_nicegui_app(
                 return
             dialog_image_paths.append(image_path)
             tree_source = f"/bellatrex_tmp/{image_name}"
-            tree_data_url = (
-                f"data:image/png;base64,{base64.b64encode(tree_png).decode('ascii')}"
-            )
 
-            tree_preview.clear()
-            with tree_preview:
-                with ui.card().style(
-                    "width:95vw; max-width:none; height:70vh;"
-                    "display:flex; flex-direction:column; gap:0.5rem; padding:1rem;"
-                ):
-                    with ui.row().style(
-                        "width:100%; display:flex; align-items:center;"
-                        "justify-content:space-between; flex-shrink:0; min-width:0"
-                    ):
-                        with ui.column().style("gap:0"):
-                            ui.label(title).classes("text-lg font-semibold")
-                            if subtitle:
-                                ui.label(subtitle).classes("text-sm text-gray-500")
-                            ui.link("Open image in new tab", tree_source, new_tab=True).classes(
-                                "text-xs"
-                            )
-                        ui.button("Clear", on_click=_clear_tree_preview)
-                    with ui.element("div").style(
-                        "flex:1 1 auto; min-height:0; min-width:0; width:100%; max-width:100%; "
-                        "overflow:hidden; border:1px solid #e5e7eb; border-radius:4px; "
-                        "background:#f5f5f5; padding:12px; display:flex; "
-                        "align-items:center; justify-content:center;"
-                    ):
-                        ui.element("img").props(
-                            f'src="{tree_data_url}" alt="{title}"'
-                        ).style(
-                            "display:block; max-width:100%; max-height:100%; width:auto; height:auto;"
-                        )
+            if native:
+                tree_payload_path = _build_tree_window_payload(
+                    image_name=image_name,
+                    title=title,
+                    subtitle=subtitle,
+                    native=True,
+                    port=_find_free_port(),
+                    temp_files_dir=temp_files_dir,
+                )
+                _run_subprocess_app(tree_payload_path, blocking=False)
+            else:
+                ui.run_javascript(
+                    f"window.open({tree_source!r}, '_blank', "
+                    "'noopener,noreferrer,width=1400,height=900');"
+                )
+
+            if subtitle:
+                info_label.set_text(f"{subtitle} | Opened {title}")
+            else:
+                info_label.set_text(f"Opened {title}")
 
         # Outer page-level scroll: only kicks in when both pairs exceed the window width.
         with ui.element("div").style(
@@ -675,7 +739,7 @@ def _run_nicegui_app(
                             lbl.set_text(text)
                             tree_name = _normalize_tree_name(raw_tree_name)
                             if tree_name is not None:
-                                _open_tree_dialog(tree_name, text)
+                                _open_tree_window(tree_name, text)
 
                         plot_elem.on(
                             "plotly_click",
@@ -764,7 +828,7 @@ def launch_nicegui_window(
     port = _find_free_port()
 
     if sys.platform.startswith("win"):
-        payload_path = _build_subprocess_payload(
+        payload_path = _build_main_window_payload(
             plots, colorbar_paths, render_context, native, port, temp_files_dir
         )
         _run_subprocess_app(payload_path, blocking)
