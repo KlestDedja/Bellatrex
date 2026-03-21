@@ -1,4 +1,5 @@
 import argparse
+import base64
 import io
 import importlib.util
 import os
@@ -407,8 +408,18 @@ def _run_nicegui_app(
         info_label = ui.label("Click on a point to open the corresponding tree").classes(
             "text-sm italic text-gray-500 px-4 pb-2"
         )
+        tree_preview = ui.element("div").style("padding:0 1rem 1rem 1rem; width:100%;")
+        with tree_preview:
+            ui.label("Click a point to preview the corresponding tree.").classes(
+                "text-sm text-gray-500"
+            )
 
-        tree_dialog = ui.dialog()
+        def _clear_tree_preview() -> None:
+            tree_preview.clear()
+            with tree_preview:
+                ui.label("Click a point to preview the corresponding tree.").classes(
+                    "text-sm text-gray-500"
+                )
 
         def _normalize_tree_name(raw_tree_name) -> str | None:
             """Return a scalar tree id from Plotly click payloads.
@@ -478,38 +489,39 @@ def _run_nicegui_app(
                 return
             dialog_image_paths.append(image_path)
             tree_source = f"/bellatrex_tmp/{image_name}"
+            tree_data_url = (
+                f"data:image/png;base64,{base64.b64encode(tree_png).decode('ascii')}"
+            )
 
-            tree_dialog.clear()
-            with (
-                tree_dialog,
-                ui.card().style(
-                    "width:95vw; max-width:none; height:92vh;"
+            tree_preview.clear()
+            with tree_preview:
+                with ui.card().style(
+                    "width:95vw; max-width:none; height:70vh;"
                     "display:flex; flex-direction:column; gap:0.5rem; padding:1rem;"
-                ),
-            ):
-                with ui.row().style(
-                    "width:100%; display:flex; align-items:center;"
-                    "justify-content:space-between; flex-shrink:0; min-width:0"
                 ):
-                    with ui.column().style("gap:0"):
-                        ui.label(title).classes("text-lg font-semibold")
-                        if subtitle:
-                            ui.label(subtitle).classes("text-sm text-gray-500")
-                        ui.link("Open image directly", tree_source, new_tab=True).classes("text-xs")
-                    ui.button("Close", on_click=lambda: tree_dialog.close())
-                # width:100% pins the div to the card boundary so the vertical
-                # scrollbar always appears at the right edge of the visible card,
-                # not at the far right of the (potentially very wide) image.
-                # min-width:0 lets the flex child shrink below its content size.
-                with ui.element("div").style(
-                    "flex:1 1 auto; min-height:0; min-width:0; width:100%; max-width:100%; "
-                    "overflow:scroll; display:inline-block;"
-                    "border:1px solid #e5e7eb; border-radius:4px"
-                ):
-                    ui.image(tree_source).props("fit=none").style(
-                        "display:block; width:auto; height:auto; max-width:none;"
-                    )
-            tree_dialog.open()
+                    with ui.row().style(
+                        "width:100%; display:flex; align-items:center;"
+                        "justify-content:space-between; flex-shrink:0; min-width:0"
+                    ):
+                        with ui.column().style("gap:0"):
+                            ui.label(title).classes("text-lg font-semibold")
+                            if subtitle:
+                                ui.label(subtitle).classes("text-sm text-gray-500")
+                            ui.link("Open image in new tab", tree_source, new_tab=True).classes(
+                                "text-xs"
+                            )
+                        ui.button("Clear", on_click=_clear_tree_preview)
+                    with ui.element("div").style(
+                        "flex:1 1 auto; min-height:0; min-width:0; width:100%; max-width:100%; "
+                        "overflow:hidden; border:1px solid #e5e7eb; border-radius:4px; "
+                        "background:#f5f5f5; padding:12px; display:flex; "
+                        "align-items:center; justify-content:center;"
+                    ):
+                        ui.element("img").props(
+                            f'src="{tree_data_url}" alt="{title}"'
+                        ).style(
+                            "display:block; max-width:100%; max-height:100%; width:auto; height:auto;"
+                        )
 
         # Outer page-level scroll: only kicks in when both pairs exceed the window width.
         with ui.element("div").style(
