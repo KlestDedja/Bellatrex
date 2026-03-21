@@ -445,19 +445,38 @@ def _run_tree_window_app(
 
     @ui.page("/")
     def tree_window_page() -> None:
-        with ui.column().style("width:100%; gap:0.75rem; padding:1rem;"):
+        ui.add_head_html("""
+        <style>
+            html, body {
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+            }
+            .nicegui-content {
+                height: 100vh;
+                overflow: hidden;
+            }
+        </style>
+        """)
+        with ui.column().style(
+            "width:100%; height:100%; gap:0.75rem; padding:1rem; "
+            "box-sizing:border-box; overflow:hidden;"
+        ):
             ui.label(title).classes("text-xl font-semibold")
             if subtitle:
                 ui.label(subtitle).classes("text-sm text-gray-500")
             ui.link("Open in browser", tree_source, new_tab=True).classes("text-sm")
             with ui.element("div").style(
-                "width:100%; min-height:0; border:1px solid #e5e7eb; border-radius:4px; "
-                "background:#f5f5f5; padding:12px; display:flex; "
-                "align-items:center; justify-content:center;"
+                "flex:1 1 auto; min-height:0; min-width:0; width:100%; overflow-x:auto; "
+                "overflow-y:auto; border:1px solid #e5e7eb; border-radius:4px; "
+                "background:#f5f5f5; padding:12px; box-sizing:border-box;"
             ):
-                ui.element("img").props(f'src="{tree_source}" alt="{title}"').style(
-                    "display:block; max-width:100%; max-height:85vh; width:auto; height:auto;"
-                )
+                with ui.element("div").style(
+                    "display:inline-block; width:max-content; height:max-content; background:white;"
+                ):
+                    ui.element("img").props(f'src="{tree_source}" alt="{title}"').style(
+                        "display:block; width:auto; height:auto; max-width:none; max-height:none;"
+                    )
 
     ng_app.on_shutdown(lambda: _cleanup_payload_file(payload_path))
 
