@@ -326,8 +326,18 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
         and output_format in ["probability", "auto"]
     ):
         partials = tree.value[:, 0, :]  # output for 2 classes, now take average
-        tree_dict["values"] = (partials[:, 1] / (partials[:, 0] + partials[:, 1])).reshape(-1, 1)
 
+        try:
+            tree_dict["values"] = (partials[:, 1] / (partials[:, 0] + partials[:, 1])).reshape(
+                -1, 1
+            )
+        except IndexError:
+            # Handle the case where there is only one class in the node
+            tree_dict["values"] = np.zeros((tree.node_count, 1))  # Default to 0 probability
+            warnings.warn(
+                "One of the trees contains only one class, resulting in an IndexError. "
+                "Defaulting to 0 probability. Will be handled better in future versions."
+            )
     elif (  # case SETUP=multi-label
         isinstance(tree_obj, DecisionTreeClassifier)
         and tree_obj.n_outputs_ > 1
