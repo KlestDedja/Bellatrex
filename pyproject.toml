@@ -4,7 +4,7 @@ dynamic = ["version"]
 description = "Explaining Random Forest model predictions by Building Explanations through a LocaLly AccuraTe Rule EXtractor"
 readme = "README.md"
 authors = [
-    { name = "Klest Dedja", email = "daneel.olivaw94@gmail.com" },
+    { name = "Klest Dedja", email = "klest.dev@gmail.com" },
 ]
 license = { file = "LICENSE.txt" }
 requires-python = ">=3.10, <4.0"
@@ -13,8 +13,8 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12"
-    "Programming Language :: Python :: 3.13"
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14"
 ]
 dependencies = [
