@@ -1,11 +1,11 @@
-name: Cross-Platform Test Matrix
+name: Cross-Platform Full Matrix
 
 on:
   pull_request:
     branches: [ main, dev ]
     paths-ignore: [ "docs/**", "**/*.md" ]
   push:
-    branches: [ "**" ]
+    branches: [ main, dev ]
     paths-ignore: [ "docs/**", "**/*.md" ]
   workflow_dispatch:
 
@@ -17,22 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quick-test:
-    if: github.event_name == 'push' && github.event.pull_request == null
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.11", cache: "pip" }
-      - name: Install
-        run: |
-          python -m pip install --upgrade pip
-          pip install .[dev] pytest
-      - name: Tests (quick)
-        run: pytest -q
-
   full-matrix-test:
-    if: github.event_name != 'push' || github.event.pull_request != null
     strategy:
       fail-fast: false
       matrix:
