@@ -1,13 +1,16 @@
 name: release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'            # on version tag push
-  workflow_dispatch:       # plus, allow manual runs
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Stable release tag (vX.Y.Z)"
+        required: true
+        type: string
 
 permissions:
   contents: read
+  actions: read
 
 env:
   PACKAGE_NAME: bellatrex
@@ -16,40 +19,82 @@ env:
 jobs:
   details:
     runs-on: ubuntu-latest
-    # Skip this workflow when the tag looks like a pre-release (contains dev or a)
-    # Use `github.ref_name` (the tag name) instead of `github.ref` (which contains the full ref
-    # path like `refs/tags/...` and therefore always contains the letter 'a' from the word
-    # "tags"), otherwise `contains(github.ref, 'a')` is always true and the job is skipped.
-    if: ${{ !contains(github.ref_name, 'dev') && !contains(github.ref_name, 'a') }}
     outputs:
       new_version: ${{ steps.release.outputs.new_version }}
       suffix: ${{ steps.release.outputs.suffix }}
       tag_name: ${{ steps.release.outputs.tag_name }}
+      tag_sha: ${{ steps.release.outputs.tag_sha }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Extract tag and Details
         id: release
+        shell: bash
         run: |
-          if [ "${{ github.ref_type }}" = "tag" ]; then
-            TAG_NAME=${GITHUB_REF#refs/tags/}
-            # Remove trailing alpha/dev suffix (letters+digits) if present to get base version
-            NEW_VERSION=$(echo "$TAG_NAME" | sed -E 's/([a-z]+[0-9]+)$//')
-            # Extract the last letter+digit suffix (e.g. dev1, a1) if any
-            SUFFIX=$(echo "$TAG_NAME" | grep -oP '[a-z]+[0-9]+' | tail -n1 || echo "")
-            echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
-            echo "suffix=${SUFFIX}" >> "$GITHUB_OUTPUT"
-            echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
-            echo "Version is ${NEW_VERSION}"
-            echo "Suffix is ${SUFFIX}"
-            echo "Tag name is ${TAG_NAME}"
-          else
-            echo "No tag found"
+          set -euo pipefail
+
+          TAG_NAME="${{ github.event.inputs.tag }}"
+          TAG_NAME="${TAG_NAME#refs/tags/}"
+
+          # Stable release tags only: vX.Y.Z
+          if [[ ! "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid stable release tag '$TAG_NAME'. Use format vX.Y.Z (no dev/a/rc)."
             exit 1
           fi
 
-  check_pypi:
+          if ! git rev-parse -q --verify "refs/tags/${TAG_NAME}" >/dev/null; then
+            echo "Tag '${TAG_NAME}' does not exist in repository."
+            exit 1
+          fi
+
+          TAG_SHA=$(git rev-list -n 1 "${TAG_NAME}")
+          NEW_VERSION="${TAG_NAME#v}"
+          SUFFIX=""
+
+          echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "suffix=${SUFFIX}" >> "$GITHUB_OUTPUT"
+          echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+          echo "tag_sha=${TAG_SHA}" >> "$GITHUB_OUTPUT"
+          echo "Version is ${NEW_VERSION}"
+          echo "Tag name is ${TAG_NAME}"
+          echo "Tag SHA is ${TAG_SHA}"
+
+  verify_matrix:
     needs: details
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful ci-matrix run for tag commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ needs.details.outputs.tag_sha }}
+          WORKFLOW_FILE: ci-matrix.yaml
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          run_json=$(gh api "repos/${REPO}/actions/workflows/${WORKFLOW_FILE}/runs?event=push&head_sha=${SHA}&status=completed&per_page=20")
+          run_id=$(echo "$run_json" | jq -r '.workflow_runs[0].id // empty')
+          conclusion=$(echo "$run_json" | jq -r '.workflow_runs[0].conclusion // empty')
+
+          if [ -z "$run_id" ]; then
+            echo "No completed ci-matrix run found for commit ${SHA}."
+            echo "Run ci-matrix first (on the tag push) and retry this manual release."
+            exit 1
+          fi
+
+          if [ "$conclusion" != "success" ]; then
+            echo "ci-matrix run ${run_id} is completed with conclusion=${conclusion}."
+            echo "Release is blocked until ci-matrix succeeds."
+            exit 1
+          fi
+
+          echo "ci-matrix run ${run_id} succeeded for commit ${SHA}."
+
+  check_pypi:
+    needs: [details, verify_matrix]
     runs-on: ubuntu-latest
     steps:
       - name: Fetch information from PyPI
@@ -79,6 +124,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.details.outputs.tag_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -133,6 +180,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v6
         with:
+          ref: ${{ needs.details.outputs.tag_name }}
           fetch-depth: 0
 
       - name: Download artifacts
