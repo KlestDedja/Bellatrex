@@ -1,12 +1,9 @@
 name: Cross-Platform Full Matrix
 
 on:
-  pull_request:
-    branches: [ main, dev ]
-    paths-ignore: [ "docs/**", "**/*.md" ]
   push:
-    branches: [ main, dev ]
-    paths-ignore: [ "docs/**", "**/*.md" ]
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
 
 permissions:
