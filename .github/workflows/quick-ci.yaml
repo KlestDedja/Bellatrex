@@ -33,13 +33,13 @@ jobs:
         run: black --check .
 
   quick-test-no-gui:
-    needs: lint
+    needs: linting-checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: pip
       - name: Install
         run: |
@@ -55,7 +55,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: pip
       - name: Install (GUI)
         run: |
