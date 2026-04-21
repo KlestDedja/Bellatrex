@@ -1,46 +1,60 @@
-name: release
+name: publish
 
 on:
+  push:
+    tags:
+      - 'v*' # broad trigger, will be validated in workflow
   workflow_dispatch:
     inputs:
       tag:
-        description: "Stable release tag (vX.Y.Z)"
+        description: "Release tag (vX.Y.Z, or vX.Y.Z.devN)"
         required: true
         type: string
 
 permissions:
   contents: read
-  actions: read
 
 env:
   PACKAGE_NAME: bellatrex
-  OWNER: klestdedja
 
 jobs:
+  # 1) Resolve the tag to release, validate format, and expose reusable outputs.
   details:
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.release.outputs.new_version }}
-      suffix: ${{ steps.release.outputs.suffix }}
       tag_name: ${{ steps.release.outputs.tag_name }}
       tag_sha: ${{ steps.release.outputs.tag_sha }}
+      is_dev: ${{ steps.release.outputs.is_dev }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Extract tag and Details
+      - name: Parse and validate tag
         id: release
         shell: bash
         run: |
           set -euo pipefail
 
-          TAG_NAME="${{ github.event.inputs.tag }}"
+          # Manual runs read the user-provided tag; push runs read the pushed tag.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG_NAME="${{ github.event.inputs.tag }}"
+          else
+            TAG_NAME="${GITHUB_REF_NAME}"
+          fi
+
           TAG_NAME="${TAG_NAME#refs/tags/}"
 
-          # Stable release tags only: vX.Y.Z
-          if [[ ! "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Invalid stable release tag '$TAG_NAME'. Use format vX.Y.Z (no dev/a/rc)."
+          # Accepted formats:
+          # - stable: vX.Y.Z
+          # - prerelease dev: vX.Y.Z.devN
+          if [[ "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            IS_DEV="false"
+          elif [[ "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+\.dev[0-9]+$ ]]; then
+            IS_DEV="true"
+          else
+            echo "Invalid tag '$TAG_NAME'. Use vX.Y.Z or vX.Y.Z.devN."
             exit 1
           fi
 
@@ -51,76 +65,73 @@ jobs:
 
           TAG_SHA=$(git rev-list -n 1 "${TAG_NAME}")
           NEW_VERSION="${TAG_NAME#v}"
-          SUFFIX=""
 
           echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "suffix=${SUFFIX}" >> "$GITHUB_OUTPUT"
           echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
           echo "tag_sha=${TAG_SHA}" >> "$GITHUB_OUTPUT"
+          echo "is_dev=${IS_DEV}" >> "$GITHUB_OUTPUT"
           echo "Version is ${NEW_VERSION}"
           echo "Tag name is ${TAG_NAME}"
           echo "Tag SHA is ${TAG_SHA}"
+          echo "Dev release is ${IS_DEV}"
 
-  verify_matrix:
+  # 2) Full validation matrix is run for releases with tag (all supported OS/Python combos).
+  full_matrix_test:
+    needs: details
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+    runs-on: ${{ matrix.os }}
+    name: validate ${{ matrix.os }} / py${{ matrix.python-version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.details.outputs.tag_name }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev] pytest
+      - name: Run tests
+        run: pytest -q
+
+  # 3) Stable-only safety gate: block if version is not newer than PyPI.
+  check_release_version:
     needs: details
     runs-on: ubuntu-latest
     steps:
-      - name: Require successful ci-matrix run for tag commit
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          SHA: ${{ needs.details.outputs.tag_sha }}
-          WORKFLOW_FILE: ci-matrix.yaml
+      - name: Compare against PyPI (stable releases only)
         shell: bash
         run: |
           set -euo pipefail
 
-          run_json=$(gh api "repos/${REPO}/actions/workflows/${WORKFLOW_FILE}/runs?event=push&head_sha=${SHA}&status=completed&per_page=20")
-          run_id=$(echo "$run_json" | jq -r '.workflow_runs[0].id // empty')
-          conclusion=$(echo "$run_json" | jq -r '.workflow_runs[0].conclusion // empty')
-
-          if [ -z "$run_id" ]; then
-            echo "No completed ci-matrix run found for commit ${SHA}."
-            echo "Run ci-matrix first (on the tag push) and retry this manual release."
-            exit 1
+          if [ "${{ needs.details.outputs.is_dev }}" = "true" ]; then
+            echo "Skipping PyPI version check for dev release."
+            exit 0
           fi
 
-          if [ "$conclusion" != "success" ]; then
-            echo "ci-matrix run ${run_id} is completed with conclusion=${conclusion}."
-            echo "Release is blocked until ci-matrix succeeds."
-            exit 1
-          fi
-
-          echo "ci-matrix run ${run_id} succeeded for commit ${SHA}."
-
-  check_pypi:
-    needs: [details, verify_matrix]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fetch information from PyPI
-        run: |
           response=$(curl -s https://pypi.org/pypi/${{ env.PACKAGE_NAME }}/json || echo "{}")
-          latest_previous_version=$(echo $response | jq --raw-output "select(.releases != null) | .releases | keys_unsorted | last")
-          if [ -z "$latest_previous_version" ]; then
-            echo "Package not found on PyPI."
+          latest_previous_version=$(echo "$response" | jq --raw-output "select(.releases != null) | .releases | keys_unsorted | last")
+          if [ -z "$latest_previous_version" ] || [ "$latest_previous_version" = "null" ]; then
             latest_previous_version="0.0.0"
           fi
-          echo "Latest version on PyPI: $latest_previous_version"
-          echo "latest_previous_version=$latest_previous_version" >> $GITHUB_ENV
 
-      - name: Compare versions and exit if not newer
-        run: |
-          NEW_VERSION=${{ needs.details.outputs.new_version }}
-          LATEST_VERSION=$latest_previous_version
-          if [ "$(printf '%s\n' "$LATEST_VERSION" "$NEW_VERSION" | sort -rV | head -n 1)" != "$NEW_VERSION" ] || [ "$NEW_VERSION" == "$LATEST_VERSION" ]; then
-            echo "The new version $NEW_VERSION is not greater than the latest version $LATEST_VERSION on PyPI."
+          NEW_VERSION="${{ needs.details.outputs.new_version }}"
+          if [ "$(printf '%s\n' "$latest_previous_version" "$NEW_VERSION" | sort -rV | head -n 1)" != "$NEW_VERSION" ] || [ "$NEW_VERSION" = "$latest_previous_version" ]; then
+            echo "The new version $NEW_VERSION is not greater than latest PyPI version $latest_previous_version."
             exit 1
-          else
-            echo "The new version $NEW_VERSION is greater than the latest version $LATEST_VERSION on PyPI."
           fi
 
-  setup_and_build:
-    needs: [details, check_pypi]
+          echo "Stable version check passed: $NEW_VERSION > $latest_previous_version"
+
+  # 4) Build source and wheel artifacts once, then reuse them for publish/release jobs.
+  build_dist:
+    needs: [details, full_matrix_test, check_release_version]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -132,27 +143,47 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Set up Python and build tools
+      - name: Set up build tools
         run: |
           python -m pip install --upgrade pip
-          pip install build twine
+          pip install build
 
-      - name: Install package and build distributions
-        run: |
-          # Install project (and dev extras if present) so build dependencies are available
-          pip install -e ".[dev]" || true
-          # Build sdist and wheel into ./dist
-          python -m build --sdist --wheel
+      - name: Build sdist and wheel
+        run: python -m build --sdist --wheel
 
-      - name: Upload artifacts
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/
 
-  pypi_publish:
-    name: Upload release to PyPI
-    needs: [setup_and_build, details]
+  # 5a) Dev tags publish to TestPyPI only.
+  publish_testpypi:
+    name: Publish to TestPyPI
+    needs: [details, build_dist]
+    if: ${{ needs.details.outputs.is_dev == 'true' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: pre-release
+    permissions:
+      id-token: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish distribution to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  # 5b) Stable tags publish to production PyPI only.
+  publish_pypi:
+    name: Publish to PyPI
+    needs: [details, build_dist]
+    if: ${{ needs.details.outputs.is_dev != 'true' }}
     runs-on: ubuntu-latest
     environment:
       name: release
@@ -168,30 +199,44 @@ jobs:
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
-  github_release:
-    name: Create GitHub Release
-    needs: [setup_and_build, details]
+  # 6a) Dev tags create GitHub pre-releases.
+  github_release_dev:
+    name: Create GitHub Pre-release
+    needs: [details, publish_testpypi]
+    if: ${{ needs.details.outputs.is_dev == 'true' }}
     runs-on: ubuntu-latest
-    environment:
-      name: release
     permissions:
       contents: write
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.details.outputs.tag_name }}
-          fetch-depth: 0
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
-
-      - name: Create GitHub Release
-        id: create_release
+      - name: Create GitHub pre-release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create ${{ needs.details.outputs.tag_name }} dist/* --title ${{ needs.details.outputs.tag_name }} --generate-notes
+          gh release create ${{ needs.details.outputs.tag_name }} dist/* \
+            --title "${{ needs.details.outputs.tag_name }}" \
+            --prerelease
+
+  # 6b) Stable tags create normal GitHub releases.
+  github_release_stable:
+    name: Create GitHub Release
+    needs: [details, publish_pypi]
+    if: ${{ needs.details.outputs.is_dev != 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create ${{ needs.details.outputs.tag_name }} dist/* \
+            --title "${{ needs.details.outputs.tag_name }}" \
+            --generate-notes
