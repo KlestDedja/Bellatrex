@@ -1,33 +1,48 @@
 # Changelog
 
-## [0.3.2] - unreleased
+## [0.4.0] - 2026-04-12
+
+This release supersedes the previously planned `0.3.2`. Its scope grew enough to warrant a
+minor-version bump, driven mainly by the new browser-based GUI and broader API and packaging
+cleanup.
 
 ### Added
-- `pack_trained_ensemble` and `predict_helper` are now importable directly from `bellatrex`
-  (e.g. `from bellatrex import pack_trained_ensemble`).
-- `BellatrexExplain` now has a `__repr__` method that shows key parameters.
-- `BellatrexExplain.__init__` initialises `sample`, `tuned_method`, `sample_index`, and
-  `surrogate_pred_str` to `None`, so calling visualization methods before `explain()` raises
-  a clear `ValueError` rather than an `AttributeError`.
+- A browser-based interactive GUI powered by NiceGUI, with clickable rule exploration,
+  dedicated tree views, and a new internal rendering/runtime layer.
+- Top-level imports for `pack_trained_ensemble` and `predict_helper`, making it easier to work
+  with packed forests directly from `bellatrex`.
+- Bundled pretrained example models for all supported task types, together with normalized
+  tutorial dataset names.
 
 ### Changed
-- **API**: `explain()` now raises `TypeError` with a helpful message when `X` is not a pandas
-  DataFrame, instead of failing silently with an `AttributeError`.
-- `verbose=0` (the default) is now fully silent.  Fitting and status messages are only printed
-  at `verbose >= 1`, consistent with the scikit-learn convention.
-- The mutable default `p_grid={}` in `__init__` is replaced with `p_grid=None`; the default
-  grid is defined as the class-level constant `_DEFAULT_P_GRID`.
-- `ys_oracle` constructor parameter is now correctly stored (`self.ys_oracle = ys_oracle`
-  instead of being silently dropped).
-- `n_jobs > 1` no longer emits a spurious warning; thread-based parallelism just runs.
-- `create_rules_txt` / `print_rules_txt`: path-resolution logic simplified.  `out_dir=None`
-  resolves to `$BELLATREX_EXPLAIN_DIR` (if set) or `<cwd>/explanations-output`; any other
-  relative path is resolved directly from the current working directory.
-  The env var `BELLATREX_EXPLAIN_DIR` is now actually respected (it was previously commented
-  out).
-- Dead private method `_pick_runtime_dir` removed; a new `_resolve_output_dir` helper
-  centralises the two-method path logic into one place.
-- `tutorial.ipynb` and `tutorial.py` updated to use the new top-level imports.
+- The optional GUI stack has moved from DearPyGUI to a browser-based NiceGUI workflow;
+  `bellatrex[gui]` now installs `nicegui`, `pywebview`, and `plotly`.
+- The README and tutorials were overhauled with clearer installation steps, a proper
+  quickstart, and an API overview for the main public entry points.
+- `BellatrexExplain` now accepts normalized `set_up` aliases, exposes a more helpful
+  `__repr__`, uses `p_grid=None` instead of a mutable default, and produces cleaner text
+  explanations.
+- Declared Python support now covers 3.10 through 3.14, and the CI pipeline now separates a
+  quick branch workflow from the full cross-platform matrix.
+
+### Fixed
+- `explain()` now fails fast with clearer errors for non-DataFrame inputs, invalid sample
+  indices, NaN or infinite values, and feature-name mismatches.
+- `ys_oracle` is now stored correctly and no longer gets mutated during single-sample
+  explanations.
+- Packed-tree conversion now handles the single-class binary-tree edge case more gracefully
+  when exporting wrapped ensembles.
+- `verbose=0` is now truly silent, and `n_jobs > 1` no longer emits a misleading warning.
+- `create_rules_txt()` and `print_rules_txt()` now share consistent path resolution and
+  correctly honor `BELLATREX_EXPLAIN_DIR`.
+- NiceGUI tree windows, scrollbars, colorbars, and temporary-artifact cleanup were stabilized
+  across the GUI refactor.
+- Tree-related tests are now deterministic, improving reproducibility in local runs and CI.
+
+### Removed
+- DearPyGUI as the supported optional GUI backend; the legacy `gui_plots_code` module is now
+  deprecated in favor of `nicegui_plots_code`.
+- Legacy Docker-based CI artifacts that were no longer part of the active development flow.
 
 ## [0.3.1] - 2025-10-25
 
