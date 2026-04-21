@@ -82,6 +82,7 @@ def test_unfitted_model():
 def test_unsupported_model():
     class UnsupportedModel:
         """Just a dummy class to simulate an unsupported model type."""
+
         pass
 
     clf = UnsupportedModel()

@@ -12,7 +12,10 @@ try:
     from app.bellatrex._nicegui.models import InteractPlot, InteractPoint
     from app.bellatrex._nicegui.rendering import build_plotly_figure, plot_with_interface
     from app.bellatrex._nicegui.runtime import build_main_window_payload, cleanup_temp_artifacts
-    from app.bellatrex._nicegui.runtime import prepare_session_temp_dir, prepare_tree_window_temp_dir
+    from app.bellatrex._nicegui.runtime import (
+        prepare_session_temp_dir,
+        prepare_tree_window_temp_dir,
+    )
     from app.bellatrex import nicegui_plots_code
 except ImportError:
     from bellatrex._nicegui.cache import TreeCacheEntry, TreeRenderCache

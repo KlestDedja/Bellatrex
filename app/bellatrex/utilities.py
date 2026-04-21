@@ -21,7 +21,6 @@ from matplotlib.colorbar import Colorbar
 
 from .wrapper_class import EnsembleWrapper
 
-
 # def is_ci():
 #     return os.environ.get("CI", "false").lower() == "true"
 
