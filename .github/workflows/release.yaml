@@ -129,7 +129,7 @@ jobs:
 
           echo "Stable version check passed: $NEW_VERSION > $latest_previous_version"
 
-  # 4) Build source and wheel artifacts once, then reuse them for publish/release jobs.
+  # 4) Build source and wheel artifacts once, then reuse them for publish jobs.
   build_dist:
     needs: [details, full_matrix_test, check_release_version]
     runs-on: ubuntu-latest
@@ -164,7 +164,7 @@ jobs:
     if: ${{ needs.details.outputs.is_dev == 'true' }}
     runs-on: ubuntu-latest
     environment:
-      name: pre-release
+      name: pre-release # if env name changes here, publisher env name (test pypi) should also be updated
     permissions:
       id-token: write
     steps:
@@ -186,7 +186,7 @@ jobs:
     if: ${{ needs.details.outputs.is_dev != 'true' }}
     runs-on: ubuntu-latest
     environment:
-      name: release
+      name: release # if env name changes here, publisher env name (pypi) should also be updated
     permissions:
       id-token: write
     steps:
@@ -208,6 +208,10 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.details.outputs.tag_name }}
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           name: dist
@@ -229,6 +233,10 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.details.outputs.tag_name }}
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           name: dist
