@@ -59,6 +59,7 @@ exclude = '''
   | \.pytest_cache
   | \.tox
   | __pycache__
+    | tmp[^/]*
 )/
 '''
 
