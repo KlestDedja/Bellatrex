@@ -15,19 +15,21 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14"
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-    "scikit-learn >=1.2",
-    "threadpoolctl >=3.1",
-    "scikit-survival >=0.22",
-    "scipy >=1.11",
+    "numpy >=1.21",
     "pandas >=1.5",
-    "bottleneck", # needed for pandas performance
+    "bottleneck", # needed for pandas performance (not a requirement! move out from here)
+    "scipy >=1.11",
     "matplotlib >=3.7",
+    "scikit-learn >=1.2",
+    "scikit-survival >=0.22",
+    "threadpoolctl >=3.1",
     "joblib >=1.3",
 ]
 
+# here optional dependecies for testing and development, include black
 [project.optional-dependencies]
 dev = [
     "ipykernel",
@@ -35,10 +37,13 @@ dev = [
     "pytest-cov",
     "pytest-xdist",
     "twine",
-    "black >= 0.24",
+    "black >= 24",
     "nbstripout >= 0.6",
-    "vulture >= 2.7"
+    "vulture >= 2.7",
 ]
+
+# TODO: move this to normal dependencies (0.4.1), drop separation
+# consider adding a [performance] one or similar
 gui = [
     "nicegui",
     "pywebview",
@@ -81,8 +86,6 @@ concurrency = ["thread", "multiprocessing"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-
-
 
 
 [build-system]
