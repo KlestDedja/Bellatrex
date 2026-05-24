@@ -5,8 +5,12 @@ import types
 
 import matplotlib
 import numpy as np
+import pytest
 
 matplotlib.use("Agg")
+pytest.importorskip("nicegui", reason="Install Bellatrex[gui] to run GUI tests")
+
+pytestmark = pytest.mark.gui
 
 try:
     from app.bellatrex._nicegui.cache import TreeCacheEntry, TreeRenderCache
@@ -14,6 +18,7 @@ try:
     from app.bellatrex._nicegui.rendering import build_plotly_figure, plot_with_interface
     from app.bellatrex._nicegui.runtime import build_main_window_payload, cleanup_temp_artifacts
     from app.bellatrex._nicegui.runtime import (
+        ensure_nicegui_screen_test_port,
         prepare_session_temp_dir,
         prepare_tree_window_temp_dir,
     )
@@ -23,7 +28,11 @@ except ImportError:
     from bellatrex._nicegui.models import InteractPlot, InteractPoint
     from bellatrex._nicegui.rendering import build_plotly_figure, plot_with_interface
     from bellatrex._nicegui.runtime import build_main_window_payload, cleanup_temp_artifacts
-    from bellatrex._nicegui.runtime import prepare_session_temp_dir, prepare_tree_window_temp_dir
+    from bellatrex._nicegui.runtime import (
+        ensure_nicegui_screen_test_port,
+        prepare_session_temp_dir,
+        prepare_tree_window_temp_dir,
+    )
     from bellatrex import nicegui_plots_code
 
 
@@ -245,8 +254,6 @@ def test_main_window_payload_round_trip(tmp_path):
 def test_ensure_nicegui_screen_test_port_sets_default(monkeypatch):
     monkeypatch.delenv("NICEGUI_SCREEN_TEST_PORT", raising=False)
 
-    from app.bellatrex._nicegui.runtime import ensure_nicegui_screen_test_port
-
     ensure_nicegui_screen_test_port(4567)
 
     assert os.environ["NICEGUI_SCREEN_TEST_PORT"] == "4567"
@@ -254,8 +261,6 @@ def test_ensure_nicegui_screen_test_port_sets_default(monkeypatch):
 
 def test_ensure_nicegui_screen_test_port_preserves_existing(monkeypatch):
     monkeypatch.setenv("NICEGUI_SCREEN_TEST_PORT", "9999")
-
-    from app.bellatrex._nicegui.runtime import ensure_nicegui_screen_test_port
 
     ensure_nicegui_screen_test_port(4567)
 
