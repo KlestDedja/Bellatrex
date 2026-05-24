@@ -11,6 +11,7 @@ from .rendering import build_colorbar_paths, build_plotly_figure
 from .rendering import print_tree_rule, render_tree_image, write_tree_image
 from .runtime import build_main_window_payload, build_tree_window_payload
 from .runtime import cleanup_temp_artifacts, detect_native_window_support
+from .runtime import ensure_nicegui_screen_test_port
 from .runtime import find_free_port, prepare_session_temp_dir
 from .runtime import prepare_tree_window_temp_dir, run_subprocess_app
 
@@ -145,6 +146,7 @@ def _run_tree_window_app(
     temp_files_dir: str,
     payload_path: str | None = None,
 ) -> None:
+    ensure_nicegui_screen_test_port(port)
     ng_app.add_static_files("/bellatrex_tmp", temp_files_dir)
     tree_source = f"/bellatrex_tmp/{image_name}"
     tree_image_path = os.path.abspath(os.path.join(temp_files_dir, image_name))
@@ -190,6 +192,7 @@ def _run_nicegui_app(
     temp_files_dir: str,
     payload_path: str | None = None,
 ) -> None:
+    ensure_nicegui_screen_test_port(port)
     ng_app.add_static_files("/bellatrex_tmp", temp_files_dir)
     tree_cache = TreeRenderCache()
 
@@ -332,6 +335,7 @@ def launch_nicegui_window(
         colorbar_paths,
     )
     port = find_free_port()
+    ensure_nicegui_screen_test_port(port)
 
     if sys.platform.startswith("win"):
         payload_path = build_main_window_payload(

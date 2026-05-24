@@ -19,6 +19,10 @@ def find_free_port() -> int:
         return int(sock.getsockname()[1])
 
 
+def ensure_nicegui_screen_test_port(port: int) -> None:
+    os.environ.setdefault("NICEGUI_SCREEN_TEST_PORT", str(port))
+
+
 def prepare_session_temp_dir(
     base_temp_files_dir: str,
     colorbar_paths: list[str],

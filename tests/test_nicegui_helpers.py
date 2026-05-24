@@ -1,4 +1,5 @@
 import pickle
+import os
 import sys
 import types
 
@@ -239,3 +240,23 @@ def test_main_window_payload_round_trip(tmp_path):
     assert payload["colorbar_paths"] == ["colorbar.png"]
     assert payload["render_context"]["sample_index"] == 7
     assert payload["port"] == 8123
+
+
+def test_ensure_nicegui_screen_test_port_sets_default(monkeypatch):
+    monkeypatch.delenv("NICEGUI_SCREEN_TEST_PORT", raising=False)
+
+    from app.bellatrex._nicegui.runtime import ensure_nicegui_screen_test_port
+
+    ensure_nicegui_screen_test_port(4567)
+
+    assert os.environ["NICEGUI_SCREEN_TEST_PORT"] == "4567"
+
+
+def test_ensure_nicegui_screen_test_port_preserves_existing(monkeypatch):
+    monkeypatch.setenv("NICEGUI_SCREEN_TEST_PORT", "9999")
+
+    from app.bellatrex._nicegui.runtime import ensure_nicegui_screen_test_port
+
+    ensure_nicegui_screen_test_port(4567)
+
+    assert os.environ["NICEGUI_SCREEN_TEST_PORT"] == "9999"
