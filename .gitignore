@@ -8,6 +8,7 @@ __pycache__/
 .ipynb_checkpoints
 .idea/
 tmp*
+temp-pytest/*
 
 # Bellatrex specific stuff
 explanations-output/*
@@ -52,4 +53,3 @@ ENV/
 env.bak/
 venv.bak/
 .github/instructions/*
-
