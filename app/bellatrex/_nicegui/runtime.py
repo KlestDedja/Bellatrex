@@ -10,7 +10,14 @@ from uuid import uuid4
 
 
 def detect_native_window_support() -> bool:
-    return importlib.util.find_spec("webview") is not None
+    if importlib.util.find_spec("webview") is None:
+        return False
+
+    # On Windows, pywebview's native backend relies on pythonnet.
+    if sys.platform.startswith("win"):
+        return importlib.util.find_spec("pythonnet") is not None
+
+    return True
 
 
 def find_free_port() -> int:
@@ -182,6 +189,10 @@ def serve_payload_file(payload_path: str) -> None:
 
     with open(payload_path, "rb") as handle:
         payload = pickle.load(handle)
+
+    # Ensure the NiceGUI screen-test port is present in this subprocess.
+    if "port" in payload:
+        ensure_nicegui_screen_test_port(int(payload["port"]))
 
     kind = payload.get("kind", "main_window")
     if kind == "tree_window":

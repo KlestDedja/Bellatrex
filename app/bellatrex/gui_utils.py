@@ -12,5 +12,5 @@ def check_and_import_gui_dependencies():
     except ImportError as e:
         raise ImportError(
             "Optional dependency 'nicegui' is not installed. "
-            "Install it with: pip install bellatrex[gui]"
+            "Install it with: pip install bellatrex"
         ) from e

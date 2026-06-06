@@ -32,9 +32,10 @@ jobs:
       - name: Format check
         run: black --check .
 
-  quick-test-no-gui:
+  quick-test:
     needs: linting-checks
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -51,15 +52,23 @@ jobs:
   quick-test-gui:
     needs: linting-checks
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.14"]
+    env:
+      BELLATREX_GUI_AUTO_CLOSE_SECONDS: "2"
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
           cache: pip
-      - name: Install (GUI)
+      - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install .[dev,gui] pytest
+          pip install .[dev] pytest
       - name: Tests (quick, GUI)
         run: pytest -q -m "gui"
+

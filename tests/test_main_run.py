@@ -157,6 +157,7 @@ def test_create_rules_txt():
 def test_gui_workflow():
 
     pytest.importorskip("nicegui", reason="Install Bellatrex[gui] to run GUI tests")
+    os.environ.setdefault("BELLATREX_GUI_AUTO_CLOSE_SECONDS", "2.0")
 
     for setup, loader in DATA_LOADERS.items():
         btrex_fitted, X_test = prepare_fitted_bellatrex(setup, loader)

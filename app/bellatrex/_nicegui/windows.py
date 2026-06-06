@@ -151,6 +151,12 @@ def _run_tree_window_app(
     tree_source = f"/bellatrex_tmp/{image_name}"
     tree_image_path = os.path.abspath(os.path.join(temp_files_dir, image_name))
 
+    auto_close = os.getenv("BELLATREX_GUI_AUTO_CLOSE_SECONDS")
+    try:
+        auto_close_seconds = float(auto_close) if auto_close else 2.0
+    except ValueError:
+        auto_close_seconds = 2.0
+
     @ui.page("/")
     def tree_window_page() -> None:
         ui.add_head_html(TREE_WINDOW_HEAD_CSS)
@@ -164,6 +170,8 @@ def _run_tree_window_app(
                     ui.element("img").props(f'src="{tree_source}" alt="{title}"').style(
                         TREE_WINDOW_IMAGE_STYLE
                     )
+        if auto_close_seconds > 0:
+            ui.timer(auto_close_seconds, lambda: ng_app.shutdown(), once=True)
 
     ng_app.on_shutdown(
         lambda: cleanup_temp_artifacts(
@@ -195,6 +203,12 @@ def _run_nicegui_app(
     ensure_nicegui_screen_test_port(port)
     ng_app.add_static_files("/bellatrex_tmp", temp_files_dir)
     tree_cache = TreeRenderCache()
+
+    auto_close = os.getenv("BELLATREX_GUI_AUTO_CLOSE_SECONDS")
+    try:
+        auto_close_seconds = float(auto_close) if auto_close else 0.0
+    except ValueError:
+        auto_close_seconds = 0.0
 
     @ui.page("/")
     def main_page() -> None:
@@ -291,6 +305,8 @@ def _run_nicegui_app(
                             ui.image(cb_source).props("fit=contain").style(COLORBAR_IMAGE_STYLE)
                     else:
                         ui.label("Colorbar missing").classes("text-xs text-red-600")
+        if auto_close_seconds > 0:
+            ui.timer(auto_close_seconds, lambda: ng_app.shutdown(), once=True)
 
     ng_app.on_shutdown(
         lambda: cleanup_temp_artifacts(
