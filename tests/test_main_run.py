@@ -165,7 +165,7 @@ def test_gui_workflow():
         for i in range(MAX_TEST_SAMPLES):
             tuned_method = btrex_fitted.explain(X_test, i)
 
-            # Enforce plot_gui=False in headless mode
+            # Build GUI objects without opening a blocking window in headless CI.
             fig, obj = tuned_method.plot_overview(show=not IS_CI, plot_gui=True)
             assert obj is not None
             plt.close(fig)

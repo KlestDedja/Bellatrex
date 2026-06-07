@@ -588,17 +588,18 @@ class BellatrexExplain:
                 colormap=colormap,
             )
 
-            # Launch the NiceGUI window (blocking until the window is closed).
-            launch_nicegui_window(
-                plots,
-                temp_files_dir,
-                render_context={
-                    "clf": tuned_method.clf,
-                    "sample": tuned_method.sample,
-                    "sample_index": self.sample_index,
-                    "max_depth": plot_max_depth,
-                },
-            )
+            if show:
+                # Launch the NiceGUI window (blocking until the window is closed).
+                launch_nicegui_window(
+                    plots,
+                    temp_files_dir,
+                    render_context={
+                        "clf": tuned_method.clf,
+                        "sample": tuned_method.sample,
+                        "sample_index": self.sample_index,
+                        "max_depth": plot_max_depth,
+                    },
+                )
 
             # Create a placeholder figure and axes to match the expected output format
             fig = plt.figure(figsize=(8, 6))

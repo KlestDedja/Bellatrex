@@ -135,9 +135,34 @@ def run_subprocess_app(payload_path: str, blocking: bool) -> None:
     process = subprocess.Popen(command)
 
     if blocking:
-        exit_code = process.wait()
+        timeout = _get_subprocess_timeout()
+        try:
+            exit_code = process.wait(timeout=timeout)
+        except subprocess.TimeoutExpired as exc:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+            raise RuntimeError(
+                f"NiceGUI window process timed out after {timeout} seconds."
+            ) from exc
         if exit_code != 0:
             raise RuntimeError(f"NiceGUI window process exited with code {exit_code}.")
+
+
+def _get_subprocess_timeout() -> float | None:
+    raw_timeout = os.getenv("BELLATREX_GUI_SUBPROCESS_TIMEOUT_SECONDS")
+    if raw_timeout is None or raw_timeout.strip() == "":
+        return None
+
+    try:
+        timeout = float(raw_timeout)
+    except ValueError:
+        return None
+
+    return timeout if timeout > 0 else None
 
 
 def cleanup_temp_artifacts(
