@@ -113,6 +113,7 @@ jobs:
     name: validate GUI ${{ matrix.os }} / py${{ matrix.python-version }}
     env:
       BELLATREX_GUI_AUTO_CLOSE_SECONDS: "2"
+      BELLATREX_GUI_SUBPROCESS_TIMEOUT_SECONDS: "60"
     steps:
       - uses: actions/checkout@v6
         with:
