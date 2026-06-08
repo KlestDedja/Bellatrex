@@ -342,7 +342,9 @@ def launch_nicegui_window(
     from multiprocessing import get_context
 
     if blocking is None:
-        blocking = True
+        # Prefer non-blocking by default so callers that simply want to
+        # "open a window" don't block program execution unexpectedly.
+        blocking = False
 
     native = detect_native_window_support()
     colorbar_paths = build_colorbar_paths(plots, temp_files_dir)
