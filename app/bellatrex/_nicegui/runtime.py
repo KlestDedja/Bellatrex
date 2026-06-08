@@ -132,22 +132,20 @@ def build_tree_window_payload(
 
 def run_subprocess_app(payload_path: str, blocking: bool) -> None:
     command = [sys.executable, "-m", "bellatrex.nicegui_plots_code", "--payload", payload_path]
-    process = subprocess.Popen(command)
+    process = subprocess.Popen(command, env=_build_subprocess_env())
 
     if blocking:
         timeout = _get_subprocess_timeout()
         try:
             exit_code = process.wait(timeout=timeout)
         except subprocess.TimeoutExpired as exc:
-            process.terminate()
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait()
+            _terminate_subprocess(process)
             raise RuntimeError(
                 f"NiceGUI window process timed out after {timeout} seconds."
             ) from exc
+        except (KeyboardInterrupt, SystemExit):
+            _terminate_subprocess(process)
+            raise
         if exit_code != 0:
             raise RuntimeError(f"NiceGUI window process exited with code {exit_code}.")
 
@@ -163,6 +161,25 @@ def _get_subprocess_timeout() -> float | None:
         return None
 
     return timeout if timeout > 0 else None
+
+
+def _build_subprocess_env() -> dict[str, str]:
+    env = os.environ.copy()
+    package_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    pythonpath = env.get("PYTHONPATH", "")
+    paths = [path for path in pythonpath.split(os.pathsep) if path]
+    if package_root not in paths:
+        env["PYTHONPATH"] = os.pathsep.join([package_root, *paths])
+    return env
+
+
+def _terminate_subprocess(process: subprocess.Popen) -> None:
+    process.terminate()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
 
 
 def cleanup_temp_artifacts(

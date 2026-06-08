@@ -86,7 +86,7 @@ for i in range(N_TEST_SAMPLES):
     tuned_method = Btrex_fitted.explain(X_test, i)
 
     # Plot 1: cluster overview (shows pre-selected trees and selected rules)
-    tuned_method.plot_overview(plot_gui=PLOT_GUI, show=False)
+    tuned_method.plot_overview(plot_gui=PLOT_GUI, show=PLOT_GUI)
     # When plot_gui=True the NiceGUI window blocks until closed, then the loop continues.
     if PLOT_GUI:
         # Ensure no placeholder matplotlib figure leaks from overview when NiceGUI is used.
