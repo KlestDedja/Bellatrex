@@ -5,6 +5,7 @@ Created on Mon Oct  9 14:55:55 2023
 @author:       Klest Dedja
 @institution:  KU Leuven
 """
+
 import warnings
 import numpy as np
 import pandas as pd
@@ -41,8 +42,8 @@ def pack_trained_ensemble(clf: Any, set_up: str = "auto", time_to_bin: Optional[
     Returns
     -------
     dict
-        A dictionary representation of the packed ensemble model. This format is compatible with scikit-learn's
-        model loading functions.
+        A dictionary representation of the packed ensemble model.
+        This format is compatible with scikit-learn's model loading functions.
 
     Raises
     ------
@@ -70,7 +71,7 @@ def pack_trained_ensemble(clf: Any, set_up: str = "auto", time_to_bin: Optional[
 
     tree_list = []
     # Correct access to n_estimators
-    if hasattr(clf, 'n_estimators'):
+    if hasattr(clf, "n_estimators"):
         for t in range(clf.n_estimators):
             tree_dict = tree_to_dict(clf, t, output_format=set_up, time_to_bin=time_to_bin)
             tree_list.append(tree_dict)
@@ -279,7 +280,7 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
 
     tree_dict["output_format"] = output_format
 
-    if isinstance(tree_obj, SurvivalTree): # case SETUP=survival
+    if isinstance(tree_obj, SurvivalTree):  # case SETUP=survival
 
         if tree_dict["unique_times_"] is None and output_format not in ["probability"]:
             raise KeyError("Missing 'unique_times_' in the tree ensemble.")
@@ -327,9 +328,19 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
         and output_format in ["probability", "auto"]
     ):
         partials = tree.value[:, 0, :]  # output for 2 classes, now take average
-        tree_dict["values"] = (partials[:, 1] / (partials[:, 0] + partials[:, 1])).reshape(-1, 1)
 
-    elif ( #case SETUP=multi-label
+        try:
+            tree_dict["values"] = (partials[:, 1] / (partials[:, 0] + partials[:, 1])).reshape(
+                -1, 1
+            )
+        except IndexError:
+            # Handle the case where there is only one class in the node
+            tree_dict["values"] = np.zeros((tree.node_count, 1))  # Default to 0 probability
+            warnings.warn(
+                "One of the trees contains only one class, resulting in an IndexError. "
+                "Defaulting to 0 probability. Will be handled better in future versions."
+            )
+    elif (  # case SETUP=multi-label
         isinstance(tree_obj, DecisionTreeClassifier)
         and tree_obj.n_outputs_ > 1
         and output_format in ["probability", "auto"]
@@ -337,14 +348,14 @@ def tree_to_dict(clf_obj, idx, output_format, time_to_bin=None):
         partials = tree.value
         tree_dict["values"] = partials[:, :, 1] / (partials[:, :, 0] + partials[:, :, 1])
 
-    elif ( # case SETUP=regression
+    elif (  # case SETUP=regression
         isinstance(tree_obj, DecisionTreeRegressor)
         and tree_obj.n_outputs_ == 1
         and output_format in ["probability", "auto"]
     ):
         tree_dict["values"] = tree.value[:, 0, 0].reshape(-1, 1)  # output (n_nodes, 1)
 
-    elif ( # case SETUP=multi-target
+    elif (  # case SETUP=multi-target
         isinstance(tree_obj, DecisionTreeRegressor)
         and tree_obj.n_outputs_ > 1
         and output_format in ["probability", "auto"]

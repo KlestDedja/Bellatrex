@@ -1,9 +1,15 @@
-import os
+"""DEPRECATED – DearPyGUI backend removed.
+
+The GUI has been migrated to NiceGUI. See nicegui_plots_code.py.
+This file is kept for historical reference only and is no longer imported.
+"""
+
+# Guarded imports — this module is not loaded at runtime.
+raise ImportError("gui_plots_code is deprecated. Use nicegui_plots_code instead.")
+
+import os  # noqa: F401 – unreachable, kept for historical reference
 import warnings
 import math
-
-import dearpygui.dearpygui as dpg
-from dearpygui_ext.themes import create_theme_imgui_light
 
 import numpy as np
 import matplotlib as mpl
@@ -33,12 +39,13 @@ class InteractPoint:  # Object containg all information of a point
 
 
 class InteractPlot:  # Object containing all information of a plot
-    def __init__(self, name, points, clustered=False, xlabel="PC1", ylabel="PC2"):
+    def __init__(self, name, points, clustered=False, xlabel="PC1", ylabel="PC2", sample_idx=None):
         self.name = str(name)  # string (should be unique)
         self.points = points  # list of InteractPoints objects
         self.clustered = clustered  # Boolean
         self.xlabel = xlabel  # string
         self.ylabel = ylabel  # string
+        self.sample_idx = sample_idx  # sample index
 
 
 def make_interactive_plot(plots, temp_files_dir, plot_size=700, other_inputs=None, max_depth=None):
@@ -372,7 +379,7 @@ def plot_with_interface(
 
     def sizer(in_size):
         if in_size is True:
-            return 16.0
+            return 15.0
         else:
             return 9.0
 
@@ -388,10 +395,10 @@ def plot_with_interface(
     # repeat PCA to 2 dimensions for projected trees
     # (original proj dimension can be > 2)
     # better: use original one and keep only the first two dims.
-    PCA_fitted = PCA(n_components=2).fit(plot_data_bunch.proj_data)
-    plottable_data = PCA_fitted.transform(plot_data_bunch.proj_data)  # (lambda,2)
+    pca_fitted = PCA(n_components=2).fit(plot_data_bunch.proj_data)
+    plottable_data = pca_fitted.transform(plot_data_bunch.proj_data)  # (lambda,2)
 
-    # centers = PCA_fitted.transform(kmeans.cluster_centers_)
+    # centers = pca_fitted.transform(kmeans.cluster_centers_)
     cluster_memb = kmeans.labels_
 
     final_ts_idx = input_method.final_trees_idx
@@ -578,7 +585,7 @@ def plot_with_interface(
                 else:
                     raise ValueError("expecting float, got {type(plot_data_bunch.loss)} instead")
 
-        plots.append(InteractPlot(plotindex, points, clustered=clustered))
+        plots.append(InteractPlot(plotindex, points, clustered=clustered, sample_idx=plotindex))
 
     # end of the enumerate(clusterplots) `for' loop (length 2 -> two plots)
     viewport_dict = make_interactive_plot(

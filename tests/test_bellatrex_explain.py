@@ -2,6 +2,7 @@ import os
 import pytest
 import numpy as np
 import pandas as pd
+from importlib import import_module
 
 try:  # TODO: Paths to be updated: this workaround makes tests work across different setups.
     from app.bellatrex.bellatrex_explain import BellatrexExplain
@@ -63,6 +64,46 @@ def test_bellatrex_explain_plot_overview(mock_clf, mock_data):
     # fig, axes = explainer.plot_overview(show=False)
     assert fig is not None
     assert axes is not None
+
+
+@pytest.mark.gui
+def test_plot_overview_gui_show_false_does_not_launch_window(monkeypatch, tmp_path):
+    pytest.importorskip("nicegui", reason="Install Bellatrex[gui] to run GUI tests")
+
+    class FakeTunedMethod:
+        final_trees_idx = []
+        cluster_sizes = []
+        clf = object()
+        sample = pd.DataFrame([[1.0]], columns=["feature"])
+
+        def preselect_represent_cluster_trees(self):
+            return object(), object()
+
+    explainer = object.__new__(BellatrexExplain)
+    explainer.sample = pd.DataFrame([[1.0]], columns=["feature"])
+    explainer.tuned_method = FakeTunedMethod()
+    explainer.sample_index = 0
+    explainer.surrogate_pred_str = "0.0"
+    explainer.verbose = -1
+    explainer.clf = object()
+
+    module_root = BellatrexExplain.__module__.rsplit(".", 1)[0]
+    nicegui_plots_code = import_module(f"{module_root}.nicegui_plots_code")
+
+    def fail_launch(*args, **kwargs):
+        raise AssertionError("show=False should not launch a NiceGUI window")
+
+    monkeypatch.setattr(nicegui_plots_code, "plot_with_interface", lambda *a, **k: ["plot"])
+    monkeypatch.setattr(nicegui_plots_code, "launch_nicegui_window", fail_launch)
+
+    fig, axes = explainer.plot_overview(
+        show=False,
+        plot_gui=True,
+        temp_gui_dir=str(tmp_path),
+    )
+
+    assert fig is not None
+    assert axes == ["plot"]
 
 
 @pytest.mark.xfail(raises=NotImplementedError, reason="Not implemented yet")

@@ -21,7 +21,6 @@ from matplotlib.ticker import FuncFormatter
 from matplotlib.colorbar import Colorbar
 
 from .wrapper_class import EnsembleWrapper
-from typing import Any, List, Optional, Tuple, Union
 
 # def is_ci():
 #     return os.environ.get("CI", "false").lower() == "true"
@@ -630,10 +629,10 @@ def plot_preselected_trees(
 
     # PCA to 2 dimensions for projected trees
     # (original proj dimension can be > 2)
-    PCA_fitted = PCA(n_components=2).fit(plot_data_bunch.proj_data)
-    plottable_data = PCA_fitted.transform(plot_data_bunch.proj_data)  # (lambda,2)
+    pca_fitted = PCA(n_components=2).fit(plot_data_bunch.proj_data)
+    plottable_data = pca_fitted.transform(plot_data_bunch.proj_data)  # (lambda,2)
 
-    centers = PCA_fitted.transform(kmeans.cluster_centers_)
+    centers = pca_fitted.transform(kmeans.cluster_centers_)
     class_memb = kmeans.labels_
 
     custom_gridspec = {"width_ratios": [3, 0.2, 3, 0.2]}

@@ -63,7 +63,7 @@ The current support of Bellatrex focuses on Random Forest models implemented via
 
 # Set-up
 
-To install the standard version of Bellatrex (without an interacting GUI), create an anaconda environment:
+To install Bellatrex, create an anaconda environment:
 
 ```
 conda create -n bellatrex python=3.12
@@ -80,18 +80,22 @@ If this step fails and you don't find a solution immediately, please [open an is
 
 ## Interactive GUI mode
 
-For an enhanced user experience that includes interactive plots, you can run:
+The NiceGUI-based interactive frontend is installed by default with:
+```
+pip install bellatrex
+```
+
+The legacy command still works as a compatibility alias:
 ```
 pip install bellatrex[gui]
 ```
 
-or manually install the following additional packages:
+or you can install the browser GUI dependency manually:
 ```
-pip install dearpygui==1.6.2
-pip install dearpygui-ext==0.9.5
+pip install nicegui
 ```
 
-**Note:** When running Bellatrex with the GUI for multiple test samples, the program will generate an interactive window. The process may take a couple of seconds, and the user might have to click at least once within the generated window in order to activate the interactive mode. Once this is done, the user can explore the generated rules by clicking on the corresponding representation. To show the Bellatrex explanation for the next sample, close the interactive window and wait until Bellatrex generates the explanation for the new sample.
+**Note:** Bellatrex installs the browser GUI everywhere, and adds native window support automatically where the platform backend is available. On Windows with Python 3.14, Bellatrex currently falls back to browser-based GUI mode because the native `pythonnet` backend does not yet support that Python version. When running Bellatrex with the GUI for multiple test samples, the program will generate an interactive window in your browser. The user can explore the generated rules by clicking on the corresponding representation. To show the Bellatrex explanation for the next sample, interact with the interface and wait until Bellatrex generates the explanation for the new sample.
 
 # Quickstart
 

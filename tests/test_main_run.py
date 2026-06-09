@@ -9,6 +9,7 @@ import matplotlib
 
 matplotlib.use("Agg")  # Must be before importing pyplot
 
+from importlib import import_module
 import matplotlib.pyplot as plt  # Safe after backend is set
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -151,14 +152,30 @@ def test_create_rules_txt(tmp_path):
 #                 assert fig is not None
 #                 plt.close(fig)
 #             else:
-#                 assert obj is not None  # DearPyGui plot objects
+#                 assert obj is not None  # NiceGUI plot objects
 
 
 @pytest.mark.gui
-def test_gui_workflow():
-    # Skip GUI tests unless all GUI dependencies are present
-    dpg = pytest.importorskip(
-        "dearpygui.dearpygui", reason="Install Bellatrex[gui] to run GUI tests"
+def test_gui_workflow(monkeypatch):
+
+    pytest.importorskip("nicegui", reason="Install Bellatrex[gui] to run GUI tests")
+    nicegui_plots_code = import_module("bellatrex.nicegui_plots_code")
+    launch_calls = []
+
+    def fake_launch_nicegui_window(plots, temp_files_dir, blocking=None, render_context=None):
+        launch_calls.append(
+            {
+                "plots": plots,
+                "temp_files_dir": temp_files_dir,
+                "blocking": blocking,
+                "render_context": render_context,
+            }
+        )
+
+    monkeypatch.setattr(
+        nicegui_plots_code,
+        "launch_nicegui_window",
+        fake_launch_nicegui_window,
     )
     pytest.importorskip("nicegui", reason="Install Bellatrex[gui] to run GUI tests")
     pytest.importorskip("plotly", reason="Install Bellatrex[gui] to run GUI tests")
@@ -169,7 +186,11 @@ def test_gui_workflow():
         for i in range(MAX_TEST_SAMPLES):
             tuned_method = btrex_fitted.explain(X_test, i)
 
-            # Enforce plot_gui=False in headless mode
-            fig, obj = tuned_method.plot_overview(show=not IS_CI, plot_gui=True)
+            # Exercise the show=True GUI path without opening real OS windows in tests.
+            fig, obj = tuned_method.plot_overview(show=True, plot_gui=True)
             assert obj is not None
+            assert launch_calls[-1]["plots"] is obj
+            assert launch_calls[-1]["render_context"]["clf"] is tuned_method.tuned_method.clf
             plt.close(fig)
+
+    assert len(launch_calls) == len(DATA_LOADERS) * MAX_TEST_SAMPLES

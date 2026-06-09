@@ -1,9 +1,11 @@
 import pytest
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')  # for headless testing
+
+matplotlib.use("Agg")  # for headless testing
 import matplotlib.pyplot as plt
 from bellatrex.visualization import plot_rules, parse, read_rules
+
 
 # --- plot_rules ---
 def test_plot_rules_basic():
@@ -16,6 +18,7 @@ def test_plot_rules_basic():
     assert axs is not None
     plt.close(fig)
 
+
 def test_plot_rules_with_other_preds():
     rules = [["feature_1 <= 0.5", "feature_2 > 1.0"]]
     preds = [[0.2, 0.8]]
@@ -25,6 +28,7 @@ def test_plot_rules_with_other_preds():
     fig, axs = plot_rules(rules, preds, baselines, weights, other_preds=other_preds)
     assert fig is not None
     plt.close(fig)
+
 
 def test_plot_rules_with_preds_distr():
     rules = [["feature_1 <= 0.5", "feature_2 > 1.0"]]
@@ -36,6 +40,7 @@ def test_plot_rules_with_preds_distr():
     assert fig is not None
     plt.close(fig)
 
+
 def test_plot_rules_with_conf_level():
     rules = [["feature_1 <= 0.5", "feature_2 > 1.0"]]
     preds = [[0.2, 0.8]]
@@ -46,6 +51,7 @@ def test_plot_rules_with_conf_level():
     assert fig is not None
     plt.close(fig)
 
+
 def test_plot_rules_with_bbox_pred():
     rules = [["feature_1 <= 0.5", "feature_2 > 1.0"]]
     preds = [[0.2, 0.8]]
@@ -54,6 +60,7 @@ def test_plot_rules_with_bbox_pred():
     fig, axs = plot_rules(rules, preds, baselines, weights, b_box_pred=0.7)
     assert fig is not None
     plt.close(fig)
+
 
 # --- parse ---
 def test_parse_latex_and_parenthesis():
@@ -64,33 +71,31 @@ def test_parse_latex_and_parenthesis():
     out2 = parse(s2)
     assert r"$\\geq$" in out2 or "$\\geq$" in out2
 
+
 def test_parse_removes_after_paren():
     s = "feature_1 <= 0.5 (val=0.3)"
     out = parse(s)
     assert "(" not in out or out.endswith("(")
 
+
 # --- read_rules ---
 def test_read_rules(tmp_path):
     rule_file = tmp_path / "rules.txt"
     extra_file = tmp_path / "rules_extra.txt"
-    rule_file.write_text(
-        """
+    rule_file.write_text("""
 RULE WEIGHT: 0.5
 Baseline prediction: 0.1
 node: feature_1 <= 0.5 --> 0.2
 node: feature_2 > 1.0 --> 0.8
 leaf
 Bellatrex prediction: 0.8
-"""
-    )
-    extra_file.write_text(
-        """
+""")
+    extra_file.write_text("""
 Baseline prediction: 0.1
 node: feature_1 <= 0.5 --> 0.2
 node: feature_2 > 1.0 --> 0.8
 leaf
-"""
-    )
+""")
     rules, preds, baselines, weights, other_preds = read_rules(str(rule_file), str(extra_file))
     assert isinstance(rules, list)
     assert isinstance(preds, list)
