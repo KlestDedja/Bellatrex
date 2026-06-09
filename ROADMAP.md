@@ -27,6 +27,8 @@ The weight of the extra $q$ dimensions should be controlled by a new parameter.
 - Enhance Bellatrex explanations for multi-output tasks, enable users to:
     - select a subset of targets to run explanations for;
     - select a (single) target to run ``plot_visuals()``
+- Impose best practices for code API stability over several version: raise `DeprecationWarning` when functions are being dropped
+
 
 
 ### Type safety
@@ -56,7 +58,7 @@ The weight of the extra $q$ dimensions should be controlled by a new parameter.
 
 - Add docstrings to all internal functions that currently have none (e.g.,
   `frmt_pretty_print`, `rule_to_file`, `_validate_p_grid`).
-- Set up auto-generated API docs (Sphinx / ReadTheDocs).
+- Set up auto-generated API docs (Sphinx / ReadTheDocs / zensical. See short term goals).
 
 ### Testing
 
@@ -86,4 +88,4 @@ The weight of the extra $q$ dimensions should be controlled by a new parameter.
 Open a PR directly, either for small fixes or for suggesting new features and roadmap items.
 
 ---
-_Last updated: 2026-02-20_
+_Last updated: 2026-05-11_
