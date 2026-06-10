@@ -1,5 +1,4 @@
 import warnings
-import os
 from enum import Enum
 import numpy as np
 import pandas as pd
@@ -110,7 +109,7 @@ def normalize_set_up(set_up: str) -> str:
     return _SET_UP_ALIASES[key]
 
 
-def _infer_set_up(clf: Any, y: Any) -> str:
+def _infer_set_up(clf, y) -> str:
     """Infer the prediction task from a fitted classifier and its training labels.
 
     Returns one of the canonical set_up strings: ``"binary"``, ``"regression"``,
@@ -180,7 +179,7 @@ def concatenate_helper(y_pred: np.ndarray, y_local_pred: np.ndarray, axis: int =
     return np.concatenate((y_pred, y_local_pred), axis=axis)
 
 
-def predict_helper(clf: Any, X: Any) -> Any:
+def predict_helper(clf: object, X: object) -> np.ndarray:
     """
     Return consistent predictions across classifiers, regressors, and wrapped models.
 
@@ -196,7 +195,7 @@ def predict_helper(clf: Any, X: Any) -> Any:
     - Or a float if X has shape (1, n_features)
     """
 
-    def squeeze_output(y):
+    def squeeze_output(y: object) -> np.ndarray:
         """Ensure scalar for single sample, else return array."""
         y = np.array(y)
         if y.size == 1:

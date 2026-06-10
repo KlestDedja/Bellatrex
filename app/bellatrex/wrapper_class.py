@@ -9,7 +9,6 @@ Created on Mon Oct  9 14:55:55 2023
 import warnings
 import numpy as np
 import pandas as pd
-from typing import Any, Optional, Dict
 from scipy.sparse import csr_matrix, hstack
 
 from sklearn.utils.validation import check_is_fitted
@@ -21,8 +20,8 @@ from sksurv.ensemble import RandomSurvivalForest
 
 
 def pack_trained_ensemble(
-    clf: Any, set_up: str = "auto", time_to_bin: Optional[float] = None
-) -> Dict:
+    clf: object, set_up: str = "auto", time_to_bin: float | None = None
+) -> dict:
     """
     Packs a trained ensemble model into a dictionary format compatible with scikit-learn.
 
