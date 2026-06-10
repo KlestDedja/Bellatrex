@@ -20,7 +20,9 @@ from sksurv.tree import SurvivalTree
 from sksurv.ensemble import RandomSurvivalForest
 
 
-def pack_trained_ensemble(clf: Any, set_up: str = "auto", time_to_bin: Optional[float] = None) -> Dict:
+def pack_trained_ensemble(
+    clf: Any, set_up: str = "auto", time_to_bin: Optional[float] = None
+) -> Dict:
     """
     Packs a trained ensemble model into a dictionary format compatible with scikit-learn.
 
