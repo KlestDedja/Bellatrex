@@ -5,7 +5,7 @@ This file sketches the direction of the project. It’s meant as a _guidepost_ a
 
 ## Immediate goals (v0.4.x patches)
 
-- Update documentation to recent 0.4.0 changes
+- Update README documentation as well as `tutorial` files to recent 0.4.0 changes
 - Patch all links to Readme page so that errors disappear in the next PyPi release
 - Track coverage rate in CI, ensure (again) consistency between local runs and codecov runs
 - Increase coverage to >80%. Main gains to be made in the newly refactored GUI code (migrated to `nicegui`)
