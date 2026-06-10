@@ -3,7 +3,7 @@
 This file sketches the direction of the project. It’s meant as a _guidepost_ and priorities can shift over time.
 
 
-## Near-term goals (v0.x series)
+## Immediate goals (v0.4.x patches)
 
 - Update documentation to recent 0.4.0 changes
 - Track coverage % in CI, ensure consistency between local runs and codecov runs
@@ -12,7 +12,7 @@ This file sketches the direction of the project. It’s meant as a _guidepost_ a
 - Consider a modern suite for code quality stack: balck + pytest + mypy, and later add ruff + coverage + pre-commit
 
 
-## Mid-term ideas (future versions)
+## Mid-term ideas (future releases)
 
 ### New features
 
