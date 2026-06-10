@@ -5,21 +5,18 @@ This file sketches the direction of the project. It’s meant as a _guidepost_ a
 
 ## Near-term goals (v0.x series)
 
-- Expand integration tests
-- Expand compatibility up to Python 3.14
-- Track coverage % in CI and target >80%. To reach this:
-    - Refactor the GUI code (migrated from _dearpygui_ to _nicegui_)
-
-### Code quality
-
-- Align the supported Python version classifiers in `pyproject.toml` with what the
-  CI matrix actually tests — blocked on `dearpygui <2.0`, which has no Python 3.13
-  wheels. Will be resolved when the GUI dependency constraint is updated.
+- Update documentation to recent 0.4.0 changes
+- Track coverage % in CI, ensure consistency between local runs and codecov runs
+- Increase coverage to >80%. Main gains to be made in the newly refactored GUI code (migrated to _nicegui_)
+- Consider adding static type checking such as _mypy_
+- Consider a modern suite for code quality stack: balck + pytest + mypy, and later add ruff + coverage + pre-commit
 
 
 ## Mid-term ideas (future versions)
 
 ### New features
+
+- Bellatrex already supports a model agnostic approach (building a surrogate random forest model). Test thoroughly, update related APIs, and documentation
 
 - Enhance vector representation by including leaf predictions in the representation of the trees. The resulting representation could have $d+q$ dimensions, where $q$ is the output dimensionality and $d$ is the input dimensionality. Currently only feature splits are used to create the tree representation.
 The weight of the extra $q$ dimensions should be controlled by a new parameter.
@@ -27,8 +24,8 @@ The weight of the extra $q$ dimensions should be controlled by a new parameter.
 - Enhance Bellatrex explanations for multi-output tasks, enable users to:
     - select a subset of targets to run explanations for;
     - select a (single) target to run ``plot_visuals()``
-- Impose best practices for code API stability over several version: raise `DeprecationWarning` when functions are being dropped
 
+- Impose best practices for code API stability over several version: raise `DeprecationWarning` when functions are being dropped
 
 
 ### Type safety
