@@ -1,7 +1,6 @@
 import os
 import re
 import sys
-from typing import Any
 
 from nicegui import app as ng_app
 from nicegui import ui
@@ -58,7 +57,7 @@ COLORBAR_CONTAINER_STYLE = (
 COLORBAR_IMAGE_STYLE = "height:440px; width:134px; display:block; flex-shrink:0;"
 
 
-def _extract_click_selection(args: Any) -> tuple[str, Any]:
+def _extract_click_selection(args: object) -> tuple[str, object]:
     text = "Point selected"
 
     if isinstance(args, dict):
@@ -79,7 +78,7 @@ def _extract_click_selection(args: Any) -> tuple[str, Any]:
     return text, None
 
 
-def _normalize_tree_name(raw_tree_name: Any) -> str | None:
+def _normalize_tree_name(raw_tree_name: object) -> str | None:
     if raw_tree_name is None:
         return None
 

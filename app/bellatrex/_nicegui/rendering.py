@@ -130,7 +130,7 @@ def _add_points_trace(
     size: float,
     trace_name: str,
     clustered: bool,
-    plotly_go: Any,
+    plotly_go: object,
 ) -> None:
     if not points:
         return
@@ -161,7 +161,7 @@ def _add_legend_trace(
     size: float,
     trace_name: str,
     fill_color: str = "rgba(220,220,220,1.0)",
-    plotly_go: Any | None = None,
+    plotly_go: object | None = None,
 ) -> None:
     if plotly_go is None:
         raise ValueError("plotly_go must be provided when adding legend traces")

@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Any
 
 
 @dataclass(slots=True)
@@ -7,7 +6,7 @@ class InteractPoint:
     """Container for one clickable point in the NiceGUI scatter plot."""
 
     name: str
-    pos: Any
+    pos: object
     color: list[float]
     size: float
     shape: str
@@ -27,7 +26,7 @@ class InteractPlot:
     clustered: bool = False
     xlabel: str = "PC1"
     ylabel: str = "PC2"
-    sample_idx: Any = None
+    sample_idx: object = None
 
     def __post_init__(self) -> None:
         self.name = str(self.name)
