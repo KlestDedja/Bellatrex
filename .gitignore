@@ -41,11 +41,10 @@ MANIFEST
 .pypirc
 
 # coverage report output files
-.coverage
+.coverage*
 .coverage.*
-# coverage.xml
+coverage.xml
 htmlcov/
-coverage.json
 
 # Environments
 .env
