@@ -56,7 +56,7 @@ print("Model fitting complete.")
 # To save your own model, uncomment and adjust the line below:
 # joblib.dump(clf, os.path.join('app', 'bellatrex', 'datasets', 'model_example.pkl'))
 
-model_path = os.path.join("app", "bellatrex", "datasets", "model_example.pkl")
+model_path = os.path.join("app", "bellatrex", "datasets", f"{SETUP}_pretrained.pkl")
 if os.path.exists(model_path):
     clf = joblib.load(model_path)
     print(f"Loaded pre-trained model from {model_path}")
@@ -86,19 +86,18 @@ for i in range(N_TEST_SAMPLES):
     tuned_method = Btrex_fitted.explain(X_test, i)
 
     # Plot 1: cluster overview (shows pre-selected trees and selected rules)
-    tuned_method.plot_overview(plot_gui=PLOT_GUI, show=PLOT_GUI)
-    # When plot_gui=True the NiceGUI window blocks until closed, then the loop continues.
-    if PLOT_GUI:
-        # Ensure no placeholder matplotlib figure leaks from overview when NiceGUI is used.
-        plt.close("all")
-    else:
+    fig_overview, _ = tuned_method.plot_overview(plot_gui=PLOT_GUI, show=PLOT_GUI)
+    # In GUI mode, plot_overview opens a blocking NiceGUI window and returns a placeholder
+    # matplotlib figure. In non-GUI mode, show the real matplotlib overview explicitly.
+    if not PLOT_GUI:
         plt.show(block=True)
+    plt.close(fig_overview)
 
     # Plot 2: rule-level detail (single-output tasks only)
     if SETUP.lower() in ["binary", "survival", "regression"]:
-        tuned_method.plot_visuals(
+        fig_visuals, _ = tuned_method.plot_visuals(
             plot_max_depth=5, preds_distr=y_train_pred, conf_level=0.9, tot_digits=4, show=False
         )
         # plot_visuals is always a plain matplotlib figure; show it regardless of GUI mode.
         plt.show(block=True)
-        plt.close("all")
+        plt.close(fig_visuals)
