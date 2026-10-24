@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import base64
 
-from nicegui import ui
+from nicegui import app, ui
 from nicegui.events import GenericEventArguments
 
 from .models import InteractPlot
@@ -138,9 +138,26 @@ def run_explorer(
     port: int | None = None,
     show: bool = True,
 ) -> None:
-    """Run the browser-based NiceGUI explorer in the current process."""
+    """Run until the last explorer tab closes, or the user presses Ctrl+C."""
+    connected_clients: set[str] = set()
+
+    def create_page():
+        client = ui.context.client
+
+        def stop_if_last_tab_closed():
+            if client.id not in connected_clients:
+                return
+            connected_clients.remove(client.id)
+            if not connected_clients:
+                app.shutdown()
+
+        # Wait for reconnections so a page refresh does not stop the server.
+        client.on_connect(lambda: connected_clients.add(client.id))
+        client.on_delete(stop_if_last_tab_closed)
+        build_explorer_page(plots, render_context)
+
     ui.run(
-        lambda: build_explorer_page(plots, render_context),
+        create_page,
         title="Bellatrex",
         host="127.0.0.1",
         port=port,

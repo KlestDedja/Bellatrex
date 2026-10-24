@@ -1,3 +1,5 @@
+import asyncio
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -290,3 +292,46 @@ async def test_explorer_cache_is_scoped_to_each_page():
             user.find(marker="explorer-plot-0").trigger("plotly_click", {"tree_name": "1"})
             await user.should_see("Opened Tree 1")
     assert render_calls == ["1", "1"]
+
+
+def _standalone_page(monkeypatch):
+    roots = []
+    with monkeypatch.context() as patch:
+        patch.setattr(explorer.ui, "run", lambda root, **kwargs: roots.append(root))
+        explorer.run_explorer(_prepared_plots())
+    return roots[0]
+
+
+@requires_simulator
+@pytest.mark.anyio
+async def test_standalone_exits_after_last_tab_disconnects(monkeypatch):
+    shutdown_calls = []
+    monkeypatch.setattr(explorer.app, "shutdown", lambda: shutdown_calls.append(True))
+    async with user_simulation(root=_standalone_page(monkeypatch)) as user:
+        assert shutdown_calls == []
+        client = await user.open("/")
+        client.handle_disconnect(next(iter(client._socket_to_document_id)))
+        assert shutdown_calls == []
+        await asyncio.sleep(3.2)
+        assert client.is_deleted
+        assert shutdown_calls == [True]
+
+
+@requires_simulator
+@pytest.mark.anyio
+async def test_standalone_refresh_and_other_tabs_keep_server_running(monkeypatch):
+    shutdown_calls = []
+    monkeypatch.setattr(explorer.app, "shutdown", lambda: shutdown_calls.append(True))
+    async with user_simulation(root=_standalone_page(monkeypatch)) as user:
+        original = await user.open("/")
+        original.handle_disconnect(next(iter(original._socket_to_document_id)))
+        refreshed = await user.open("/")
+        await asyncio.sleep(3.2)
+        assert original.is_deleted
+        assert shutdown_calls == []
+
+        other_tab = await user.open("/")
+        refreshed.delete()
+        assert shutdown_calls == []
+        other_tab.delete()
+        assert shutdown_calls == [True]

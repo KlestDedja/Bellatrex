@@ -86,9 +86,10 @@ clicking a point opens the corresponding tree in an in-page dialog.
 
 GUI mode returns `(None, plots)` rather than a Matplotlib placeholder figure. Use
 `show=False` to prepare plots without starting a server. With `show=True`, the local
-server runs in the current process and blocks until interrupted with Ctrl+C; closing
-its browser tab does not stop it. The former `temp_gui_dir` parameter has been removed,
-since GUI images stay in memory. Use a standalone Python script to launch the explorer;
+server runs in the current process and stops when the last explorer tab closes, after
+a short reconnection grace period (normally three seconds). Refreshing the page or
+keeping another explorer tab open keeps it running. Ctrl+C remains a fallback.
+The former `temp_gui_dir` parameter has been removed, since GUI images stay in memory. Use a standalone Python script to launch the explorer;
 `tutorial.ipynb` defaults to static Matplotlib plots because Jupyter already runs an event loop.
 
 Tree images are rendered on demand and cached per page. A first render can still pause

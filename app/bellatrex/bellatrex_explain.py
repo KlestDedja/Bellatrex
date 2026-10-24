@@ -531,8 +531,9 @@ class BellatrexExplain:
         """Return the overview figure/axes, or ``(None, plots)`` in browser GUI mode.
 
         With ``plot_gui=True``, ``show=False`` prepares plot data without starting a
-        server. Otherwise the local NiceGUI server blocks until interrupted; closing
-        its browser tab does not stop it. ``plot_max_depth`` limits selected tree images.
+        server. Otherwise it runs until the last explorer tab closes, allowing a short
+        reconnection grace period for page refreshes. Ctrl+C remains a fallback.
+        ``plot_max_depth`` limits selected tree images.
         """
 
         if self.sample is None or self.tuned_method is None:

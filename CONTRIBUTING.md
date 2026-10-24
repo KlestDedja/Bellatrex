@@ -20,7 +20,7 @@ python -m pip install -e ".[dev]"
 
 The development extra requests NiceGUI 3.12.1 or newer for the user-simulation test
 helper. The runtime minimum remains NiceGUI 3.0. When the simulator helper is
-unavailable, only its three tests are skipped; the remaining tests still run.
+unavailable, only tests that need it are skipped; the remaining tests still run.
 
 Installing the development extra is recommended but not required to open a pull request;
 GitHub Actions runs the mandatory checks before changes can merge. In VS Code, select
